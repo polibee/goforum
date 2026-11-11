@@ -248,7 +248,7 @@ GoForum 面向希望**自己掌握数据与规则**的社区团队。它把 Disc
 | 2FA 范围 | 仅管理员；普通用户暂未开放 |
 | 迁移锁 / 校验和 | 未实现 advisory lock；不要修改已发布迁移 |
 | 内置调度器 | 备份、清理等需外部 cron |
-| Dockerfile | 仓库未提供，需自行构建镜像或裸机部署 |
+| Docker | 已提供 `Dockerfile`、`docker-compose.yml` 与一键部署脚本；多实例仍需共享存储 |
 | `APP_KEY` 轮换 | 会导致设置密钥与 TOTP 失效，需重新配置 |
 
 ## 9. 推荐基础设施
@@ -281,6 +281,16 @@ make build
 # 产物：bin/goforum
 ```
 
+生产一键部署：
+
+```bash
+# 裸机 systemd
+sudo ./scripts/deploy.sh --url https://forum.example.com
+
+# Docker Compose
+./scripts/docker-deploy.sh --url https://forum.example.com
+```
+
 生产升级：
 
 ```bash
@@ -301,6 +311,7 @@ make build
 | [账号验证开关](../../30-账号验证开关.md) | 注册验证、密码找回、邮件配额 |
 | [管理员 TOTP](../../32-管理员TOTP两步验证.md) | 2FA 策略、绑定、恢复码 |
 | [密钥加密与版本化迁移](../../33-密钥加密与版本化迁移.md) | 设置加密、迁移台账 |
+| [一键部署脚本与 Docker](../../34-一键部署脚本与Docker.md) | systemd 一键脚本、Dockerfile/Compose、升级与排错 |
 
 ## 12. 常见问题
 

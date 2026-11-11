@@ -26,8 +26,8 @@
 3. Functional spec: `docs/03-功能模块规格.md`
 4. Database: `docs/04-数据库设计.md`
 5. Security: `docs/11-安全与权限设计.md`
-6. Deployment: `docs/13-部署与运维.md`
-7. Recent work: `docs/29`–`docs/33`
+6. Deployment: `docs/13-部署与运维.md`, `docs/34-一键部署脚本与Docker.md`
+7. Recent work: `docs/29`–`docs/34`
 8. Code and tests win when docs disagree; update the docs or the code.
 
 ## 2. Repository Map

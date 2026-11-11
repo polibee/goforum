@@ -155,3 +155,57 @@ func TestEnvFileRoundTrip(t *testing.T) {
 		t.Errorf("sslmode missing:\n%s", out)
 	}
 }
+
+func TestEnvironmentWithoutEnvFile(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("GF_ENV_FILE", filepath.Join(dir, "missing.env"))
+	t.Setenv("APP_ENV", "staging")
+	t.Setenv("APP_KEY", "env-only-key")
+	t.Setenv("APP_URL", "https://env.example.com")
+	t.Setenv("DB_CONNECTION", "sqlite")
+	t.Setenv("DB_DATABASE", filepath.Join(dir, "env.db"))
+
+	cfg, err := Load("")
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if cfg.Env != "staging" {
+		t.Errorf("env = %q, want staging", cfg.Env)
+	}
+	if cfg.Security.SecretKey != "env-only-key" {
+		t.Errorf("secret key = %q, want env value", cfg.Security.SecretKey)
+	}
+	if cfg.HTTP.BaseURL != "https://env.example.com" {
+		t.Errorf("base url = %q, want env value", cfg.HTTP.BaseURL)
+	}
+	if cfg.Database.Driver != "sqlite" || cfg.Database.DSN != filepath.Join(dir, "env.db") {
+		t.Errorf("database = %q/%q, want sqlite/env.db", cfg.Database.Driver, cfg.Database.DSN)
+	}
+}
+
+func TestAppendDatabaseEnvOverridesEarlierValues(t *testing.T) {
+	dir := t.TempDir()
+	envPath := filepath.Join(dir, ".env")
+	if err := os.WriteFile(envPath, []byte(`
+APP_ENV=production
+DB_CONNECTION=sqlite
+DB_DATABASE=./data/old.db
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	dsn := `host=db user=u password=p dbname=forum sslmode=disable TimeZone=UTC`
+	if err := AppendDatabaseEnv(envPath, "postgres", dsn); err != nil {
+		t.Fatalf("append: %v", err)
+	}
+	t.Setenv("GF_ENV_FILE", envPath)
+	for _, key := range []string{"GF_ENV", "GF_DB_DRIVER", "GF_DB_DSN"} {
+		t.Setenv(key, "")
+	}
+	cfg, err := Load("")
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if cfg.Database.Driver != "postgres" || cfg.Database.DSN != dsn {
+		t.Errorf("database = %q/%q, want postgres override", cfg.Database.Driver, cfg.Database.DSN)
+	}
+}

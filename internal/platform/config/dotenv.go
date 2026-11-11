@@ -187,6 +187,7 @@ func (c *Config) applyDotEnv(dotenv map[string]string) {
 	str("APP_KEY", &c.Security.SecretKey)
 
 	str("HTTP_ADDR", &c.HTTP.Addr)
+	bodyMegabytes := 0
 	integer("HTTP_MAX_BODY_MB", &bodyMegabytes)
 	int64Value("HTTP_MAX_BODY_BYTES", &c.HTTP.MaxBodyBytes)
 	if bodyMegabytes > 0 {
@@ -265,9 +266,6 @@ func (c *Config) applyDotEnv(dotenv map[string]string) {
 	boolean("WORKER_ENABLED", &c.Worker.Enabled)
 	boolean("QUEUE_WORKER", &c.Worker.Enabled)
 }
-
-// bodyMegabytes is a scratch value for the HTTP_MAX_BODY_MB convenience key.
-var bodyMegabytes int
 
 func truthy(v string) bool {
 	switch strings.ToLower(strings.TrimSpace(v)) {
@@ -385,6 +383,33 @@ func quoteDSNValue(v string) string {
 	v = strings.ReplaceAll(v, `\`, `\\`)
 	v = strings.ReplaceAll(v, `'`, `\'`)
 	return "'" + v + "'"
+}
+
+// AppendDatabaseEnv records the database selected by the installer as a final
+// override block. Appending (instead of rewriting) preserves operator comments
+// and unrelated keys; the dotenv parser lets the last value win.
+func AppendDatabaseEnv(path, driver, dsn string) error {
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = fmt.Fprintf(f,
+		"\n# --- database selected by the installer ---\nDB_CONNECTION=%s\nDB_DSN=%s\n",
+		normalizeDriver(driver), quoteEnvValue(dsn))
+	return err
+}
+
+func quoteEnvValue(v string) string {
+	if v == "" {
+		return `""`
+	}
+	if !strings.ContainsAny(v, " \t#\"'\\") {
+		return v
+	}
+	v = strings.ReplaceAll(v, `\`, `\\`)
+	v = strings.ReplaceAll(v, `"`, `\"`)
+	return `"` + v + `"`
 }
 
 // SaveEnv writes the current config as a Laravel-style .env file.

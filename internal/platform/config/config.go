@@ -165,9 +165,9 @@ func Load(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(dotenv) > 0 {
-		cfg.applyDotEnv(dotenv)
-	}
+	// Apply Laravel-style env vars even when no .env file exists. Container
+	// deployments usually inject APP_KEY/DB_* through the process environment.
+	cfg.applyDotEnv(dotenv)
 
 	applyEnv(cfg)
 	if err := cfg.Validate(); err != nil {

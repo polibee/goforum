@@ -248,7 +248,7 @@ Compliance note: privacy policy, terms of service, moderation rules and data-ret
 | 2FA scope | Admins only; not yet available to regular users |
 | Migration lock / checksums | No advisory lock; never edit an applied migration |
 | Built-in scheduler | Backups and cleanup need external cron |
-| Dockerfile | Not included; build an image or deploy on a host |
+| Docker | `Dockerfile`, `docker-compose.yml` and a one-command deploy script are included; multi-instance still needs shared storage |
 | `APP_KEY` rotation | Invalidates encrypted settings and TOTP secrets; re-enter them |
 
 ## 9. Recommended Infrastructure
@@ -281,6 +281,16 @@ make build
 # Output: bin/goforum
 ```
 
+One-command production deployment:
+
+```bash
+# Bare metal (systemd)
+sudo ./scripts/deploy.sh --url https://forum.example.com
+
+# Docker Compose
+./scripts/docker-deploy.sh --url https://forum.example.com
+```
+
 Production upgrade:
 
 ```bash
@@ -301,6 +311,7 @@ Production upgrade:
 | [Account verification switches](../../30-账号验证开关.md) | Registration verification, password recovery, email quotas |
 | [Admin TOTP](../../32-管理员TOTP两步验证.md) | 2FA policy, enrollment and recovery codes |
 | [Secret encryption and versioned migrations](../../33-密钥加密与版本化迁移.md) | Settings encryption and migration ledger |
+| [One-command deployment and Docker](../../34-一键部署脚本与Docker.md) | systemd script, Dockerfile/Compose, upgrades and troubleshooting |
 
 ## 12. FAQ
 

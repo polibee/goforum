@@ -45,6 +45,7 @@ GF_CONFIG=configs/goforum.preview.yaml GF_ENV_FILE=.env go run ./cmd/goforum
 | Auth / 2FA | `internal/modules/auth/` |
 | Templates | `web/templates/` |
 | English copy | `web/locales/en-US/` |
+| Deployment | `scripts/deploy.sh`, `scripts/docker-deploy.sh`, `Dockerfile`, `docker-compose.yml` |
 
 ## Workflow
 

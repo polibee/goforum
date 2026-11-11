@@ -51,18 +51,30 @@ go run ./cmd/goforum
 
 ```bash
 # 先配置 GF_BACKUP_KEY 并备份，再应用 schema，最后启动新版本
-./goforum backup
-./goforum migrate
-./goforum
+./bin/goforum backup
+./bin/goforum migrate
+./bin/goforum
 ```
 
 Windows 上若端口被占用或防火墙拦截，可绑定回环地址：
 
 ```bash
-GF_HTTP_ADDR=127.0.0.1:18080 go run ./cmd/goforum
+HTTP_ADDR=127.0.0.1:18080 go run ./cmd/goforum
 ```
 
 默认使用 SQLite（`data/goforum.db`），安装时写入 `configs/goforum.yaml`；安装完成后 `/install` 自动锁定。
+
+### 生产一键部署
+
+```bash
+# 裸机 systemd：构建、生成密钥、安装服务
+sudo ./scripts/deploy.sh --url https://forum.example.com
+
+# Docker Compose：生成 goforum.env、构建镜像、健康检查
+./scripts/docker-deploy.sh --url https://forum.example.com
+```
+
+脚本不会自动创建管理员：启动后访问 `/install` 完成安装。完整参数、升级、备份与排错见 [34 一键部署脚本与 Docker](./docs/34-一键部署脚本与Docker.md)。
 
 ## 产品文档
 
@@ -128,6 +140,7 @@ GF_HTTP_ADDR=127.0.0.1:18080 go run ./cmd/goforum
 | [31 生产部署 P0 修复](./docs/31-生产部署P0修复.md) | 生产安装自动建表、`goforum migrate`、schema 快速失败 |
 | [32 管理员 TOTP 两步验证](./docs/32-管理员TOTP两步验证.md) | 管理员 2FA 策略、绑定、恢复码、登录挑战 |
 | [33 密钥加密与版本化迁移](./docs/33-密钥加密与版本化迁移.md) | 设置密钥 AES-GCM 加密、schema_migrations 台账 |
+| [34 一键部署脚本与 Docker](./docs/34-一键部署脚本与Docker.md) | systemd 一键脚本、Dockerfile/Compose、密钥、升级与排错 |
 
 ## 技术栈
 

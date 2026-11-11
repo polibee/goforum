@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+goforum.env
 configs/*.yaml
 !configs/goforum.example.yaml
 

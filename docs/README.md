@@ -74,6 +74,7 @@ GoForum 是一个**可自托管、单二进制部署、支持 SQLite / MySQL / P
 | 31 | [生产部署 P0 修复](./31-生产部署P0修复.md) | 生产安装自动建表、`goforum migrate`、schema 快速失败 |
 | 32 | [管理员 TOTP 两步验证](./32-管理员TOTP两步验证.md) | 管理员 2FA 策略、绑定、恢复码、登录挑战 |
 | 33 | [密钥加密与版本化迁移](./33-密钥加密与版本化迁移.md) | 设置密钥 AES-GCM 加密、schema_migrations 台账 |
+| 34 | [一键部署脚本与 Docker](./34-一键部署脚本与Docker.md) | systemd 一键脚本、Dockerfile/Compose、密钥、升级与排错 |
 
 ## 5. 术语表
 

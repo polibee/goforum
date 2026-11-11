@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -195,6 +196,19 @@ func (i *Installer) post(c *gin.Context) {
 			return
 		}
 		cfg.Security.SecretKey = base64.StdEncoding.EncodeToString(key)
+	}
+
+	// A .env file wins over YAML. Record the installer's database choice before
+	// creating any data, so a restart cannot fall back to the previous database.
+	if envPath := config.EnvPath(); envPath != "" {
+		if _, statErr := os.Stat(envPath); statErr == nil {
+			if err := config.AppendDatabaseEnv(envPath, cfg.Database.Driver, cfg.Database.DSN); err != nil {
+				i.Log.Error("install: update env database failed", "error", err)
+				data.Error = "写入 .env 数据库配置失败：" + err.Error()
+				i.render(c, http.StatusInternalServerError, data)
+				return
+			}
+		}
 	}
 
 	// Production mode deliberately skips AutoMigrate at startup, so a fresh
