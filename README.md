@@ -7,6 +7,30 @@
 - 模块化单体，支付渠道可插拔，站点外观与设置由后台驱动
 - 完整 SEO：服务端渲染、结构化数据、sitemap、RSS、Core Web Vitals
 
+## 界面预览
+
+<p align="center">
+  <img src="./docs/product/images/zh-CN/home.png" alt="GoForum 首页" width="760">
+</p>
+<p align="center"><em>首页：主题列表、板块筛选、本周热门、社区数据与侧边栏卡片。</em></p>
+
+<p align="center">
+  <img src="./docs/product/images/zh-CN/topic.png" alt="GoForum 主题页" width="760">
+</p>
+<p align="center"><em>主题页：正文、回复、操作区与右侧信息栏。</em></p>
+
+<p align="center">
+  <img src="./docs/product/images/zh-CN/admin-dashboard.png" alt="GoForum 后台仪表盘" width="760">
+</p>
+<p align="center"><em>后台仪表盘：用户、主题、回复、待处理事项、模块状态与运行信息。</em></p>
+
+<p align="center">
+  <img src="./docs/product/images/zh-CN/admin-payment-settings.png" alt="GoForum 支付设置" width="760">
+</p>
+<p align="center"><em>支付设置：XCash / NOWPayments API 字段与注册入口。</em></p>
+
+更多截图见 [中文产品文档](./docs/product/zh-CN/README.md) 与 [English Product Docs](./docs/product/en-US/README.md)。
+
 ## 当前状态
 
 **菜单、主题与内容管理已落地**：导航/侧边栏改为数据库管理并提供小白化后台，新增微信/抖音/简约白主题、用户签名、NodeSeek 风格帖子页、投票与捐赠、轻量 Markdown 编辑器（内容/预览/对照）与后台主题/回复编辑；此前完成多语言与支付/邮件集成。新增 zh-CN / en-US 多语言框架、按功能拆分的翻译文件、语言切换与 hreflang；支付接入 NOWPayments、XCash、Deipay、Creem、Lemon Squeezy，邮件支持 SMTP 与 Resend。后台新增「账号验证」分组，可启停注册邮箱验证、密码找回、修改密码验证码与换绑邮箱。生产安装现在会在空库上自动建表；升级前执行 `goforum migrate`，schema 不完整时启动会直接拒绝。管理员支持 TOTP 两步验证，默认要求超管绑定，并支持 10 张一次性恢复码。敏感设置使用 AES-256-GCM 加密落库，数据库迁移改为 `schema_migrations` 版本台账。M0–M7 能力保持可用。
