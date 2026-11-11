@@ -1,0 +1,13 @@
+{{define "flash"}}
+{{if .Flash}}
+  <div class="fixed bottom-4 right-4 z-50 w-full max-w-sm space-y-2 px-4 sm:px-0" role="status" aria-live="polite">
+    {{range .Flash}}
+      <div x-data="flash" x-show="visible" x-cloak class="gf-card flex items-start gap-3 p-3">
+        <span class="mt-1 inline-block h-2 w-2 shrink-0 rounded-full {{if eq .Kind "error"}}bg-danger{{else}}bg-success{{end}}"></span>
+        <p class="flex-1 text-sm">{{t .Message $.Lang}}</p>
+        <button type="button" x-on:click="dismiss" class="text-fg-muted hover:text-fg" aria-label="{{t "关闭提示" $.Lang}}">&times;</button>
+      </div>
+    {{end}}
+  </div>
+{{end}}
+{{end}}

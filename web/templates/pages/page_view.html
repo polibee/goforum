@@ -1,0 +1,11 @@
+{{define "page"}}
+<div class="mx-auto max-w-3xl px-4 py-10">
+  {{with .Data}}{{with .Page}}
+  <article class="gf-card p-6 sm:p-8">
+    <nav class="text-xs text-fg-muted"><a href="/" class="hover:text-fg">{{t "首页" $.Lang}}</a> / {{.Title}}</nav>
+    <h1 class="mt-3 text-2xl font-semibold">{{.Title}}</h1>
+    <div class="gf-prose mt-5">{{safeHTML .BodyHTML}}</div>
+  </article>
+  {{end}}{{end}}
+</div>
+{{end}}

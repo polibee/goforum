@@ -1,0 +1,159 @@
+{{define "admin_nav"}}
+<nav class="space-y-1.5">
+  {{range .AdminGroups}}
+  {{$active := false}}
+  {{range .Items}}{{if eq $.Path .URL}}{{$active = true}}{{end}}{{end}}
+  <details class="group/nav" {{if $active}}open{{end}}>
+    <summary class="flex cursor-pointer list-none items-center gap-2 rounded-lg px-2.5 py-2 text-[11px] font-semibold tracking-wide text-fg-muted transition hover:bg-surface-muted hover:text-fg [&::-webkit-details-marker]:hidden">
+      <svg class="h-3 w-3 shrink-0 transition-transform group-open/nav:rotate-90" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.5 5.5 5.5-5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="truncate">{{t .Label $.Lang}}</span>
+      {{if $active}}<span class="ml-auto h-1.5 w-1.5 rounded-full bg-brand-600"></span>{{end}}
+    </summary>
+    <div class="relative mt-0.5 space-y-0.5 pb-1 pl-3">
+      <span class="absolute inset-y-1 left-[1.05rem] w-px bg-border/70" aria-hidden="true"></span>
+      {{range .Items}}
+      <a href="{{.URL}}" {{if eq $.Path .URL}}aria-current="page"{{end}} class="group/item relative flex items-center gap-2 rounded-lg py-1.5 pl-[1.15rem] pr-2.5 text-[13px] font-medium transition {{if eq $.Path .URL}}bg-brand-50 text-brand-700 shadow-sm dark:bg-brand-900 dark:text-brand-200{{else}}text-fg-muted hover:bg-surface-muted hover:text-fg{{end}}">
+        <span class="absolute left-[0.05rem] top-1/2 h-3.5 w-0.5 -translate-y-1/2 rounded-full transition {{if eq $.Path .URL}}bg-brand-600{{else}}bg-transparent group-hover/item:bg-fg-muted/40{{end}}"></span>
+        <span class="truncate">{{t .Label $.Lang}}</span>
+        {{if eq $.Path .URL}}<svg class="ml-auto h-3 w-3 shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.5 5.5 5.5-5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>{{end}}
+      </a>
+      {{end}}
+    </div>
+  </details>
+  {{end}}
+</nav>
+{{end}}
+
+{{define "admin"}}
+<!doctype html>
+<html lang="{{if .Lang}}{{.Lang}}{{else}}{{.Site.Locale}}{{end}}" class="{{if .Dark}}dark{{end}}" data-theme="{{.ThemePreset}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{tTitle .Title $.Lang}}</title>
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="csrf-token" content="{{.CSRF}}">
+  <link rel="stylesheet" href="{{asset "app.css"}}">
+  <style nonce="{{.Nonce}}">
+    :root { --gf-brand: {{.Site.BrandColor}}; --gf-accent: {{.Site.AccentColor}}; }
+  </style>
+</head>
+<body class="min-h-screen overflow-x-hidden bg-surface-muted text-fg" x-data="nav">
+  <div class="flex min-h-screen">
+    <aside class="hidden w-64 shrink-0 flex-col border-r border-border bg-surface lg:flex">
+      <div class="flex h-16 items-center gap-3 border-b border-border px-5">
+        {{if .Site.LogoLight}}
+        <img src="{{.Site.LogoLight}}" alt="{{.Site.Name}}" class="h-8">
+        {{else}}
+        <span class="brand-dot flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold text-white shadow-sm">{{initial .Site.Name}}</span>
+        {{end}}
+        <div class="min-w-0">
+          <div class="truncate text-sm font-semibold">{{.Site.Name}}</div>
+          <div class="mt-0.5 flex items-center gap-1.5 text-[11px] text-fg-muted">
+            <span class="h-1.5 w-1.5 rounded-full bg-success"></span>{{t "管理后台" $.Lang}}
+          </div>
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto px-3 py-5">{{template "admin_nav" .}}</div>
+      <div class="border-t border-border p-3">
+        <a href="/" class="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-fg-muted transition hover:bg-surface-muted hover:text-fg">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3.5 9.5 10 4l6.5 5.5M5 8.5V16h10V8.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          {{t "返回前台" $.Lang}}
+          <svg class="ml-auto h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7.5 4.5 13 10l-5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </aside>
+
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header class="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-border bg-surface/90 px-4 backdrop-blur lg:px-8">
+        <div class="flex min-w-0 items-center gap-3">
+          <button type="button" x-on:click="toggle" class="gf-btn gf-btn-ghost !px-2.5 lg:hidden" aria-label="{{t "打开导航" $.Lang}}">
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5h12M4 10h12M4 14.5h12" stroke-linecap="round"/></svg>
+          </button>
+          <div class="min-w-0">
+            <div class="truncate text-[11px] text-fg-muted">{{t "管理后台" $.Lang}} <span class="mx-1 opacity-50">/</span> {{if .PageTitle}}{{t .PageTitle $.Lang}}{{else}}{{t .Title $.Lang}}{{end}}</div>
+            <h1 class="truncate text-[15px] font-semibold">{{if .PageTitle}}{{t .PageTitle $.Lang}}{{else}}{{t .Title $.Lang}}{{end}}</h1>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <a href="/" class="gf-btn gf-btn-ghost hidden !px-2.5 sm:inline-flex" title="{{t "查看站点" $.Lang}}">
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3.5 10h13M10 3.5c2 2 3 4.2 3 6.5s-1 4.5-3 6.5c-2-2-3-4.2-3-6.5s1-4.5 3-6.5Z"/><circle cx="10" cy="10" r="6.5"/></svg>
+            <span class="hidden lg:inline">{{t "查看站点" $.Lang}}</span>
+          </a>
+          <button type="button" x-data="theme" x-on:click="toggle" class="gf-btn gf-btn-ghost !px-2.5" aria-label="{{t "切换主题" $.Lang}}">
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3.5v1.2M10 15.3v1.2M3.5 10h1.2M15.3 10h1.2M5.4 5.4l.9.9M13.7 13.7l.9.9M14.6 5.4l-.9.9M6.3 13.7l-.9.9" stroke-linecap="round"/><circle cx="10" cy="10" r="3.2"/></svg>
+          </button>
+          {{template "admin_lang_switch" .}}
+          {{if .User}}
+          <div class="relative" x-data="adminMenu">
+            <button type="button" x-on:click="toggle" class="gf-btn gf-btn-ghost !px-2.5" aria-haspopup="menu" x-bind:aria-expanded="open">
+              <span class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-100 text-[10px] font-semibold text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{initial .User.Username}}</span>
+              <span class="hidden max-w-24 truncate sm:inline">{{.User.Username}}</span>
+              <svg class="h-3 w-3 text-fg-muted" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 7 5 5 5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div x-show="open" x-cloak x-transition.origin.top.right x-on:click.outside="close" class="absolute right-0 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-surface p-1.5 shadow-xl" role="menu">
+              <a href="/admin" class="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-fg-muted hover:bg-surface-muted hover:text-fg" role="menuitem">
+                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="5" height="5" rx="1"/><rect x="11.5" y="3.5" width="5" height="5" rx="1"/><rect x="3.5" y="11.5" width="5" height="5" rx="1"/><rect x="11.5" y="11.5" width="5" height="5" rx="1"/></svg>
+                {{t "仪表盘" $.Lang}}
+              </a>
+              <a href="/" class="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-fg-muted hover:bg-surface-muted hover:text-fg" role="menuitem">
+                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3.5 9.5 10 4l6.5 5.5M5 8.5V16h10V8.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                {{t "查看前台" $.Lang}}
+              </a>
+              <div class="my-1 border-t border-border"></div>
+              <form method="post" action="/admin/logout">
+                <input type="hidden" name="_csrf" value="{{.CSRF}}">
+                <button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[13px] text-danger hover:bg-danger/10" role="menuitem">
+                  <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 4.5H5.5v11H8M12.5 7 16 10l-3.5 3M8.5 10H16" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  {{t "退出登录" $.Lang}}
+                </button>
+              </form>
+            </div>
+          </div>
+          {{end}}
+        </div>
+      </header>
+
+      <main class="mx-auto w-full max-w-[1400px] flex-1 p-4 lg:p-8">{{template "page" .}}</main>
+    </div>
+  </div>
+
+  <div x-show="open" x-cloak class="fixed inset-0 z-50 lg:hidden">
+    <div x-show="open" x-transition.opacity class="absolute inset-0 bg-black/40" x-on:click="close"></div>
+    <aside x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full" class="absolute left-0 top-0 h-full w-72 overflow-y-auto bg-surface p-3 shadow-2xl">
+      <div class="mb-4 flex items-center justify-between gap-2 px-2 py-1">
+        <span class="flex items-center gap-2 text-sm font-semibold"><span class="brand-dot h-6 w-6 rounded-lg"></span>{{.Site.Name}}</span>
+        <button type="button" x-on:click="close" class="gf-btn gf-btn-ghost !px-2" aria-label="{{t "关闭导航" $.Lang}}">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 5 10 10M15 5 5 15" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      {{template "admin_nav" .}}
+    </aside>
+  </div>
+
+  {{template "confirm_modal" .}}
+  {{template "flash" .}}
+  <script nonce="{{.Nonce}}" src="{{asset "app.js"}}" defer></script>
+</body>
+</html>
+{{end}}
+
+{{define "admin_lang_switch"}}
+{{$next := .Path}}
+<details class="relative" data-menu>
+  <summary class="gf-btn gf-btn-ghost cursor-pointer list-none gap-1 !px-2.5" aria-label="{{t "切换语言" .Lang}}" title="{{t "切换语言" .Lang}}">
+    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6.5"/><path d="M3.5 10h13M10 3.5c1.8 2 2.6 4.1 2.6 6.5s-.8 4.5-2.6 6.5c-1.8-2-2.6-4.1-2.6-6.5s.8-4.5 2.6-6.5Z"/></svg>
+    <span class="hidden text-[11px] font-medium sm:inline">{{if eq .Lang "en-US"}}EN{{else}}中{{end}}</span>
+  </summary>
+  <div class="absolute right-0 z-50 mt-2 w-36 overflow-hidden rounded-xl border border-border bg-surface p-1.5 shadow-xl">
+    <a href="{{langURL $next "zh-CN"}}" class="flex items-center justify-between rounded-lg px-3 py-2 text-[13px] {{if eq .Lang "zh-CN"}}bg-brand-50 font-medium text-brand-700 dark:bg-brand-950 dark:text-brand-200{{else}}text-fg-muted hover:bg-surface-muted hover:text-fg{{end}}">
+      <span>简体中文</span>
+      {{if eq .Lang "zh-CN"}}<svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 10.5 3 3 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>{{end}}
+    </a>
+    <a href="{{langURL $next "en-US"}}" class="flex items-center justify-between rounded-lg px-3 py-2 text-[13px] {{if eq .Lang "en-US"}}bg-brand-50 font-medium text-brand-700 dark:bg-brand-950 dark:text-brand-200{{else}}text-fg-muted hover:bg-surface-muted hover:text-fg{{end}}">
+      <span>English</span>
+      {{if eq .Lang "en-US"}}<svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 10.5 3 3 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>{{end}}
+    </a>
+  </div>
+</details>
+{{end}}

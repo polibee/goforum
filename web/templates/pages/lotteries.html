@@ -1,0 +1,28 @@
+{{define "page"}}
+<div class="mx-auto max-w-4xl px-4 py-8">
+  {{with .Data}}
+  {{if .Error}}<div class="gf-alert-danger mb-4">{{t .Error $.Lang}}</div>{{end}}
+  <h1 class="text-2xl font-semibold">{{t "抽奖" $.Lang}}</h1>
+  <p class="mt-1 text-sm text-fg-muted">{{t "参与抽奖会消耗积分，开奖结果可审计。" $.Lang}}</p>
+
+  <div class="mt-5 space-y-3">
+    {{range .Rows}}
+    <a href="/lotteries/{{.ID}}" class="gf-card block p-4 hover:border-brand-300">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div class="text-sm font-semibold">{{.Title}}</div>
+          <div class="mt-1 text-xs text-fg-muted">{{t "奖品：" $.Lang}}{{.Prize}} {{t "· 名额" $.Lang}} {{.WinnerCount}} {{t "· 参与消耗" $.Lang}} {{.EntryCost}} {{t "积分" $.Lang}}</div>
+        </div>
+        <div class="text-right text-xs text-fg-muted">
+          <span class="gf-badge gf-badge-neutral">{{.Status}}</span>
+          <div class="mt-1">{{t "截止" $.Lang}} {{.EndsAt.Format "2006-01-02 15:04"}}</div>
+        </div>
+      </div>
+    </a>
+    {{else}}
+    <div class="gf-card p-10 text-center text-sm text-fg-muted">{{t "暂无抽奖" $.Lang}}</div>
+    {{end}}
+  </div>
+  {{end}}
+</div>
+{{end}}

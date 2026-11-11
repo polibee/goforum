@@ -1,0 +1,43 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-4">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold">{{t "模块清单" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "按依赖顺序注册。新增模块只需实现 Module 契约并在装配处注册。" $.Lang}}</p>
+    </div>
+    <span class="gf-badge bg-success/10 text-success">{{len .Modules}} {{t "个模块运行中" $.Lang}}</span>
+  </div>
+
+  <div class="gf-card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="gf-table gf-table-cards text-xs">
+        <thead>
+          <tr><th>#</th><th>{{t "模块" $.Lang}}</th><th>{{t "依赖" $.Lang}}</th><th>{{t "权限键" $.Lang}}</th><th>{{t "设置项" $.Lang}}</th></tr>
+        </thead>
+        <tbody>
+          {{range $i, $m := .Modules}}
+          <tr>
+            <td class="text-fg-muted">{{add $i 1}}</td>
+            <td><span class="flex items-center gap-2"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-surface-muted text-[10px] font-semibold uppercase text-fg-muted">{{printf "%.1s" $m.Name}}</span><span class="text-[13px] font-medium">{{$m.Name}}</span></span></td>
+            <td class="text-fg-muted">{{if $m.DependsOn}}{{range $j, $d := $m.DependsOn}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{$d}}</span>{{end}}{{else}}—{{end}}</td>
+            <td>{{$m.PermissionCount}}</td>
+            <td>{{$m.SettingCount}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="gf-card p-4">
+    <h3 class="text-[13px] font-semibold">{{t "边界规则" $.Lang}}</h3>
+    <ul class="mt-2 list-disc space-y-1 pl-5 text-xs text-fg-muted">
+      <li>{{t "模块只能依赖 platform 与其他模块的 contracts。" $.Lang}}</li>
+      <li>{{t "每个模块独占自己的表、迁移、权限、设置与后台贡献。" $.Lang}}</li>
+      <li>{{t "依赖图必须无环；启动与 CI 双重校验。" $.Lang}}</li>
+    </ul>
+  </div>
+</div>
+{{end}}
+{{end}}

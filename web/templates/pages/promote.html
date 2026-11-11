@@ -1,0 +1,228 @@
+{{define "page"}}
+<div class="mx-auto max-w-6xl px-4 py-8">
+  {{with .Data}}
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold">{{t "自助推广" $.Lang}}</h1>
+      <p class="mt-1 text-sm text-fg-muted">{{t "三步完成投放：选择广告位、填写内容、付款。审核通过后自动上线。" $.Lang}}</p>
+    </div>
+    <div class="flex items-center gap-2 rounded-xl border border-border bg-surface px-3.5 py-2 text-[11px] text-fg-muted">
+      <span class="rounded bg-surface-muted px-1.5 py-0.5 font-mono font-medium text-fg">USD</span>
+      {{t "按月计价" $.Lang}}
+    </div>
+  </div>
+
+  {{if .Success}}<div class="gf-alert-success mt-4">{{t "推广已提交，支付成功并通过审核后开始展示。" $.Lang}}</div>{{end}}
+  {{if .Error}}<div class="gf-alert-danger mt-4">{{t .Error $.Lang}}</div>{{end}}
+  {{if not .Enabled}}<div class="gf-alert-warning mt-4">{{t "自助推广暂未开放，请联系管理员。" $.Lang}}</div>{{end}}
+
+  <form method="post" action="/promote" class="mt-5 space-y-4"
+        x-data="adPurchase" data-prices="{{toJSON .Prices}}" data-sizes="{{toJSON .Sizes}}" data-max-months="{{.MaxMonths}}">
+    <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+
+    <!-- 步骤 1：选广告位 -->
+    <section class="gf-card overflow-hidden">
+      <div class="flex items-center gap-2.5 border-b border-border px-4 py-3">
+        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-600 text-[11px] font-semibold text-white">1</span>
+        <div>
+          <h2 class="text-[13px] font-semibold">{{t "选择广告位" $.Lang}}</h2>
+          <p class="mt-0.5 text-[11px] text-fg-muted">{{t "不同位置曝光量不同，价格也不一样。" $.Lang}}</p>
+        </div>
+      </div>
+      <div class="grid gap-2 p-4 sm:grid-cols-2 lg:grid-cols-3">
+        {{range .Plans}}
+        <label class="relative flex cursor-pointer flex-col rounded-xl border p-3 transition"
+               x-bind:class="slot === '{{.Key}}' ? 'border-brand-500 bg-brand-50/60 ring-1 ring-brand-500 dark:bg-brand-950/40' : 'border-border hover:border-brand-300'">
+          <input type="radio" name="slot" value="{{.Key}}" x-model="slot" class="sr-only">
+          <div class="flex items-start justify-between gap-2">
+            <span class="text-[13px] font-medium">{{t .Label $.Lang}}</span>
+            <svg x-cloak x-show="slot === '{{.Key}}'" class="h-4 w-4 shrink-0 text-brand-600" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 10.5 3 3 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <p class="mt-1 line-clamp-2 text-[11px] leading-snug text-fg-muted">{{t .Description $.Lang}}</p>
+          <div class="mt-2 flex items-center gap-1.5 text-[10px] text-fg-muted">
+            <span class="rounded bg-surface-muted px-1.5 py-0.5 font-mono">{{.Size}}</span>
+          </div>
+          <div class="mt-2.5 space-y-0.5 border-t border-border/70 pt-2 text-[11px]">
+            <div class="flex items-center justify-between">
+              <span class="text-fg-muted">{{t "文字" $.Lang}}</span>
+              <span class="font-semibold tabular-nums">{{usd .TextPrice}}<span class="font-normal text-fg-muted">/{{t "月" $.Lang}}</span></span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-fg-muted">{{t "图片" $.Lang}}</span>
+              <span class="font-semibold tabular-nums">{{usd .ImagePrice}}<span class="font-normal text-fg-muted">/{{t "月" $.Lang}}</span></span>
+            </div>
+          </div>
+        </label>
+        {{end}}
+      </div>
+    </section>
+
+    <!-- 步骤 2：填写内容 -->
+    <section class="gf-card overflow-hidden">
+      <div class="flex items-center gap-2.5 border-b border-border px-4 py-3">
+        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-600 text-[11px] font-semibold text-white">2</span>
+        <div>
+          <h2 class="text-[13px] font-semibold">{{t "填写广告内容" $.Lang}}</h2>
+          <p class="mt-0.5 text-[11px] text-fg-muted">{{t "先选格式，再填写对应内容。" $.Lang}}</p>
+        </div>
+      </div>
+
+      <div class="space-y-4 p-4">
+        <div class="inline-flex rounded-lg border border-border bg-surface-muted p-0.5">
+          <button type="button" x-on:click="format = 'text'"
+                  x-bind:class="format === 'text' ? 'bg-surface text-fg shadow-sm' : 'text-fg-muted'"
+                  class="rounded-md px-3 py-1.5 text-[12px] font-medium transition">{{t "文字广告" $.Lang}}</button>
+          <button type="button" x-on:click="format = 'image'"
+                  x-bind:class="format === 'image' ? 'bg-surface text-fg shadow-sm' : 'text-fg-muted'"
+                  class="rounded-md px-3 py-1.5 text-[12px] font-medium transition">{{t "图片广告" $.Lang}}</button>
+          <input type="hidden" name="format" x-model="format">
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label class="gf-label !mb-1 text-[11px]" for="ad-title">{{t "广告标题" $.Lang}}</label>
+            <input id="ad-title" name="title" class="gf-input !py-2 text-xs" maxlength="120"
+                   placeholder="{{t "一句话说明你的产品" $.Lang}}" required>
+          </div>
+          <div>
+            <label class="gf-label !mb-1 text-[11px]" for="ad-url">{{t "跳转链接" $.Lang}}</label>
+            <input id="ad-url" name="url" type="url" class="gf-input !py-1.5 font-mono text-[11px]"
+                   placeholder="https://" required>
+          </div>
+        </div>
+
+        <div x-show="format === 'text'">
+          <label class="gf-label !mb-1 text-[11px]" for="ad-text">{{t "广告文案" $.Lang}}</label>
+          <textarea id="ad-text" name="text" rows="3" maxlength="300" class="gf-input !py-2 text-xs"
+                    placeholder="{{t "简短介绍，建议 60 字以内。" $.Lang}}"></textarea>
+          <p class="gf-hint text-[10px]">{{t "文字广告只显示标题与这段文案，不加载图片。" $.Lang}}</p>
+        </div>
+
+        <div x-show="format === 'image'" x-cloak class="space-y-2">
+          <div>
+            <label class="gf-label !mb-1 text-[11px]" for="ad-image">{{t "图片地址" $.Lang}}</label>
+            <input id="ad-image" name="image_url" class="gf-input !py-1.5 font-mono text-[11px]" placeholder="https://...">
+          </div>
+          <div class="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border bg-surface-muted/40 px-3 py-2">
+            <span class="text-[10px] text-fg-muted">{{t "推荐尺寸" $.Lang}}</span>
+            <span class="rounded bg-surface px-1.5 py-0.5 font-mono text-[10px] font-medium text-fg" x-text="recommendedSize()"></span>
+            <span class="text-[10px] text-fg-muted">· {{t "建议 2 倍图适配高清屏" $.Lang}}</span>
+          </div>
+          <p class="gf-hint text-[10px]">{{t "支持 JPG / PNG / WebP 外链，请避免透明留白过大或动态尺寸。" $.Lang}}</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 步骤 3：时长与支付 -->
+    <section class="gf-card overflow-hidden">
+      <div class="flex items-center gap-2.5 border-b border-border px-4 py-3">
+        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-600 text-[11px] font-semibold text-white">3</span>
+        <div>
+          <h2 class="text-[13px] font-semibold">{{t "选择时长并支付" $.Lang}}</h2>
+          <p class="mt-0.5 text-[11px] text-fg-muted">{{t "支付成功后进入审核，通过即开始投放。" $.Lang}}</p>
+        </div>
+      </div>
+
+      <div class="space-y-4 p-4">
+        <div>
+          <span class="gf-label !mb-1.5 text-[11px]">{{t "投放时长" $.Lang}}</span>
+          <div class="flex flex-wrap gap-1.5">
+            {{range $i := seq 1 .MaxMonths}}
+            <label class="cursor-pointer">
+              <input type="radio" name="months" value="{{$i}}" x-model.number="months" class="sr-only">
+              <span class="inline-flex min-w-16 items-center justify-center rounded-lg border px-3 py-1.5 text-[12px] transition"
+                    x-bind:class="months === {{$i}} ? 'border-brand-500 bg-brand-50 font-medium text-brand-700 dark:bg-brand-950/40 dark:text-brand-200' : 'border-border text-fg-muted hover:border-brand-300'">
+                {{$i}} {{t "个月" $.Lang}}
+              </span>
+            </label>
+            {{end}}
+          </div>
+        </div>
+
+        <div>
+          <label class="gf-label !mb-1 text-[11px]" for="ad-channel">{{t "支付方式" $.Lang}}</label>
+          <select id="ad-channel" name="channel_id" class="gf-input !py-2 text-xs sm:!w-72" required>
+            {{range .Channels}}<option value="{{.ID}}">{{.Name}}</option>{{else}}<option value="">{{t "暂无可用支付渠道" $.Lang}}</option>{{end}}
+          </select>
+        </div>
+
+        <div class="rounded-xl border border-border bg-surface-muted/50 p-4">
+          <div class="flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <div class="text-[11px] text-fg-muted">{{t "应付金额" $.Lang}}</div>
+              <div class="mt-0.5 text-[11px] text-fg-muted">
+                <span x-text="format === 'text' ? '{{t "文字广告" $.Lang}}' : '{{t "图片广告" $.Lang}}'"></span>
+                · <span x-text="months"></span> {{t "个月" $.Lang}}
+              </div>
+            </div>
+            <div class="text-2xl font-semibold tabular-nums" x-text="totalLabel()"></div>
+          </div>
+        </div>
+
+        <button type="submit" class="gf-btn gf-btn-primary w-full !py-2.5" {{if not .Enabled}}disabled{{end}}>
+          {{t "前往支付" $.Lang}}
+        </button>
+        <p class="text-center text-[10px] text-fg-muted">{{t "提交后跳转收银台；审核未通过会说明原因。" $.Lang}}</p>
+      </div>
+    </section>
+  </form>
+
+  <!-- 我的推广 -->
+  <section class="gf-card mt-4 overflow-hidden">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+      <div>
+        <h2 class="text-[13px] font-semibold">{{t "我的推广" $.Lang}}</h2>
+        <p class="mt-0.5 text-[11px] text-fg-muted">{{t "查看投放状态、剩余时间与点击量。" $.Lang}}</p>
+      </div>
+      <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{.Total}} {{t "条" $.Lang}}</span>
+    </div>
+    <div class="divide-y divide-border">
+      {{range .MyAds}}
+      <div class="flex flex-wrap items-start gap-3 px-4 py-3">
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="truncate text-[13px] font-medium">{{.Title}}</span>
+            <span class="gf-badge !px-1.5 !py-0 text-[10px] {{if eq .Status "active"}}bg-success/10 text-success{{else if eq .Status "pending"}}bg-warning/10 text-warning{{else if eq .Status "rejected"}}bg-danger/10 text-danger{{else}}gf-badge-neutral{{end}}">{{t .StatusLabel $.Lang}}</span>
+            {{if .UserID}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{t "自助" $.Lang}}</span>{{end}}
+          </div>
+          <div class="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-fg-muted">
+            <span>{{t .SlotLabel $.Lang}}</span><span>·</span>
+            <span>{{t .FormatLabel $.Lang}}</span>
+            {{if .StartAt}}<span>·</span><span>{{.StartAt.Format "01-02"}} → {{if .EndAt}}{{.EndAt.Format "01-02"}}{{else}}—{{end}}</span>{{end}}
+          </div>
+          {{if .ReviewNote}}<div class="mt-1 text-[11px] text-warning">{{.ReviewNote}}</div>{{end}}
+        </div>
+        <div class="flex shrink-0 items-center gap-3 text-right">
+          <div>
+            <div class="text-[13px] font-semibold tabular-nums">{{.ClickCount}}</div>
+            <div class="text-[10px] text-fg-muted">{{t "点击" $.Lang}}</div>
+          </div>
+          {{if .Price}}
+          <div class="border-l border-border pl-3">
+            <div class="text-[13px] font-semibold tabular-nums">{{usd .Price}}</div>
+            <div class="text-[10px] text-fg-muted">{{t "已付" $.Lang}}</div>
+          </div>
+          {{end}}
+        </div>
+      </div>
+      {{else}}
+      <div class="px-4 py-10 text-center">
+        <svg class="mx-auto h-8 w-8 text-fg-muted/40" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 14.5 7 9l3 2.5 3.5-5 3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 16.5h13" stroke-linecap="round"/></svg>
+        <p class="mt-2 text-[13px] font-medium">{{t "还没有推广记录" $.Lang}}</p>
+        <p class="mt-0.5 text-[11px] text-fg-muted">{{t "填写上面的表单即可创建第一条推广。" $.Lang}}</p>
+      </div>
+      {{end}}
+    </div>
+    {{if gt .TotalPages 1}}
+    <nav class="flex flex-wrap items-center justify-center gap-1.5 border-t border-border px-4 py-3">
+      {{if gt .Page 1}}<a href="{{pageURL .BasePath (sub .Page 1)}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "上一页" $.Lang}}</a>{{end}}
+      {{range pageWindow .Page .TotalPages}}
+        {{if eq . 0}}<span class="px-1.5 text-xs text-fg-muted">…</span>{{else}}<a href="{{pageURL $.Data.BasePath .}}" class="flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-xs {{if eq . $.Data.Page}}border-brand-600 bg-brand-600 text-white{{else}}border-border text-fg-muted hover:border-brand-300 hover:text-fg{{end}}">{{.}}</a>{{end}}
+      {{end}}
+      {{if lt .Page .TotalPages}}<a href="{{pageURL .BasePath (add .Page 1)}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "下一页" $.Lang}}</a>{{end}}
+    </nav>
+    {{end}}
+  </section>
+  {{end}}
+</div>
+{{end}}

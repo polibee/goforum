@@ -1,0 +1,27 @@
+{{define "page"}}
+<div class="gf-card p-6 sm:p-8">
+  <h1 class="text-xl font-semibold">{{t "找回密码" $.Lang}}</h1>
+
+  {{with .Data}}
+    {{if .Error}}<div class="gf-alert-danger mt-4">{{t .Error $.Lang}}</div>{{end}}
+    {{if .Disabled}}
+    <div class="mt-6 rounded-lg border border-border bg-surface-muted/60 p-4 text-sm text-fg-muted">
+      {{t "站点已关闭自助找回密码，请联系管理员处理。" $.Lang}}
+    </div>
+    <a href="/login" class="gf-btn gf-btn-primary mt-6 w-full">{{t "返回登录" $.Lang}}</a>
+    {{else}}
+    <p class="mt-1 text-sm text-fg-muted">{{t "输入注册邮箱，我们会发送重置链接。" $.Lang}}</p>
+    <form method="post" action="/forgot-password" class="mt-6 space-y-4">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      <div>
+        <label class="gf-label" for="email">{{t "邮箱" $.Lang}}</label>
+        <input id="email" name="email" type="email" value="{{.Email}}" class="gf-input" required autofocus>
+      </div>
+      <button type="submit" class="gf-btn gf-btn-primary w-full">{{t "发送重置链接" $.Lang}}</button>
+    </form>
+    {{end}}
+  {{end}}
+
+  <p class="mt-6 text-center text-xs text-fg-muted"><a href="/login" class="hover:text-fg">{{t "返回登录" $.Lang}}</a></p>
+</div>
+{{end}}

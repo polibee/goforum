@@ -1,0 +1,44 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-5">
+  {{template "ads_tabs" $}}
+  {{if .Saved}}<div class="gf-alert-success">{{t "广告设置已保存。" $.Lang}}</div>{{end}}
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+
+  <div>
+    <p class="text-sm text-fg-muted">{{t "控制自助推广开关、审核策略与最长投放月数。" $.Lang}}</p>
+  </div>
+
+  <form method="post" action="/admin/ads/settings" class="space-y-5">
+    <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+    <section class="gf-card p-5">
+      <h2 class="text-[15px] font-semibold">{{t "自助推广" $.Lang}}</h2>
+      <div class="mt-4 space-y-3">
+        <label class="flex items-start gap-3 rounded-lg border border-border p-3">
+          <input type="checkbox" name="enabled" value="1" {{if .Enabled}}checked{{end}} class="mt-0.5 h-4 w-4">
+          <span><span class="block text-sm font-medium">{{t "开放用户自助购买广告位" $.Lang}}</span><span class="mt-0.5 block text-xs text-fg-muted">{{t "关闭后 /promote 仅显示说明，不能提交订单。" $.Lang}}</span></span>
+        </label>
+        <label class="flex items-start gap-3 rounded-lg border border-border p-3">
+          <input type="checkbox" name="review" value="1" {{if .Review}}checked{{end}} class="mt-0.5 h-4 w-4">
+          <span><span class="block text-sm font-medium">{{t "自助广告先审核后投放" $.Lang}}</span><span class="mt-0.5 block text-xs text-fg-muted">{{t "关闭时购买后立即投放，管理员可随时下架或封禁。" $.Lang}}</span></span>
+        </label>
+        <div>
+          <label class="gf-label" for="max-months">{{t "最长投放月数" $.Lang}}</label>
+          <input id="max-months" name="max_months" type="number" min="1" max="36" class="gf-input !w-32" value="{{.MaxMonths}}">
+        </div>
+      </div>
+    </section>
+
+    <section class="gf-card p-5">
+      <h2 class="text-[15px] font-semibold">{{t "广告位与价格" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "广告位价格、展示数量、隐藏与下架销售已移至广告位管理。" $.Lang}}</p>
+      <a href="/admin/ads/slots" class="gf-btn gf-btn-ghost mt-3 border border-border !py-1.5 text-xs">{{t "前往广告位管理" $.Lang}}</a>
+    </section>
+
+    <div class="flex justify-end">
+      <button class="gf-btn gf-btn-primary">{{t "保存设置" $.Lang}}</button>
+    </div>
+  </form>
+</div>
+{{end}}
+{{end}}

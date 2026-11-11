@@ -1,0 +1,183 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-4">
+  {{template "site_tabs" $}}
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold">{{if eq .Location "footer"}}{{t "页脚导航" $.Lang}}{{else}}{{t "页眉导航" $.Lang}}{{end}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{if eq .Location "footer"}}{{t "按分组显示在网站页脚；同一分组的链接会显示在同一列。" $.Lang}}{{else}}{{t "显示在网站顶部，顺序按排序数字从小到大。" $.Lang}}{{end}}</p>
+    </div>
+    <a href="#add-nav" data-details-open="add-nav" class="gf-btn gf-btn-primary !py-2 text-xs">
+      <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg>
+      {{t "添加导航项" $.Lang}}
+    </a>
+  </div>
+
+  <section class="gf-card p-4">
+    <div class="flex items-center gap-2">
+      <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900 dark:text-brand-200">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 10s2.8-5 7.5-5 7.5 5 7.5 5-2.8 5-7.5 5-7.5-5-7.5-5Z" stroke-linejoin="round"/><circle cx="10" cy="10" r="2"/></svg>
+      </span>
+      <div>
+        <h3 class="text-[13px] font-semibold">{{t "前台预览" $.Lang}}</h3>
+        <p class="text-[11px] text-fg-muted">{{t "这里只显示已启用的导航项。" $.Lang}}</p>
+      </div>
+    </div>
+    {{if eq .Location "footer"}}
+    <div class="mt-3 grid gap-4 rounded-xl border border-border bg-surface-muted/40 p-3 sm:grid-cols-2 lg:grid-cols-3">
+      {{range .Groups}}
+      <div>
+        <div class="text-[10px] font-semibold uppercase tracking-wide text-fg-muted">{{.Name}}</div>
+        <div class="mt-2 space-y-1">
+          {{range .Items}}{{if .Enabled}}<a href="{{.URL}}" class="block text-[12px] text-fg-muted hover:text-fg" {{if .External}}target="_blank" rel="noopener"{{end}}>{{.Label}}</a>{{end}}{{end}}
+        </div>
+      </div>
+      {{else}}
+      <p class="text-sm text-fg-muted">{{t "暂无启用的页脚导航。" $.Lang}}</p>
+      {{end}}
+    </div>
+    {{else}}
+    <div class="mt-3 flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-surface-muted/40 px-3 py-2.5">
+      {{range .Items}}{{if .Enabled}}<a href="{{.URL}}" class="rounded-lg border border-border bg-surface px-2.5 py-1 text-[12px] text-fg-muted hover:border-brand-300 hover:text-fg" {{if .External}}target="_blank" rel="noopener"{{end}}>{{.Label}}</a>{{end}}{{else}}<span class="text-xs text-fg-muted">{{t "暂无启用的页眉导航，前台使用内置导航。" $.Lang}}</span>{{end}}
+    </div>
+    {{end}}
+  </section>
+
+  <section class="gf-card p-4">
+    <details id="add-nav" {{if .Editing}}open{{end}}>
+      <summary class="flex cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+        <div>
+          <h3 class="text-[13px] font-semibold">{{if .Editing}}{{t "编辑导航项" $.Lang}}{{else}}{{t "添加导航项" $.Lang}}{{end}}</h3>
+          <p class="mt-0.5 text-xs text-fg-muted">{{t "填写名称与链接即可，权限与分组属于可选高级设置。" $.Lang}}</p>
+        </div>
+        <span class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs">{{t "展开 / 收起" $.Lang}}</span>
+      </summary>
+      <form method="post" action="/admin/site/nav/action" class="mt-3 space-y-3">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="location" value="{{.Location}}">
+        {{if .Editing}}<input type="hidden" name="id" value="{{.Editing.ID}}">{{end}}
+        <input type="hidden" name="action" value="{{if .Editing}}update{{else}}create{{end}}">
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label class="gf-label" for="nav-label">{{t "名称" $.Lang}}</label>
+            <input id="nav-label" name="label" class="gf-input" placeholder="{{t "例如：关于我们" $.Lang}}" value="{{if .Editing}}{{.Editing.Label}}{{end}}" required>
+          </div>
+          <div>
+            <label class="gf-label" for="nav-url">{{t "链接" $.Lang}}</label>
+            <input id="nav-url" name="url" class="gf-input font-mono text-xs" placeholder="{{t "/about 或 https://..." $.Lang}}" value="{{if .Editing}}{{.Editing.URL}}{{end}}" required>
+          </div>
+          {{if eq .Location "footer"}}
+          <div>
+            <label class="gf-label" for="nav-section">{{t "页脚分组" $.Lang}}</label>
+            <input id="nav-section" name="section" list="footer-sections" class="gf-input" placeholder="{{t "例如：社区、资源" $.Lang}}" value="{{if .Editing}}{{.Editing.Section}}{{end}}">
+            <datalist id="footer-sections">{{range .Sections}}<option value="{{.}}">{{end}}</datalist>
+          </div>
+          {{end}}
+          <div>
+            <label class="gf-label" for="nav-sort">{{t "排序" $.Lang}}</label>
+            <input id="nav-sort" name="sort" type="number" class="gf-input" placeholder="0" value="{{if .Editing}}{{.Editing.Sort}}{{end}}">
+            <p class="gf-hint">{{t "数字越小越靠前。" $.Lang}}</p>
+          </div>
+        </div>
+        <details class="rounded-lg border border-border p-3">
+          <summary class="cursor-pointer text-xs font-medium text-fg-muted">{{t "高级设置（可选）" $.Lang}}</summary>
+          <div class="mt-3">
+            <label class="gf-label" for="nav-permission">{{t "需要权限" $.Lang}}</label>
+            <input id="nav-permission" name="permission" class="gf-input font-mono text-xs" placeholder="topic.create" value="{{if .Editing}}{{.Editing.Permission}}{{end}}">
+            <p class="gf-hint">{{t "留空表示所有访客可见；填写权限键后仅拥有该权限的用户可见。" $.Lang}}</p>
+          </div>
+        </details>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" value="1" {{if .Editing}}{{if .Editing.Enabled}}checked{{end}}{{else}}checked{{end}} class="h-4 w-4"> {{t "启用该项" $.Lang}}</label>
+        <div class="flex justify-end gap-2">
+          {{if .Editing}}<a href="/admin/site/{{.Location}}" class="gf-btn gf-btn-ghost">{{t "取消" $.Lang}}</a>{{end}}
+          <button class="gf-btn gf-btn-primary">{{if .Editing}}{{t "保存修改" $.Lang}}{{else}}{{t "添加" $.Lang}}{{end}}</button>
+        </div>
+      </form>
+    </details>
+  </section>
+
+  {{if eq .Location "footer"}}
+  <div class="space-y-4">
+    {{range .Groups}}
+    <section class="gf-card overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3">
+        <div class="flex items-center gap-2">
+          <h3 class="text-[13px] font-semibold">{{.Name}}</h3>
+          <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{len .Items}} {{t "个链接" $.Lang}}</span>
+        </div>
+        <a href="/admin/site/footer" class="text-[11px] text-fg-muted hover:text-fg">{{t "添加到此分组" $.Lang}}</a>
+      </div>
+      <div class="divide-y divide-border">
+        {{range .Items}}
+        <div class="flex flex-wrap items-center gap-3 px-4 py-2.5">
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="truncate text-[12px] font-medium {{if not .Enabled}}text-fg-muted line-through{{end}}">{{.Label}}</span>
+              {{if .Permission}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{.Permission}}</span>{{end}}
+              {{if not .Enabled}}<span class="gf-badge bg-surface-muted !px-1.5 !py-0 text-[10px] text-fg-muted">{{t "已停用" $.Lang}}</span>{{end}}
+            </div>
+            <div class="mt-0.5 truncate font-mono text-[10px] text-fg-muted">{{.URL}}</div>
+          </div>
+          <span class="text-[10px] tabular-nums text-fg-muted">#{{.Sort}}</span>
+          <div class="flex items-center gap-1">
+            <a href="/admin/site/footer?nav={{.ID}}" class="gf-btn gf-btn-ghost !px-2 !py-1 text-[11px]">{{t "编辑" $.Lang}}</a>
+            <form method="post" action="/admin/site/nav/action">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="{{.ID}}">
+              <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{if .Enabled}}{{t "停用" $.Lang}}{{else}}{{t "启用" $.Lang}}{{end}}</button>
+            </form>
+            <form method="post" action="/admin/site/nav/action" data-confirm="{{t "确认删除？" $.Lang}}">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{.ID}}">
+              <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs text-danger">{{t "删除" $.Lang}}</button>
+            </form>
+          </div>
+        </div>
+        {{end}}
+      </div>
+    </section>
+    {{else}}
+    <div class="gf-card px-6 py-14 text-center">
+      <p class="text-sm font-medium">{{t "还没有页脚导航。" $.Lang}}</p>
+      <p class="mt-1 text-xs text-fg-muted">{{t "先添加一个分组，例如「社区」「资源」「关于」。" $.Lang}}</p>
+    </div>
+    {{end}}
+  </div>
+  {{else}}
+  <section class="gf-card overflow-hidden">
+    <div class="divide-y divide-border">
+      {{range .Items}}
+      <div class="flex flex-wrap items-center gap-3 px-4 py-2.5">
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="truncate text-[12px] font-medium {{if not .Enabled}}text-fg-muted line-through{{end}}">{{.Label}}</span>
+            {{if .Permission}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{.Permission}}</span>{{end}}
+            {{if not .Enabled}}<span class="gf-badge bg-surface-muted !px-1.5 !py-0 text-[10px] text-fg-muted">{{t "已停用" $.Lang}}</span>{{end}}
+          </div>
+          <div class="mt-0.5 truncate font-mono text-[10px] text-fg-muted">{{.URL}}</div>
+        </div>
+        <span class="text-[11px] tabular-nums text-fg-muted">#{{.Sort}}</span>
+        <div class="flex items-center gap-1">
+          <a href="/admin/site/header?nav={{.ID}}" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "编辑" $.Lang}}</a>
+          <form method="post" action="/admin/site/nav/action">
+            <input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="{{.ID}}">
+            <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{if .Enabled}}{{t "停用" $.Lang}}{{else}}{{t "启用" $.Lang}}{{end}}</button>
+          </form>
+          <form method="post" action="/admin/site/nav/action" data-confirm="{{t "确认删除？" $.Lang}}">
+            <input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{.ID}}">
+            <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs text-danger">{{t "删除" $.Lang}}</button>
+          </form>
+        </div>
+      </div>
+      {{else}}
+      <div class="px-6 py-14 text-center">
+        <p class="text-sm font-medium">{{t "还没有页眉导航。" $.Lang}}</p>
+        <p class="mt-1 text-xs text-fg-muted">{{t "添加后会替换前台内置导航。" $.Lang}}</p>
+      </div>
+      {{end}}
+    </div>
+  </section>
+  {{end}}
+</div>
+{{end}}
+{{end}}

@@ -1,0 +1,58 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-4">
+  {{template "moderation_tabs" $}}
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold">{{t "审计日志" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "共" $.Lang}} {{.Total}} {{t "条。记录管理操作，不可删除。" $.Lang}}</p>
+    </div>
+    <span class="gf-badge gf-badge-neutral">{{t "只读" $.Lang}}</span>
+  </div>
+
+  <form method="get" action="/admin/audit" class="gf-card flex flex-wrap items-end gap-2.5 p-3">
+    <div><label class="gf-label !mb-1 text-[10px]" for="actor">{{t "操作人 ID" $.Lang}}</label><input id="actor" name="actor" value="{{.Actor}}" class="gf-input !py-1.5 font-mono text-xs"></div>
+    <div><label class="gf-label !mb-1 text-[10px]" for="action">{{t "动作" $.Lang}}</label><input id="action" name="action" value="{{.Action}}" class="gf-input !py-1.5 font-mono text-xs" placeholder="topic.delete"></div>
+    <div><label class="gf-label !mb-1 text-[10px]" for="target_type">{{t "目标类型" $.Lang}}</label><input id="target_type" name="target_type" value="{{.TargetType}}" class="gf-input !py-1.5 font-mono text-xs" placeholder="topic / user"></div>
+    <button class="gf-btn gf-btn-primary !px-3 !py-1.5 text-xs">{{t "筛选" $.Lang}}</button>
+    <a href="/admin/audit" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "重置" $.Lang}}</a>
+  </form>
+
+  <div class="gf-card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="gf-table gf-table-cards text-xs">
+        <thead><tr><th>{{t "时间" $.Lang}}</th><th>{{t "操作人" $.Lang}}</th><th>{{t "动作" $.Lang}}</th><th>{{t "目标" $.Lang}}</th><th>{{t "原因" $.Lang}}</th><th>IP</th></tr></thead>
+        <tbody>
+          {{range .Entries}}
+          <tr>
+            <td class="whitespace-nowrap text-xs text-fg-muted">{{.CreatedAt.Format "2006-01-02 15:04:05"}}</td>
+            <td data-label="{{t "操作人" $.Lang}}">
+              <span class="text-[12px]">{{if index $.Data.ActorNames .ActorID}}{{index $.Data.ActorNames .ActorID}}{{else}}<span class="font-mono text-[10px]">{{.ActorID}}</span>{{end}}</span>
+            </td>
+            <td data-label="{{t "动作" $.Lang}}"><span class="gf-badge bg-brand-50 !px-1.5 !py-0 font-mono text-[10px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{.Action}}</span></td>
+            <td data-label="{{t "目标" $.Lang}}" class="text-[11px] text-fg-muted">
+              {{if .TargetType}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{.TargetType}}</span> <span class="font-mono text-[10px]">{{.TargetID}}</span>{{else}}—{{end}}
+            </td>
+            <td data-label="{{t "原因" $.Lang}}" class="max-w-xs text-[11px]">{{.Reason}}</td>
+            <td data-label="IP" class="font-mono text-[10px] text-fg-muted">{{.IP}}</td>
+          </tr>
+          {{else}}
+          <tr><td colspan="6" class="py-8 text-center text-fg-muted">{{t "暂无审计记录" $.Lang}}</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {{if gt .TotalPages 1}}
+  <nav class="flex flex-wrap items-center justify-center gap-1.5">
+    {{if gt .Page 1}}<a href="/admin/audit?page={{sub .Page 1}}&actor={{.Actor}}&action={{.Action}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "上一页" $.Lang}}</a>{{end}}
+    {{range pageWindow .Page .TotalPages}}
+      {{if eq . 0}}<span class="px-1.5 text-xs text-fg-muted">…</span>{{else}}<a href="/admin/audit?page={{.}}&actor={{$.Data.Actor}}&action={{$.Data.Action}}" class="flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-xs {{if eq . $.Data.Page}}border-brand-600 bg-brand-600 text-white{{else}}border-border text-fg-muted hover:border-brand-300 hover:text-fg{{end}}">{{.}}</a>{{end}}
+    {{end}}
+    {{if lt .Page .TotalPages}}<a href="/admin/audit?page={{add .Page 1}}&actor={{.Actor}}&action={{.Action}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "下一页" $.Lang}}</a>{{end}}
+  </nav>
+  {{end}}
+</div>
+{{end}}
+{{end}}

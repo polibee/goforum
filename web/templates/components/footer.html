@@ -1,0 +1,40 @@
+{{define "footer"}}
+<footer class="border-t border-border bg-surface">
+  {{if .FooterGroups}}
+  <div class="mx-auto max-w-7xl px-4 py-8">
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <div class="text-sm font-semibold">{{.Site.Name}}</div>
+        {{if .Site.Tagline}}<p class="mt-1 text-xs text-fg-muted">{{.Site.Tagline}}</p>{{end}}
+        <p class="mt-3 text-xs text-fg-muted">&copy; {{year}} {{.Site.Name}}{{if .Site.FooterCopyright}} · {{.Site.FooterCopyright}}{{end}}</p>
+      </div>
+      {{range .FooterGroups}}
+      <div>
+        {{if .Label}}<h3 class="text-xs font-semibold uppercase tracking-wide text-fg-muted">{{.Label}}</h3>{{end}}
+        <div class="mt-2 space-y-1.5">
+          {{range .Items}}
+            {{if or (eq .Permission "") (and $.User (hasPerm $.User .Permission))}}
+            <a href="{{.URL}}" class="block text-sm text-fg-muted hover:text-fg" {{if .External}}target="_blank" rel="noopener"{{end}}>{{.Label}}</a>
+            {{end}}
+          {{end}}
+        </div>
+      </div>
+      {{end}}
+    </div>
+    <div class="mt-6 border-t border-border pt-4 text-xs text-fg-muted">Powered by GoForum {{.Version}}</div>
+  </div>
+  {{else}}
+  <div class="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-fg-muted sm:flex-row sm:items-center sm:justify-between">
+    <p>&copy; {{year}} {{.Site.Name}}{{if .Site.FooterCopyright}} · {{.Site.FooterCopyright}}{{end}}</p>
+    <p class="flex flex-wrap items-center gap-3">
+      <a href="/about" class="hover:text-fg">{{t "关于" $.Lang}}</a>
+      <a href="/privacy" class="hover:text-fg">{{t "隐私" $.Lang}}</a>
+      <a href="/terms" class="hover:text-fg">{{t "条款" $.Lang}}</a>
+      <a href="/sitemap.xml" class="hover:text-fg">{{t "站点地图" $.Lang}}</a>
+      <a href="/feed.xml" class="hover:text-fg">RSS</a>
+      <span>Powered by GoForum {{.Version}}</span>
+    </p>
+  </div>
+  {{end}}
+</footer>
+{{end}}

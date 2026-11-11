@@ -1,0 +1,22 @@
+{{define "page"}}
+<div class="gf-card p-6 sm:p-8">
+  <h1 class="text-xl font-semibold">{{t "两步验证" $.Lang}}</h1>
+  <p class="mt-1 text-sm text-fg-muted">{{t "输入身份验证器中的 6 位验证码，或使用一张恢复码。" $.Lang}}</p>
+
+  {{with .Data}}
+    {{if .Username}}<p class="mt-2 text-xs text-fg-muted">{{t "正在登录：" $.Lang}} <span class="font-medium text-fg">{{.Username}}</span></p>{{end}}
+    {{if .Error}}<div class="gf-alert-danger mt-4">{{t .Error $.Lang}}</div>{{end}}
+    <form method="post" action="/login/2fa" class="mt-6 space-y-4">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      <div>
+        <label class="gf-label" for="code">{{t "验证码或恢复码" $.Lang}}</label>
+        <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" class="gf-input text-center font-mono text-lg tracking-widest" required autofocus
+               placeholder="{{t "6 位验证码或 XXXXX-XXXXX" $.Lang}}">
+      </div>
+      <button type="submit" class="gf-btn gf-btn-primary w-full">{{t "验证并登录" $.Lang}}</button>
+    </form>
+  {{end}}
+
+  <p class="mt-6 text-center text-xs text-fg-muted"><a href="/login" class="hover:text-fg">{{t "返回登录" $.Lang}}</a></p>
+</div>
+{{end}}

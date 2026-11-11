@@ -1,0 +1,18 @@
+{
+  "name": "goforum-assets",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i ./web/css/app.css -o ./web/static/dist/app.css --minify",
+    "build:js": "esbuild ./web/js/app.js --bundle --minify --outfile=./web/static/dist/app.js",
+    "build": "npm run build:css && npm run build:js",
+    "watch:css": "tailwindcss -i ./web/css/app.css -o ./web/static/dist/app.css --watch",
+    "watch:js": "esbuild ./web/js/app.js --bundle --outfile=./web/static/dist/app.js --watch"
+  },
+  "devDependencies": {
+    "@alpinejs/csp": "^3.14.9",
+    "@tailwindcss/typography": "^0.5.16",
+    "alpinejs": "^3.14.9",
+    "esbuild": "^0.24.2",
+    "tailwindcss": "^3.4.17"
+  }
+}

@@ -1,0 +1,129 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-4">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold">{{t "用户" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "审核、封禁、禁言与账号状态管理。" $.Lang}}</p>
+    </div>
+    <span class="gf-badge gf-badge-neutral">{{.Total}} {{t "个账号" $.Lang}}</span>
+  </div>
+
+  {{if .Error}}<div class="gf-alert-danger">{{.Error}}</div>{{end}}
+
+  <form method="get" action="/admin/users" class="gf-card flex flex-wrap items-end gap-2.5 p-3">
+    <div class="min-w-48 flex-1">
+      <label class="gf-label !mb-1 text-[10px]" for="q">{{t "搜索" $.Lang}}</label>
+      <input id="q" name="q" value="{{.Query}}" class="gf-input !py-1.5 text-xs" placeholder="{{t "用户名或邮箱" $.Lang}}">
+    </div>
+    <div>
+      <label class="gf-label !mb-1 text-[10px]" for="status">{{t "状态" $.Lang}}</label>
+      <select id="status" name="status" class="gf-input !py-1.5 text-xs">
+        <option value="" {{if eq .Status ""}}selected{{end}}>{{t "全部" $.Lang}}</option>
+        <option value="active" {{if eq .Status "active"}}selected{{end}}>{{t "正常" $.Lang}}</option>
+        <option value="suspended" {{if eq .Status "suspended"}}selected{{end}}>{{t "禁言" $.Lang}}</option>
+        <option value="banned" {{if eq .Status "banned"}}selected{{end}}>{{t "封禁" $.Lang}}</option>
+        <option value="rejected" {{if eq .Status "rejected"}}selected{{end}}>{{t "拒绝" $.Lang}}</option>
+        <option value="pending_review" {{if eq .Status "pending_review"}}selected{{end}}>{{t "待审核" $.Lang}}</option>
+        <option value="pending_email" {{if eq .Status "pending_email"}}selected{{end}}>{{t "待验证" $.Lang}}</option>
+      </select>
+    </div>
+    <button class="gf-btn gf-btn-primary !px-3 !py-1.5 text-xs">{{t "筛选" $.Lang}}</button>
+    <a href="/admin/users" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "重置" $.Lang}}</a>
+  </form>
+
+  <form id="bulk-users" method="post" action="/admin/users/bulk" class="gf-card flex flex-wrap items-center gap-2 p-2.5">
+    <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+    <select name="status" class="gf-input !w-36 !py-1.5 text-xs">
+      <option value="active">{{t "通过/启用" $.Lang}}</option>
+      <option value="suspended">{{t "禁言" $.Lang}}</option>
+      <option value="banned">{{t "封禁" $.Lang}}</option>
+      <option value="rejected">{{t "拒绝" $.Lang}}</option>
+    </select>
+    <button class="gf-btn gf-btn-ghost border border-border !px-2.5 !py-1.5 text-xs">{{t "批量执行" $.Lang}}</button>
+    <span class="text-[11px] text-fg-muted">{{t "勾选下方用户后执行。" $.Lang}}</span>
+  </form>
+
+  <div class="gf-card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="gf-table gf-table-cards text-xs">
+        <thead>
+          <tr><th class="w-8"><input type="checkbox" x-data="bulk" x-on:change="toggleAll($event.target.checked)" class="h-3.5 w-3.5 rounded border-border" aria-label="{{t "全选" $.Lang}}"></th><th>{{t "用户名" $.Lang}}</th><th>{{t "邮箱" $.Lang}}</th><th>{{t "状态" $.Lang}}</th><th>{{t "验证" $.Lang}}</th><th>{{t "信任等级" $.Lang}}</th><th>{{t "注册时间" $.Lang}}</th><th class="text-right">{{t "操作" $.Lang}}</th></tr>
+        </thead>
+        <tbody>
+          {{range .Users}}
+          <tr>
+            <td><input type="checkbox" name="ids" value="{{.ID}}" form="bulk-users" data-bulk class="h-3.5 w-3.5 rounded border-border" aria-label="{{t "选择用户" $.Lang}}"></td>
+            <td data-label="{{t "用户名" $.Lang}}">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <a href="/admin/users/{{.ID}}" class="text-[13px] font-medium hover:text-brand-600">{{.Username}}</a>
+                {{if .SuperAdmin}}<span class="gf-badge bg-brand-50 !px-1.5 !py-0 text-[9px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "超管" $.Lang}}</span>{{end}}
+              </div>
+            </td>
+            <td class="text-[11px] text-fg-muted" data-label="{{t "邮箱" $.Lang}}">{{.Email}}</td>
+            <td data-label="{{t "状态" $.Lang}}">
+              {{if eq .Status "active"}}<span class="gf-badge bg-success/10 !px-1.5 !py-0 text-[10px] text-success">{{t "正常" $.Lang}}</span>
+              {{else if eq .Status "pending_review"}}<span class="gf-badge bg-warning/10 !px-1.5 !py-0 text-[10px] text-warning">{{t "待审核" $.Lang}}</span>
+              {{else if eq .Status "pending_email"}}<span class="gf-badge bg-warning/10 !px-1.5 !py-0 text-[10px] text-warning">{{t "待验证" $.Lang}}</span>
+              {{else if eq .Status "banned"}}<span class="gf-badge bg-danger/10 !px-1.5 !py-0 text-[10px] text-danger">{{t "封禁" $.Lang}}</span>
+              {{else if eq .Status "suspended"}}<span class="gf-badge bg-danger/10 !px-1.5 !py-0 text-[10px] text-danger">{{t "禁言" $.Lang}}</span>
+              {{else}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{.Status}}</span>{{end}}
+            </td>
+            <td class="text-[10px] text-fg-muted" data-label="{{t "验证" $.Lang}}">{{if .EmailVerifiedAt}}{{t "已验证" $.Lang}}{{else}}{{t "未验证" $.Lang}}{{end}}</td>
+            <td data-label="{{t "信任等级" $.Lang}}"><span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">TL{{.TrustLevel}}</span></td>
+            <td class="whitespace-nowrap text-[10px] text-fg-muted" data-label="{{t "注册时间" $.Lang}}">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+            <td class="text-right">
+              <div class="flex items-center justify-end gap-1">
+                <a href="/admin/users/{{.ID}}" class="rounded-md border border-border p-1.5 text-fg-muted transition hover:border-brand-300 hover:text-fg" title="{{t "查看详情" $.Lang}}" aria-label="{{t "查看详情" $.Lang}}">
+                  <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2.5 10s2.8-5 7.5-5 7.5 5 7.5 5-2.8 5-7.5 5-7.5-5-7.5-5Z" stroke-linejoin="round"/><circle cx="10" cy="10" r="2"/></svg>
+                </a>
+                {{if ne .Status "active"}}
+                <form method="post" action="/admin/users/{{.ID}}/status">
+                  <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                  <input type="hidden" name="status" value="active">
+                  <button class="rounded-md border border-border p-1.5 text-success transition hover:border-success/40" title="{{t "通过/启用" $.Lang}}" aria-label="{{t "通过/启用" $.Lang}}">
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 10.5 3 3 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                </form>
+                {{end}}
+                {{if eq .Status "active"}}
+                <form method="post" action="/admin/users/{{.ID}}/status" data-confirm="{{t "确认封禁该用户？" $.Lang}}">
+                  <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                  <input type="hidden" name="status" value="banned">
+                  <button class="rounded-md border border-border p-1.5 text-danger transition hover:border-danger/40" title="{{t "封禁" $.Lang}}" aria-label="{{t "封禁" $.Lang}}">
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10" cy="10" r="6.5"/><path d="m5.5 5.5 9 9" stroke-linecap="round"/></svg>
+                  </button>
+                </form>
+                {{end}}
+                {{if ne .Status "rejected"}}
+                <form method="post" action="/admin/users/{{.ID}}/status" data-confirm="{{t "确认拒绝该用户？" $.Lang}}">
+                  <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                  <input type="hidden" name="status" value="rejected">
+                  <button class="rounded-md border border-border p-1.5 text-fg-muted transition hover:border-danger/40 hover:text-danger" title="{{t "拒绝" $.Lang}}" aria-label="{{t "拒绝" $.Lang}}">
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 8 8M14 6l-8 8" stroke-linecap="round"/></svg>
+                  </button>
+                </form>
+                {{end}}
+              </div>
+            </td>
+          </tr>
+          {{else}}
+          <tr><td colspan="8" class="py-10 text-center text-fg-muted">{{t "暂无用户" $.Lang}}</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {{if gt .TotalPages 1}}
+  <nav class="flex flex-wrap items-center justify-center gap-1.5">
+    {{if gt .Page 1}}<a href="{{pageURL .BasePath (sub .Page 1)}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "上一页" $.Lang}}</a>{{end}}
+    {{range pageWindow .Page .TotalPages}}
+      {{if eq . 0}}<span class="px-1.5 text-xs text-fg-muted">…</span>{{else}}<a href="{{pageURL $.Data.BasePath .}}" class="flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-xs {{if eq . $.Data.Page}}border-brand-600 bg-brand-600 text-white{{else}}border-border text-fg-muted hover:border-brand-300 hover:text-fg{{end}}">{{.}}</a>{{end}}
+    {{end}}
+    {{if lt .Page .TotalPages}}<a href="{{pageURL .BasePath (add .Page 1)}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "下一页" $.Lang}}</a>{{end}}
+  </nav>
+  {{end}}
+</div>
+{{end}}
+{{end}}

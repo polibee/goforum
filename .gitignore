@@ -1,0 +1,35 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+configs/*.yaml
+!configs/goforum.example.yaml
+
+# Runtime data
+data/
+backups/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Build output
+bin/
+dist/
+goforum.exe
+writeload.exe
+*.exe
+*.exe~
+
+# Frontend dependencies
+node_modules/
+web/static/dist/*.map
+
+# Local agent / browser artifacts
+.zcode/
+.playwright-mcp/
+tmp-env.png
+
+# OS noise
+.DS_Store
+Thumbs.db

@@ -1,0 +1,7 @@
+{{define "ads_tabs"}}
+<div class="flex w-fit flex-wrap gap-1 rounded-xl border border-border bg-surface p-1 shadow-sm">
+  <a href="/admin/ads" class="rounded-lg px-3 py-1.5 text-[13px] font-medium {{if eq .Path "/admin/ads"}}bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200{{else}}text-fg-muted hover:bg-surface-muted hover:text-fg{{end}}">{{t "广告管理" .Lang}}</a>
+  <a href="/admin/ads/slots" class="rounded-lg px-3 py-1.5 text-[13px] font-medium {{if eq .Path "/admin/ads/slots"}}bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200{{else}}text-fg-muted hover:bg-surface-muted hover:text-fg{{end}}">{{t "广告位管理" .Lang}}</a>
+  <a href="/admin/ads/settings" class="rounded-lg px-3 py-1.5 text-[13px] font-medium {{if eq .Path "/admin/ads/settings"}}bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200{{else}}text-fg-muted hover:bg-surface-muted hover:text-fg{{end}}">{{t "广告设置" .Lang}}</a>
+</div>
+{{end}}

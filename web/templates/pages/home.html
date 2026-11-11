@@ -1,0 +1,55 @@
+{{define "page"}}
+<section class="mx-auto max-w-6xl px-4 py-14">
+  <div class="max-w-2xl">
+    <span class="gf-badge gf-badge-neutral">GoForum {{.Version}}</span>
+    <h1 class="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">{{.Site.Name}}</h1>
+    <p class="mt-4 text-lg text-fg-muted">{{.Site.Tagline}}</p>
+    {{if .Site.Description}}<p class="mt-2 text-sm text-fg-muted">{{.Site.Description}}</p>{{end}}
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a href="/admin/login" class="gf-btn gf-btn-primary">{{t "进入后台" $.Lang}}</a>
+      <a href="/admin" class="gf-btn gf-btn-ghost">{{t "管理面板" $.Lang}}</a>
+    </div>
+  </div>
+
+  {{with .Data}}
+  <div class="mt-14 grid gap-4 sm:grid-cols-3">
+    <div class="gf-card p-5">
+      <h2 class="text-sm font-semibold">{{t "模块化单体" $.Lang}}</h2>
+      <p class="mt-2 text-sm text-fg-muted">{{t "每个功能模块拥有自己的路由、权限、设置与后台贡献，依赖由 CI 约束。" $.Lang}}</p>
+    </div>
+    <div class="gf-card p-5">
+      <h2 class="text-sm font-semibold">{{t "自选数据库" $.Lang}}</h2>
+      <p class="mt-2 text-sm text-fg-muted">{{t "SQLite、MySQL、PostgreSQL 一套代码，方言差异隔离在方言层。" $.Lang}}</p>
+    </div>
+    <div class="gf-card p-5">
+      <h2 class="text-sm font-semibold">{{t "可插拔能力" $.Lang}}</h2>
+      <p class="mt-2 text-sm text-fg-muted">{{t "缓存、存储、队列、邮件、搜索与支付渠道均可替换。" $.Lang}}</p>
+    </div>
+  </div>
+
+  <div class="mt-12 gf-card overflow-hidden">
+    <div class="flex items-center justify-between border-b border-border px-5 py-4">
+      <h2 class="text-sm font-semibold">{{t "已注册模块" $.Lang}}</h2>
+      <span class="text-xs text-fg-muted">{{len .Modules}} {{t "个" $.Lang}}</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="gf-table">
+        <thead>
+          <tr><th>{{t "模块" $.Lang}}</th><th>{{t "依赖" $.Lang}}</th><th>{{t "权限" $.Lang}}</th><th>{{t "设置" $.Lang}}</th></tr>
+        </thead>
+        <tbody>
+          {{range .Modules}}
+          <tr>
+            <td class="font-medium">{{.Name}}</td>
+            <td class="text-fg-muted">{{if .DependsOn}}{{range $i, $d := .DependsOn}}{{if $i}}, {{end}}{{$d}}{{end}}{{else}}—{{end}}</td>
+            <td>{{.PermissionCount}}</td>
+            <td>{{.SettingCount}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {{end}}
+</section>
+{{end}}

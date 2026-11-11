@@ -1,0 +1,375 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-4" x-data="billingPanel" data-open-tab="{{.OpenTab}}">
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+  {{if .TokenError}}<div class="gf-alert-danger">{{t .TokenError $.Lang}}</div>{{end}}
+  {{if .TokenSaved}}<div class="gf-alert-success">{{t "接收币种已保存，前台支付页立即生效。" $.Lang}}</div>{{end}}
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold">{{t "商业化" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "商品、订单、支付渠道、退款、订阅、优惠券与对账报表。" $.Lang}}</p>
+    </div>
+    <span class="gf-badge gf-badge-neutral">{{len .Products}} {{t "个商品" $.Lang}} · {{len .Orders}} {{t "笔订单" $.Lang}}</span>
+  </div>
+
+  <div class="flex w-fit max-w-full flex-wrap gap-1 overflow-x-auto rounded-xl border border-border bg-surface p-1 shadow-sm">
+    {{$tabs := list "products" "orders" "channels" "coupons" "ops" "subscriptions"}}
+    {{range $tabs}}
+    <button type="button" x-on:click="tab = '{{.}}'" x-bind:class="tab === '{{.}}' ? 'bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200' : 'text-fg-muted hover:bg-surface-muted hover:text-fg'" class="whitespace-nowrap rounded-lg px-3 py-1.5 text-[13px] font-medium transition">
+      {{if eq . "products"}}{{t "商品" $.Lang}}{{else if eq . "orders"}}{{t "订单" $.Lang}}{{else if eq . "channels"}}{{t "支付渠道" $.Lang}}{{else if eq . "coupons"}}{{t "优惠券" $.Lang}}{{else if eq . "ops"}}{{t "余额与对账" $.Lang}}{{else}}{{t "订阅" $.Lang}}{{end}}
+    </button>
+    {{end}}
+  </div>
+
+  <div x-show="tab === 'products'" x-cloak class="space-y-3">
+  <div class="grid gap-3 lg:grid-cols-2">
+    <section class="gf-card overflow-hidden">
+      <div class="border-b border-border px-4 py-2.5"><h3 class="text-[13px] font-semibold">{{t "近 7 日报表" $.Lang}}</h3></div>
+      <div class="overflow-x-auto">
+        <table class="gf-table gf-table-cards text-xs">
+          <thead><tr><th>{{t "日期" $.Lang}}</th><th>{{t "收入 (CNY)" $.Lang}}</th><th>{{t "退款" $.Lang}}</th><th>{{t "订单数" $.Lang}}</th><th>{{t "收入 (USD)" $.Lang}}</th><th>{{t "USD 订单" $.Lang}}</th></tr></thead>
+          <tbody>
+            {{range .Report}}
+            <tr>
+              <td class="text-xs text-fg-muted">{{.Date}}</td>
+              <td class="text-sm">¥{{money .Revenue}}</td>
+              <td class="text-sm text-danger">¥{{money .Refunded}}</td>
+              <td class="text-sm">{{.Orders}}</td>
+              <td class="text-sm">{{if .RevenueUSD}}{{usd .RevenueUSD}}{{else}}—{{end}}</td>
+              <td class="text-sm">{{if .OrdersUSD}}{{.OrdersUSD}}{{else}}—{{end}}</td>
+            </tr>
+            {{else}}<tr><td colspan="6" class="py-6 text-center text-fg-muted">{{t "暂无数据" $.Lang}}</td></tr>{{end}}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="gf-card p-4">
+      <div class="flex items-center justify-between gap-2">
+        <h3 class="text-[13px] font-semibold">{{if .EditingProduct}}{{t "编辑商品" $.Lang}}{{else}}{{t "新建商品" $.Lang}}{{end}}</h3>
+        {{if .EditingProduct}}<a href="/admin/billing" class="text-xs text-fg-muted hover:text-fg">{{t "取消" $.Lang}}</a>{{end}}
+      </div>
+      <form method="post" action="/admin/billing/action" class="mt-3 grid gap-2 sm:grid-cols-2">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="action" value="{{if .EditingProduct}}update_product{{else}}create_product{{end}}">
+        {{if .EditingProduct}}<input type="hidden" name="product_id" value="{{.EditingProduct.ID}}">{{end}}
+        <input name="name" class="gf-input" placeholder="{{t "商品名称" $.Lang}}" value="{{if .EditingProduct}}{{.EditingProduct.Name}}{{end}}" required>
+        <input name="slug" class="gf-input" placeholder="slug" value="{{if .EditingProduct}}{{.EditingProduct.Slug}}{{end}}" required>
+        <select name="type" class="gf-input">
+          <option value="points_pack" {{if and .EditingProduct (eq .EditingProduct.Type "points_pack")}}selected{{end}}>{{t "积分包" $.Lang}}</option>
+          <option value="vip_plan" {{if and .EditingProduct (eq .EditingProduct.Type "vip_plan")}}selected{{end}}>{{t "VIP 套餐" $.Lang}}</option>
+          <option value="invite_pack" {{if and .EditingProduct (eq .EditingProduct.Type "invite_pack")}}selected{{end}}>{{t "邀请包" $.Lang}}</option>
+        </select>
+        <div class="grid grid-cols-2 gap-2">
+          <input name="price_minor" type="number" min="0" class="gf-input" placeholder="{{t "价格（分）" $.Lang}}" value="{{if .EditingProduct}}{{.EditingProduct.PriceMinor}}{{end}}" required>
+          <select name="currency" class="gf-input">
+            <option value="CNY" {{if or (not .EditingProduct) (and .EditingProduct (eq .EditingProduct.Currency "CNY"))}}selected{{end}}>CNY</option>
+            <option value="USD" {{if and .EditingProduct (eq .EditingProduct.Currency "USD")}}selected{{end}}>USD</option>
+          </select>
+        </div>
+        <input name="points_amount" type="number" min="0" class="gf-input" placeholder="{{t "赠送积分" $.Lang}}" value="{{if .EditingProduct}}{{.EditingProduct.PointsAmount}}{{end}}">
+        <input name="duration_days" type="number" min="0" class="gf-input" placeholder="{{t "VIP 天数" $.Lang}}" value="{{if .EditingProduct}}{{.EditingProduct.DurationDays}}{{end}}">
+        <input name="sort" type="number" class="gf-input" placeholder="{{t "排序" $.Lang}}" value="{{if .EditingProduct}}{{.EditingProduct.Sort}}{{end}}">
+        <label class="flex items-center gap-2 text-[11px] text-fg-muted"><input type="checkbox" name="active" value="1" {{if .EditingProduct}}{{if .EditingProduct.Active}}checked{{end}}{{else}}checked{{end}} class="h-4 w-4"> {{t "上架" $.Lang}}</label>
+        <input name="description" class="gf-input sm:col-span-2" placeholder="{{t "描述" $.Lang}}" value="{{if .EditingProduct}}{{.EditingProduct.Description}}{{end}}">
+        <button class="gf-btn gf-btn-primary sm:col-span-2">{{if .EditingProduct}}{{t "保存修改" $.Lang}}{{else}}{{t "创建商品" $.Lang}}{{end}}</button>
+      </form>
+      {{if .EditingProduct}}
+      <form method="post" action="/admin/billing/action" class="mt-3 border-t border-border pt-3" data-confirm="{{t "确认删除该商品？已有订单的商品不能删除。" $.Lang}}">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="action" value="delete_product">
+        <input type="hidden" name="product_id" value="{{.EditingProduct.ID}}">
+        <button class="gf-btn gf-btn-ghost w-full !py-1.5 text-xs text-danger">{{t "删除商品" $.Lang}}</button>
+      </form>
+      {{end}}
+    </section>
+  </div>
+
+  <section class="gf-card overflow-hidden">
+    <div class="flex items-center justify-between border-b border-border px-4 py-2.5">
+      <h3 class="text-[13px] font-semibold">{{t "商品" $.Lang}}</h3>
+      <span class="text-[10px] text-fg-muted">{{len .Products}} {{t "个" $.Lang}}</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="gf-table gf-table-cards text-xs">
+        <thead><tr><th>{{t "名称" $.Lang}}</th><th>{{t "类型" $.Lang}}</th><th>{{t "价格" $.Lang}}</th><th>{{t "积分" $.Lang}}</th><th>{{t "天数" $.Lang}}</th><th>{{t "状态" $.Lang}}</th><th></th></tr></thead>
+        <tbody>
+          {{range .Products}}
+          <tr>
+            <td><div class="text-sm font-medium">{{.Name}}</div><div class="font-mono text-[11px] text-fg-muted">{{.Slug}}</div></td>
+            <td class="text-xs text-fg-muted">{{.Type}}</td>
+            <td class="text-sm">{{.Currency}} {{money .PriceMinor}}</td>
+            <td class="text-sm">{{.PointsAmount}}</td>
+            <td class="text-sm">{{.DurationDays}}</td>
+            <td><span class="gf-badge {{if .Active}}bg-success/10 text-success{{else}}bg-surface-muted text-fg-muted{{end}}">{{if .Active}}{{t "上架" $.Lang}}{{else}}{{t "下架" $.Lang}}{{end}}</span></td>
+            <td class="text-right">
+              <a href="/admin/billing?product={{.ID}}" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "编辑" $.Lang}}</a>
+              <form method="post" action="/admin/billing/action" class="inline">
+                <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                <input type="hidden" name="action" value="toggle_product">
+                <input type="hidden" name="product_id" value="{{.ID}}">
+                <input type="hidden" name="active" value="{{if .Active}}{{else}}1{{end}}">
+                <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{if .Active}}{{t "下架" $.Lang}}{{else}}{{t "上架" $.Lang}}{{end}}</button>
+              </form>
+              <form method="post" action="/admin/billing/action" class="inline" data-confirm="{{t "确认删除该商品？已有订单的商品不能删除。" $.Lang}}">
+                <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                <input type="hidden" name="action" value="delete_product">
+                <input type="hidden" name="product_id" value="{{.ID}}">
+                <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs text-danger">{{t "删除" $.Lang}}</button>
+              </form>
+            </td>
+          </tr>
+          {{else}}<tr><td colspan="7" class="py-6 text-center text-fg-muted">{{t "暂无商品" $.Lang}}</td></tr>{{end}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+
+  <div x-show="tab === 'channels'" x-cloak class="space-y-3">
+  <section class="gf-card overflow-hidden">
+    <div class="border-b border-border px-4 py-2.5"><h3 class="text-[13px] font-semibold">{{t "支付渠道" $.Lang}}</h3></div>
+    <div class="overflow-x-auto">
+      <table class="gf-table gf-table-cards text-xs">
+        <thead><tr><th>{{t "名称" $.Lang}}</th><th>{{t "驱动" $.Lang}}</th><th>{{t "模式" $.Lang}}</th><th>{{t "状态" $.Lang}}</th><th></th></tr></thead>
+        <tbody>
+          {{range .Channels}}
+          <tr>
+            <td class="text-sm font-medium">{{t .Name $.Lang}}</td>
+            <td class="font-mono text-xs">{{.Driver}}</td>
+            <td class="text-xs text-fg-muted">{{.Mode}}</td>
+            <td><span class="gf-badge {{if .Enabled}}bg-success/10 text-success{{else}}bg-surface-muted text-fg-muted{{end}}">{{if .Enabled}}{{t "启用" $.Lang}}{{else}}{{t "停用" $.Lang}}{{end}}</span></td>
+            <td class="text-right">
+              <form method="post" action="/admin/billing/channel" class="inline">
+                <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                <input type="hidden" name="channel_id" value="{{.ID}}">
+                <input type="hidden" name="enabled" value="{{if .Enabled}}{{else}}1{{end}}">
+                <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{if .Enabled}}{{t "停用" $.Lang}}{{else}}{{t "启用" $.Lang}}{{end}}</button>
+              </form>
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Deipay 接收币种 -->
+  <section class="gf-card overflow-hidden" x-data="tokenPicker({{toJSON .SelectedTokenIDs}})">
+    <div class="flex flex-wrap items-start justify-between gap-2 border-b border-border px-4 py-3">
+      <div>
+        <h3 class="flex items-center gap-2 text-[13px] font-semibold">
+          {{t "Deipay 接收币种" $.Lang}}
+          <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">Deipay</span>
+        </h3>
+        <p class="mt-0.5 text-[11px] text-fg-muted">{{t "勾选用户可以使用的币种，系统会自动填入链与合约地址，无需手写。" $.Lang}}</p>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button type="button" class="gf-btn gf-btn-ghost border border-border !px-2.5 !py-1 text-[11px]" x-on:click="selectPopular()">{{t "选择主流币种" $.Lang}}</button>
+        <button type="button" class="gf-btn gf-btn-ghost border border-border !px-2.5 !py-1 text-[11px]" x-on:click="clearAll()">{{t "清空" $.Lang}}</button>
+      </div>
+    </div>
+
+    <div class="space-y-3 p-4">
+      <div class="relative">
+        <svg class="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-fg-muted" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4" stroke-linecap="round"/></svg>
+        <input type="search" x-model="query" class="gf-input !py-1.5 pl-9 text-xs" placeholder="{{t "搜索币种或网络，例如 USDC、Polygon…" $.Lang}}" aria-label="{{t "搜索币种" $.Lang}}">
+      </div>
+
+      {{range .TokenGroups}}
+      <div data-token-group data-chain="{{.Chain}}">
+        <div class="mb-1.5 flex items-center gap-2">
+          <span class="text-[11px] font-semibold text-fg">{{.Chain}}</span>
+          <span class="font-mono text-[10px] text-fg-muted">chain {{.ChainID}}</span>
+        </div>
+        <div class="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+          {{$g := .}}
+          {{range .Tokens}}
+          <label data-token-option="{{.ID}}" data-token-symbol="{{.Symbol}}" data-token-chain="{{$g.Chain}}" data-token-chain-id="{{$g.ChainID}}" data-popular="{{if .Popular}}1{{else}}0{{end}}"
+                 x-show="matches('{{.Symbol}} {{.Name}} {{$g.Chain}}')"
+                 x-bind:class="has('{{.ID}}') ? 'border-brand-500 bg-brand-50/70 dark:bg-brand-950/40' : 'border-border hover:border-brand-300'"
+                 class="flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 transition">
+            <input type="checkbox" name="tokens" value="{{.ID}}" form="deipay-tokens"
+                   x-bind:checked="has('{{.ID}}')" x-on:change="toggle('{{.ID}}')"
+                   class="h-3.5 w-3.5 rounded border-border text-brand-600 focus:ring-brand-500">
+            <span class="flex min-w-0 flex-col">
+              <span class="flex items-center gap-1">
+                <span class="text-[12px] font-medium">{{.Symbol}}</span>
+                {{if .Popular}}<span class="gf-badge bg-brand-100 !px-1 !py-0 text-[8px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "常用" $.Lang}}</span>{{end}}
+              </span>
+              <span class="truncate text-[10px] text-fg-muted">{{.Name}}</span>
+            </span>
+          </label>
+          {{end}}
+        </div>
+      </div>
+      {{end}}
+
+      <div x-cloak x-show="chainWarn" class="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[11px] text-warning">
+        <span x-text="chainWarn"></span>
+      </div>
+
+      <div class="rounded-lg border border-border bg-surface-muted/40 p-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="text-[11px] text-fg-muted">
+            {{t "已选" $.Lang}} <span class="font-semibold text-fg" x-text="count"></span> {{t "个币种" $.Lang}}
+            <span x-cloak x-show="count > 0" class="ml-1 text-fg">· <span x-text="summary"></span></span>
+          </div>
+        </div>
+        <div class="mt-2 grid gap-2 sm:grid-cols-2">
+          <div>
+            <label class="gf-label !mb-1 text-[10px]" for="deipay_deadline">{{t "账单有效期" $.Lang}}</label>
+            <select id="deipay_deadline" name="deadline_secs" form="deipay-tokens" class="gf-input !py-1.5 text-xs">
+              <option value="1800" {{if eq .DeipayDeadline 1800}}selected{{end}}>30 {{t "分钟" $.Lang}}</option>
+              <option value="3600" {{if eq .DeipayDeadline 3600}}selected{{end}}>1 {{t "小时" $.Lang}}</option>
+              <option value="86400" {{if eq .DeipayDeadline 86400}}selected{{end}}>1 {{t "天" $.Lang}}</option>
+              <option value="259200" {{if eq .DeipayDeadline 259200}}selected{{end}}>3 {{t "天" $.Lang}}</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <p class="text-[10px] text-fg-muted">{{t "超过有效期未支付，账单会自动失效。链 ID 会随所选币种自动设置。" $.Lang}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <form id="deipay-tokens" method="post" action="/admin/billing/deipay-tokens"
+          class="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-surface-muted/30 px-4 py-2.5">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      <input type="hidden" name="custom_deadline" value="1">
+      <p class="text-[10px] text-fg-muted">{{t "保存后立即生效，前台支付页会展示所选币种。" $.Lang}}</p>
+      <button type="submit" class="gf-btn gf-btn-primary !px-4 !py-1.5 text-xs">{{t "保存币种" $.Lang}}</button>
+    </form>
+  </section>
+  </div>
+
+  <div x-show="tab === 'coupons'" x-cloak class="space-y-3">
+    <section class="gf-card overflow-hidden">
+      <div class="border-b border-border px-4 py-2.5"><h3 class="text-[13px] font-semibold">{{t "优惠券" $.Lang}}</h3></div>
+      <div class="max-h-64 overflow-auto">
+        <table class="gf-table gf-table-cards text-xs">
+          <thead><tr><th>{{t "代码" $.Lang}}</th><th>{{t "类型/值" $.Lang}}</th><th>{{t "已用/总量" $.Lang}}</th><th>{{t "状态" $.Lang}}</th></tr></thead>
+          <tbody>
+            {{range .Coupons}}
+            <tr>
+              <td class="font-mono text-xs">{{.Code}}</td>
+              <td class="text-xs">{{if eq .Type "percent"}}{{.Value}}%{{else}}¥{{money .Value}}{{end}}</td>
+              <td class="text-xs">{{.Used}}/{{.Total}}</td>
+              <td class="text-xs text-fg-muted">{{if .Enabled}}{{t "启用" $.Lang}}{{else}}{{t "停用" $.Lang}}{{end}}</td>
+            </tr>
+            {{else}}<tr><td colspan="4" class="py-6 text-center text-fg-muted">{{t "暂无" $.Lang}}</td></tr>{{end}}
+          </tbody>
+        </table>
+      </div>
+      <form method="post" action="/admin/billing/action" class="grid gap-2 border-t border-border p-4 sm:grid-cols-2">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="action" value="create_coupon">
+        <input name="code" class="gf-input" placeholder="{{t "优惠码" $.Lang}}" required>
+        <select name="type" class="gf-input"><option value="fixed">{{t "固定金额" $.Lang}}</option><option value="percent">{{t "折扣百分比" $.Lang}}</option></select>
+        <input name="value" type="number" min="1" class="gf-input" placeholder="{{t "值（分/百分比）" $.Lang}}" required>
+        <input name="min_amount_minor" type="number" min="0" class="gf-input" placeholder="{{t "最低订单金额（分）" $.Lang}}">
+        <input name="total" type="number" min="0" class="gf-input" placeholder="{{t "总量（0 不限）" $.Lang}}">
+        <input name="ends_at" type="date" class="gf-input">
+        <button class="gf-btn gf-btn-primary sm:col-span-2">{{t "创建优惠券" $.Lang}}</button>
+      </form>
+    </section>
+  </div>
+
+  <div x-show="tab === 'ops'" x-cloak class="grid gap-3 lg:grid-cols-2">
+    <section class="gf-card p-4">
+      <h3 class="text-[13px] font-semibold">{{t "余额调整" $.Lang}}</h3>
+      <form method="post" action="/admin/billing/action" class="mt-3 space-y-2">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="action" value="adjust_balance">
+        <input name="user_id" class="gf-input" placeholder="{{t "用户 ID" $.Lang}}" required>
+        <input name="amount_minor" type="number" class="gf-input" placeholder="{{t "金额（分，可为负）" $.Lang}}" required>
+        <input name="reason" class="gf-input" placeholder="{{t "原因" $.Lang}}" required>
+        <button class="gf-btn gf-btn-primary">{{t "提交调整" $.Lang}}</button>
+      </form>
+    </section>
+
+    <section class="gf-card p-4">
+      <h3 class="text-[13px] font-semibold">{{t "对账" $.Lang}}</h3>
+      <p class="mt-0.5 text-[11px] text-fg-muted">{{t "按渠道与日期比对本地订单，差异会列在下方。" $.Lang}}</p>
+      <form method="post" action="/admin/billing/action" class="mt-3 grid gap-2 sm:grid-cols-2">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="action" value="run_reconciliation">
+        <select name="channel_code" class="gf-input"><option value="alipay">{{t "支付宝" $.Lang}}</option><option value="wechat">{{t "微信支付" $.Lang}}</option><option value="balance">{{t "站内余额" $.Lang}}</option><option value="manual">{{t "人工" $.Lang}}</option></select>
+        <input name="biz_date" type="date" class="gf-input" required>
+        <button class="gf-btn gf-btn-ghost sm:col-span-2">{{t "执行对账" $.Lang}}</button>
+      </form>
+      <div class="mt-3 max-h-40 space-y-1 overflow-y-auto text-xs">
+        {{range .Runs}}
+        <div class="flex justify-between gap-2 border-b border-border py-1">
+          <span>{{.BizDate}} · {{.ChannelCode}}</span>
+          <span class="{{if gt .DiffCount 0}}text-danger{{else}}text-success{{end}}">{{t "差异" $.Lang}} {{.DiffCount}}</span>
+        </div>
+        {{else}}<div class="text-fg-muted">{{t "暂无对账记录" $.Lang}}</div>{{end}}
+      </div>
+    </section>
+  </div>
+
+  <section x-show="tab === 'orders'" x-cloak class="gf-card overflow-hidden">
+    <div class="flex items-center justify-between border-b border-border px-4 py-2.5">
+      <h3 class="text-[13px] font-semibold">{{t "订单" $.Lang}}</h3>
+      <span class="text-xs text-fg-muted">{{t "最近 100 条" $.Lang}}</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="gf-table gf-table-cards text-xs">
+        <thead><tr><th>{{t "订单号" $.Lang}}</th><th>{{t "用户" $.Lang}}</th><th>{{t "商品" $.Lang}}</th><th>{{t "金额" $.Lang}}</th><th>{{t "渠道" $.Lang}}</th><th>{{t "状态" $.Lang}}</th><th>{{t "时间" $.Lang}}</th><th>{{t "操作" $.Lang}}</th></tr></thead>
+        <tbody>
+          {{range .Orders}}
+          <tr>
+            <td class="whitespace-nowrap font-mono text-[11px]">{{.OutTradeNo}}</td>
+            <td class="font-mono text-[11px] text-fg-muted">{{.UserID}}</td>
+            <td class="text-sm">{{.ProductName}}</td>
+            <td class="whitespace-nowrap text-sm">{{if eq .Currency "USD"}}{{usd .AmountMinor}}{{else}}¥{{money .AmountMinor}}{{end}}</td>
+            <td class="text-xs text-fg-muted">{{.ChannelCode}}</td>
+            <td><span class="gf-badge {{if eq .Status "paid"}}bg-success/10 text-success{{else if eq .Status "refunded"}}bg-warning/10 text-warning{{else if eq .Status "pending"}}bg-warning/10 text-warning{{else if eq .Status "failed"}}bg-danger/10 text-danger{{else}}bg-surface-muted text-fg-muted{{end}} !px-1.5 !py-0 text-[10px]">{{if eq .Status "paid"}}{{t "已支付" $.Lang}}{{else if eq .Status "refunded"}}{{t "已退款" $.Lang}}{{else if eq .Status "pending"}}{{t "待支付" $.Lang}}{{else if eq .Status "created"}}{{t "已创建" $.Lang}}{{else if eq .Status "failed"}}{{t "失败" $.Lang}}{{else if eq .Status "closed"}}{{t "已关闭" $.Lang}}{{else}}{{.Status}}{{end}}</span></td>
+            <td class="whitespace-nowrap text-[11px] text-fg-muted">{{.CreatedAt.Format "01-02 15:04"}}</td>
+            <td class="whitespace-nowrap text-right">
+              {{if and (eq .Status "pending") (eq .ChannelCode "manual")}}
+              <form method="post" action="/admin/billing/action" class="inline">
+                <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                <input type="hidden" name="action" value="confirm_order">
+                <input type="hidden" name="order_id" value="{{.ID}}">
+                <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "确认收款" $.Lang}}</button>
+              </form>
+              {{end}}
+              {{if eq .Status "paid"}}
+              <form method="post" action="/admin/billing/refund" class="inline" data-confirm="确认退款？">
+                <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                <input type="hidden" name="order_id" value="{{.ID}}">
+                <input type="hidden" name="reason" value="管理员退款">
+                <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs text-danger">{{t "退款" $.Lang}}</button>
+              </form>
+              {{end}}
+            </td>
+          </tr>
+          {{else}}<tr><td colspan="8" class="py-8 text-center text-fg-muted">{{t "暂无订单" $.Lang}}</td></tr>{{end}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section x-show="tab === 'subscriptions'" x-cloak class="gf-card overflow-hidden">
+    <div class="border-b border-border px-4 py-2.5"><h3 class="text-[13px] font-semibold">{{t "订阅" $.Lang}}</h3></div>
+    <div class="max-h-64 overflow-auto">
+      <table class="gf-table gf-table-cards text-xs">
+        <thead><tr><th>{{t "用户" $.Lang}}</th><th>{{t "商品" $.Lang}}</th><th>{{t "状态" $.Lang}}</th><th>{{t "到期" $.Lang}}</th></tr></thead>
+        <tbody>
+          {{range .Subscriptions}}
+          <tr>
+            <td class="font-mono text-[11px] text-fg-muted">{{.UserID}}</td>
+            <td class="font-mono text-[11px]">{{.ProductID}}</td>
+            <td class="text-xs">{{.Status}}</td>
+            <td class="whitespace-nowrap text-xs text-fg-muted">{{.EndsAt.Format "2006-01-02 15:04"}}</td>
+          </tr>
+          {{else}}<tr><td colspan="4" class="py-6 text-center text-fg-muted">{{t "暂无订阅" $.Lang}}</td></tr>{{end}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{{end}}
+{{end}}

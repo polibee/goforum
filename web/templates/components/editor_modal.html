@@ -1,0 +1,37 @@
+{{define "editor_modal"}}
+<div x-show="dialogOpen" x-cloak x-on:keydown.escape.window="closeDialog" x-on:keydown.tab="trapFocus" class="fixed inset-0 z-[90] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/50" x-on:click="closeDialog"></div>
+  <div x-ref="dialogPanel" class="relative w-full max-w-md rounded-2xl border border-border bg-surface p-5 shadow-2xl" role="dialog" aria-modal="true">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <h3 class="text-base font-semibold" x-show="dialogLink">{{t "插入链接" $.Lang}}</h3>
+        <h3 class="text-base font-semibold" x-show="dialogImage">{{t "插入图片" $.Lang}}</h3>
+        <p class="mt-1 text-xs text-fg-muted" x-show="dialogImage">{{t "请粘贴图床图片链接，保存后由本站解析。" $.Lang}}</p>
+        <p class="mt-1 text-xs text-fg-muted" x-show="dialogLink">{{t "输入链接地址，可选显示文字。" $.Lang}}</p>
+      </div>
+      <button type="button" x-on:click="closeDialog" class="flex h-8 w-8 items-center justify-center rounded-full text-lg text-fg-muted hover:bg-surface-muted hover:text-fg" aria-label="{{t "关闭" $.Lang}}">×</button>
+    </div>
+
+    <div class="mt-4 space-y-3">
+      <div x-show="dialogLink">
+        <label class="gf-label" for="dialog-text">{{t "显示文字（可选）" $.Lang}}</label>
+        <input id="dialog-text" x-model="dialogText" class="gf-input" placeholder="{{t "链接文字" $.Lang}}">
+      </div>
+      <div x-show="dialogImage">
+        <label class="gf-label" for="dialog-alt">{{t "图片描述（可选）" $.Lang}}</label>
+        <input id="dialog-alt" x-model="dialogAlt" class="gf-input" placeholder="alt">
+      </div>
+      <div>
+        <label class="gf-label" for="dialog-url">{{t "链接地址" $.Lang}}</label>
+        <input id="dialog-url" x-ref="dialogUrl" x-model="dialogURL" class="gf-input font-mono text-xs" placeholder="https://..." autocomplete="off">
+      </div>
+      <p x-show="dialogError" x-cloak class="text-xs text-danger" x-text="dialogError"></p>
+    </div>
+
+    <div class="mt-5 flex justify-end gap-2">
+      <button type="button" x-on:click="closeDialog" class="gf-btn gf-btn-ghost">{{t "取消" $.Lang}}</button>
+      <button type="button" x-on:click="applyDialog" class="gf-btn gf-btn-primary">{{t "插入" $.Lang}}</button>
+    </div>
+  </div>
+</div>
+{{end}}

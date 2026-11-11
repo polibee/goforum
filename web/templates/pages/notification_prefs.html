@@ -1,0 +1,30 @@
+{{define "page"}}
+<div class="mx-auto max-w-2xl px-4 py-8">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold">{{t "通知设置" $.Lang}}</h1>
+      <p class="mt-1 text-sm text-fg-muted">{{t "选择你希望收到的站内通知类型。" $.Lang}}</p>
+    </div>
+    <a href="/notifications" class="gf-btn gf-btn-ghost">{{t "通知中心" $.Lang}}</a>
+  </div>
+
+  {{with .Data}}
+    {{if .Saved}}<div class="gf-alert-success mt-4">{{t "通知设置已保存。" $.Lang}}</div>{{end}}
+    <form method="post" action="/settings/notifications" class="gf-card mt-6 divide-y divide-border">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      {{range .Types}}
+      <label class="flex items-center justify-between gap-4 px-5 py-4">
+        <div>
+          <div class="text-sm font-medium">{{.Label}}</div>
+          <div class="text-xs text-fg-muted">{{.Key}}</div>
+        </div>
+        <input type="checkbox" name="type.{{.Key}}" value="1" {{if index $.Data.Enabled .Key}}checked{{end}} class="h-4 w-4 rounded border-border">
+      </label>
+      {{end}}
+      <div class="flex justify-end px-5 py-4">
+        <button type="submit" class="gf-btn gf-btn-primary">{{t "保存设置" $.Lang}}</button>
+      </div>
+    </form>
+  {{end}}
+</div>
+{{end}}

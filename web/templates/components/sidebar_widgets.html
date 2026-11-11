@@ -1,0 +1,14 @@
+{{define "sidebar_widgets"}}
+{{range .}}
+<div class="gf-card gf-sidebar-card">
+  <h2 class="gf-sidebar-title">{{.Title}}</h2>
+  {{if eq .Type "links"}}
+    <div class="mt-2 space-y-0.5">
+      {{range .Links}}<a href="{{.URL}}" class="gf-sidebar-text block rounded-md px-1.5 py-1 text-fg-muted hover:bg-surface-muted hover:text-fg">{{.Label}}</a>{{end}}
+    </div>
+  {{else}}
+    <p class="gf-sidebar-text mt-1.5 whitespace-pre-wrap text-fg-muted">{{.Text}}</p>
+  {{end}}
+</div>
+{{end}}
+{{end}}

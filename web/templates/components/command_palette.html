@@ -1,0 +1,32 @@
+{{define "command_palette"}}
+<div x-data="commandPalette" x-show="open" x-cloak x-on:open-command.window="show" x-on:keydown.escape.window="close" class="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-[12vh]">
+  <div class="absolute inset-0 bg-black/40" x-on:click="close"></div>
+  <div class="relative w-full max-w-xl overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl" role="dialog" aria-modal="true" x-on:keydown="keydown">
+    <div class="flex items-center gap-2 border-b border-border px-4">
+      <svg class="h-4 w-4 shrink-0 text-fg-muted" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4" stroke-linecap="round"/></svg>
+      <input x-ref="input" x-model="query" x-on:input.debounce.180ms="search" class="h-12 w-full bg-transparent text-sm text-fg placeholder:text-fg-muted focus:outline-none" placeholder="{{t "搜索主题或用户…" $.Lang}}">
+      <kbd class="hidden rounded border border-border bg-surface-muted px-1.5 py-0.5 text-[10px] text-fg-muted sm:inline">ESC</kbd>
+    </div>
+    <div class="max-h-80 overflow-y-auto p-2">
+      <template x-for="(item, idx) in results" :key="item.url">
+        <button type="button" x-on:click="go(idx)" x-on:mouseenter="active = idx" class="flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left" x-bind:class="active === idx ? 'bg-surface-muted' : ''">
+          <span x-show="item.type === 'user'" class="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[10px] font-semibold text-brand-700 dark:bg-brand-900 dark:text-brand-200">@</span>
+          <span x-show="item.type !== 'user'" class="mt-1 shrink-0 text-xs text-fg-muted">#<span x-text="item.number"></span></span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-medium text-fg" x-text="item.title"></span>
+            <span class="mt-0.5 block truncate text-[11px] text-fg-muted" x-text="item.type === 'user' ? ('TL' + item.trust_level) : (item.category_name || item.excerpt || '')"></span>
+          </span>
+          <span x-show="item.type !== 'user'" class="mt-0.5 shrink-0 text-[11px] text-fg-muted" x-text="item.reply_count + ' {{t "回复" $.Lang}}'"></span>
+        </button>
+      </template>
+      <div x-show="loading" class="px-3 py-6 text-center text-xs text-fg-muted">{{t "搜索中…" $.Lang}}</div>
+      <div x-show="!loading && query && results.length === 0" class="px-3 py-6 text-center text-xs text-fg-muted">{{t "没有匹配的主题或用户" $.Lang}}</div>
+      <div x-show="!query" class="px-3 py-6 text-center text-xs text-fg-muted">{{t "输入关键词搜索主题或用户" $.Lang}}</div>
+    </div>
+    <div class="flex items-center justify-between border-t border-border px-4 py-2 text-[10px] text-fg-muted">
+      <span>↑↓ {{t "选择" $.Lang}} · Enter {{t "打开" $.Lang}}</span>
+      <span>Ctrl / ⌘ + K</span>
+    </div>
+  </div>
+</div>
+{{end}}

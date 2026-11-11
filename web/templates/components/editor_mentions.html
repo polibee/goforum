@@ -1,0 +1,16 @@
+{{define "editor_mentions"}}
+<div x-show="mentionOpen" x-cloak class="absolute bottom-full left-0 z-40 mb-1 w-64 overflow-hidden rounded-lg border border-border bg-surface shadow-xl">
+  <div class="border-b border-border px-3 py-1.5 text-[10px] font-medium text-fg-muted">{{t "@ 提及用户" .Lang}}</div>
+  <template x-for="(mention, idx) in mentions" :key="mention.username">
+    <button type="button" x-on:mousedown.prevent="selectMention(idx)" x-on:click="selectMention(idx)" x-on:mouseenter="mentionIndex = idx" x-bind:class="mentionIndex === idx ? 'bg-surface-muted' : ''" class="flex w-full items-center gap-2 px-3 py-2 text-left">
+      <img x-show="mention.avatar_url" x-bind:src="mention.avatar_url" alt="" class="h-6 w-6 rounded-full object-cover">
+      <span x-show="!mention.avatar_url" class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-100 text-[10px] font-semibold text-brand-700 dark:bg-brand-900 dark:text-brand-200" x-text="mention.username.substring(0, 1)"></span>
+      <span class="min-w-0 flex-1 truncate text-xs font-medium" x-text="mention.username"></span>
+      <span class="shrink-0 text-[10px] text-fg-muted">TL<span x-text="mention.trust_level"></span></span>
+    </button>
+  </template>
+  <div x-show="mentionLoading" class="px-3 py-3 text-center text-[11px] text-fg-muted">{{t "搜索中…" .Lang}}</div>
+  <div x-show="!mentionLoading && mentions.length === 0" class="px-3 py-3 text-center text-[11px] text-fg-muted">{{t "没有匹配的用户" .Lang}}</div>
+  <div class="border-t border-border px-3 py-1 text-[10px] text-fg-muted">↑↓ {{t "选择" .Lang}} · Enter {{t "插入" .Lang}}</div>
+</div>
+{{end}}

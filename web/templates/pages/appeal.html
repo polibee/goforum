@@ -1,0 +1,25 @@
+{{define "page"}}
+<div class="mx-auto max-w-xl px-4 py-10">
+  {{with .Data}}
+  <h1 class="text-2xl font-semibold">{{t "账号申诉" $.Lang}}</h1>
+  <p class="mt-1 text-sm text-fg-muted">{{t "如果账号被禁言或封禁，可以在这里提交申诉。请使用被封禁账号的用户名。" $.Lang}}</p>
+
+  {{if .Submitted}}<div class="gf-alert-success mt-4">{{t "申诉已提交，版主会尽快处理。" $.Lang}}</div>{{end}}
+  {{if .Error}}<div class="gf-alert-danger mt-4">{{.Error}}</div>{{end}}
+
+  <form method="post" action="/appeal" class="gf-card mt-5 space-y-4 p-5">
+    <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+    <div>
+      <label class="gf-label" for="username">{{t "用户名" $.Lang}}</label>
+      <input id="username" name="username" class="gf-input" value="{{.Username}}" required autocomplete="username">
+    </div>
+    <div>
+      <label class="gf-label" for="reason">{{t "申诉说明" $.Lang}}</label>
+      <textarea id="reason" name="reason" rows="6" maxlength="1000" class="gf-input" placeholder="{{t "请说明情况，最多 1000 字。" $.Lang}}" required>{{.Reason}}</textarea>
+    </div>
+    <button class="gf-btn gf-btn-primary w-full">{{t "提交申诉" $.Lang}}</button>
+  </form>
+  <p class="mt-4 text-center text-xs text-fg-muted"><a href="/login" class="hover:text-fg">{{t "返回登录" $.Lang}}</a></p>
+  {{end}}
+</div>
+{{end}}

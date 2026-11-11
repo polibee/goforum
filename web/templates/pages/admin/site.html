@@ -1,0 +1,165 @@
+{{define "nav_row"}}
+<tr>
+  <td class="text-xs text-fg-muted">{{if eq .Row.Location "header"}}{{t "页眉" $.Lang}}{{else}}{{t "页脚" $.Lang}}{{end}}</td>
+  <td class="text-sm">{{.Row.Label}}</td>
+  <td class="font-mono text-xs text-fg-muted">{{.Row.URL}}</td>
+  <td class="text-xs text-fg-muted">{{if .Row.Permission}}{{.Row.Permission}}{{else}}—{{end}}</td>
+  <td class="text-sm">{{.Row.Sort}}</td>
+  <td><span class="gf-badge {{if .Row.Enabled}}bg-success/10 text-success{{else}}bg-surface-muted text-fg-muted{{end}}">{{if .Row.Enabled}}{{t "启用" $.Lang}}{{else}}{{t "停用" $.Lang}}{{end}}</span></td>
+  <td class="whitespace-nowrap text-right">
+    <a href="/admin/site?nav={{.Row.ID}}" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "编辑" $.Lang}}</a>
+    <form method="post" action="/admin/site/nav/action" class="inline" data-confirm="确认删除？">
+      <input type="hidden" name="_csrf" value="{{.CSRF}}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{.Row.ID}}">
+      <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs text-danger">{{t "删除" $.Lang}}</button>
+    </form>
+  </td>
+</tr>
+{{end}}
+
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-6">
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+  <div>
+    <h2 class="text-lg font-semibold">{{t "页面与导航" $.Lang}}</h2>
+    <p class="mt-1 text-sm text-fg-muted">{{t "静态页（关于/隐私/条款等）与顶部、页脚导航。" $.Lang}}</p>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-2">
+    <section class="gf-card overflow-hidden">
+      <div class="border-b border-border px-5 py-3"><h3 class="text-sm font-semibold">{{t "静态页面" $.Lang}}</h3></div>
+      <div class="max-h-72 overflow-auto">
+        <table class="gf-table gf-table-cards">
+          <thead><tr><th>{{t "标题" $.Lang}}</th><th>Slug</th><th>{{t "状态" $.Lang}}</th><th></th></tr></thead>
+          <tbody>
+            {{range .Pages}}
+            <tr>
+              <td class="text-sm">{{.Title}}</td>
+              <td class="font-mono text-xs text-fg-muted">/{{.Slug}}</td>
+              <td><span class="gf-badge {{if eq .Status "published"}}bg-success/10 text-success{{else}}bg-surface-muted text-fg-muted{{end}}">{{if eq .Status "published"}}{{t "已发布" $.Lang}}{{else}}{{t "草稿" $.Lang}}{{end}}</span></td>
+              <td class="text-right"><a href="/admin/site?edit={{.ID}}" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "编辑" $.Lang}}</a></td>
+            </tr>
+            {{else}}<tr><td colspan="4" class="py-6 text-center text-fg-muted">{{t "暂无页面" $.Lang}}</td></tr>{{end}}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="gf-card p-5">
+      <h3 class="text-sm font-semibold">{{if .Editing}}{{t "编辑页面" $.Lang}}{{else}}{{t "新建页面" $.Lang}}{{end}}</h3>
+      <form method="post" action="/admin/site/pages" class="mt-3 space-y-2">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        {{if .Editing}}<input type="hidden" name="id" value="{{.Editing.ID}}">{{end}}
+        <div class="grid gap-2 sm:grid-cols-2">
+          <input name="title" class="gf-input" placeholder="{{t "标题" $.Lang}}" value="{{if .Editing}}{{.Editing.Title}}{{end}}" required>
+          <input name="slug" class="gf-input" placeholder="{{t "slug（小写字母/数字/连字符）" $.Lang}}" value="{{if .Editing}}{{.Editing.Slug}}{{end}}" required>
+        </div>
+        <textarea name="body" rows="8" class="gf-input font-mono text-xs" placeholder="{{t "Markdown 正文" $.Lang}}">{{if .Editing}}{{.Editing.BodyRaw}}{{end}}</textarea>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <input name="seo_title" class="gf-input" placeholder="{{t "SEO 标题（可选）" $.Lang}}" value="{{if .Editing}}{{.Editing.SEOTitle}}{{end}}">
+          <input name="seo_description" class="gf-input" placeholder="{{t "SEO 描述（可选）" $.Lang}}" value="{{if .Editing}}{{.Editing.SEODescription}}{{end}}">
+        </div>
+        <select name="status" class="gf-input">
+          <option value="published" {{if and .Editing (eq .Editing.Status "published")}}selected{{end}}>{{t "发布" $.Lang}}</option>
+          <option value="draft" {{if and .Editing (eq .Editing.Status "draft")}}selected{{end}}>{{t "草稿" $.Lang}}</option>
+        </select>
+        <div class="flex gap-2">
+          <button class="gf-btn gf-btn-primary">{{if .Editing}}{{t "保存修改" $.Lang}}{{else}}{{t "创建页面" $.Lang}}{{end}}</button>
+          {{if .Editing}}<a href="/admin/site" class="gf-btn gf-btn-ghost">{{t "取消" $.Lang}}</a>{{end}}
+        </div>
+      </form>
+      {{if .Editing}}
+      <form method="post" action="/admin/site/pages" class="mt-3 border-t border-border pt-3" data-confirm="确认删除该页面？">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="id" value="{{.Editing.ID}}">
+        <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs text-danger">{{t "删除页面" $.Lang}}</button>
+      </form>
+      {{end}}
+    </section>
+  </div>
+
+  <section class="gf-card p-5">
+    <h3 class="text-sm font-semibold">{{t "导航菜单" $.Lang}}</h3>
+    <p class="mt-1 text-xs text-fg-muted">{{t "管理页眉与页脚链接。名称和链接必填；权限留空表示所有人可见；排序数字越小越靠前。添加自定义菜单后会替换前台内置导航，删除全部后恢复内置导航。" $.Lang}}</p>
+    <form method="post" action="/admin/site/nav/action" class="mt-4 grid gap-2 sm:grid-cols-6">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      {{if .EditingNav}}<input type="hidden" name="id" value="{{.EditingNav.ID}}">{{end}}
+      <input type="hidden" name="action" value="{{if .EditingNav}}update{{else}}create{{end}}">
+      <select name="location" class="gf-input">
+        <option value="header" {{if and .EditingNav (eq .EditingNav.Location "header")}}selected{{end}}>{{t "页眉" $.Lang}}</option>
+        <option value="footer" {{if and .EditingNav (eq .EditingNav.Location "footer")}}selected{{end}}>{{t "页脚" $.Lang}}</option>
+      </select>
+      <input name="label" class="gf-input" placeholder="{{t "名称" $.Lang}}" value="{{if .EditingNav}}{{.EditingNav.Label}}{{end}}" required>
+      <input name="url" class="gf-input sm:col-span-2" placeholder="{{t "/path 或 https://..." $.Lang}}" value="{{if .EditingNav}}{{.EditingNav.URL}}{{end}}" required>
+      <input name="permission" class="gf-input" placeholder="{{t "权限（可选）" $.Lang}}" value="{{if .EditingNav}}{{.EditingNav.Permission}}{{end}}">
+      <input name="section" class="gf-input" placeholder="{{t "页脚分组（可选）" $.Lang}}" value="{{if .EditingNav}}{{.EditingNav.Section}}{{end}}">
+      <input name="sort" type="number" class="gf-input" placeholder="{{t "排序" $.Lang}}" value="{{if .EditingNav}}{{.EditingNav.Sort}}{{end}}">
+      <label class="flex items-center gap-2 text-xs sm:col-span-4"><input type="checkbox" name="enabled" value="1" {{if .EditingNav}}{{if .EditingNav.Enabled}}checked{{end}}{{else}}checked{{end}} class="h-4 w-4"> {{t "启用" $.Lang}}</label>
+      <div class="flex gap-2 sm:col-span-2">
+        <button class="gf-btn gf-btn-primary flex-1">{{if .EditingNav}}{{t "保存修改" $.Lang}}{{else}}{{t "添加菜单" $.Lang}}{{end}}</button>
+        {{if .EditingNav}}<a href="/admin/site" class="gf-btn gf-btn-ghost">{{t "取消" $.Lang}}</a>{{end}}
+      </div>
+    </form>
+
+    <div class="mt-5 overflow-x-auto">
+      <table class="gf-table gf-table-cards">
+        <thead><tr><th>{{t "位置" $.Lang}}</th><th>{{t "名称" $.Lang}}</th><th>{{t "链接" $.Lang}}</th><th>{{t "权限" $.Lang}}</th><th>{{t "排序" $.Lang}}</th><th>{{t "状态" $.Lang}}</th><th>{{t "操作" $.Lang}}</th></tr></thead>
+        <tbody>
+          {{range .NavHeader}}{{template "nav_row" (dict "Row" . "CSRF" $.CSRF)}}{{end}}
+          {{range .NavFooter}}{{template "nav_row" (dict "Row" . "CSRF" $.CSRF)}}{{end}}
+          {{if and (not .NavHeader) (not .NavFooter)}}
+          <tr><td colspan="7" class="py-6 text-center text-fg-muted">{{t "暂无自定义菜单，前台使用内置默认导航。" $.Lang}}</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="gf-card p-5">
+    <h3 class="text-sm font-semibold">{{t "侧边栏卡片" $.Lang}}</h3>
+    <p class="mt-1 text-xs text-fg-muted">{{t "卡片按排序显示在论坛首页右侧。类型选“链接列表”时，正文每行填写“名称|链接”；类型选“文本”时直接填写文字。" $.Lang}}</p>
+    <form method="post" action="/admin/site/widget/action" class="mt-4 grid gap-2 sm:grid-cols-5">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      {{if .EditingWidget}}<input type="hidden" name="id" value="{{.EditingWidget.ID}}">{{end}}
+      <input type="hidden" name="action" value="{{if .EditingWidget}}update{{else}}create{{end}}">
+      <input name="title" class="gf-input sm:col-span-2" placeholder="{{t "卡片标题" $.Lang}}" value="{{if .EditingWidget}}{{.EditingWidget.Title}}{{end}}" required>
+      <select name="type" class="gf-input">
+        <option value="links" {{if and .EditingWidget (eq .EditingWidget.Type "links")}}selected{{end}}>{{t "链接列表" $.Lang}}</option>
+        <option value="text" {{if and .EditingWidget (eq .EditingWidget.Type "text")}}selected{{end}}>{{t "文本" $.Lang}}</option>
+      </select>
+      <input name="sort" type="number" class="gf-input" placeholder="{{t "排序" $.Lang}}" value="{{if .EditingWidget}}{{.EditingWidget.Sort}}{{end}}">
+      <label class="flex items-center gap-2 text-xs"><input type="checkbox" name="enabled" value="1" {{if .EditingWidget}}{{if .EditingWidget.Enabled}}checked{{end}}{{else}}checked{{end}} class="h-4 w-4"> {{t "启用" $.Lang}}</label>
+      <textarea name="body" rows="4" class="gf-input font-mono text-xs sm:col-span-4" placeholder="{{t "新手指南|/about&#10;赞助我们|/pricing" $.Lang}}">{{if .EditingWidget}}{{.EditingWidget.Body}}{{end}}</textarea>
+      <div class="flex flex-col gap-2">
+        <button class="gf-btn gf-btn-primary">{{if .EditingWidget}}{{t "保存修改" $.Lang}}{{else}}{{t "添加卡片" $.Lang}}{{end}}</button>
+        {{if .EditingWidget}}<a href="/admin/site" class="gf-btn gf-btn-ghost text-center">{{t "取消" $.Lang}}</a>{{end}}
+      </div>
+    </form>
+
+    <div class="mt-5 overflow-x-auto">
+      <table class="gf-table gf-table-cards">
+        <thead><tr><th>{{t "标题" $.Lang}}</th><th>{{t "类型" $.Lang}}</th><th>{{t "排序" $.Lang}}</th><th>{{t "状态" $.Lang}}</th><th>{{t "操作" $.Lang}}</th></tr></thead>
+        <tbody>
+          {{range .Widgets}}
+          <tr>
+            <td class="text-sm">{{.Title}}</td>
+            <td class="text-xs text-fg-muted">{{if eq .Type "links"}}{{t "链接列表" $.Lang}}{{else}}{{t "文本" $.Lang}}{{end}}</td>
+            <td class="text-sm">{{.Sort}}</td>
+            <td><span class="gf-badge {{if .Enabled}}bg-success/10 text-success{{else}}bg-surface-muted text-fg-muted{{end}}">{{if .Enabled}}{{t "启用" $.Lang}}{{else}}{{t "停用" $.Lang}}{{end}}</span></td>
+            <td class="text-right">
+              <a href="/admin/site?widget={{.ID}}" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "编辑" $.Lang}}</a>
+              <form method="post" action="/admin/site/widget/action" class="inline" data-confirm="确认删除？">
+                <input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{.ID}}">
+                <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs text-danger">{{t "删除" $.Lang}}</button>
+              </form>
+            </td>
+          </tr>
+          {{else}}<tr><td colspan="5" class="py-6 text-center text-fg-muted">{{t "暂无侧边栏卡片" $.Lang}}</td></tr>{{end}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{{end}}
+{{end}}

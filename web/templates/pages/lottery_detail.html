@@ -1,0 +1,44 @@
+{{define "page"}}
+<div class="mx-auto max-w-3xl px-4 py-8">
+  {{with .Data}}{{with .View}}
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold">{{.Lottery.Title}}</h1>
+      <p class="mt-1 text-sm text-fg-muted">{{.Lottery.Description}}</p>
+    </div>
+    <a href="/lotteries" class="gf-btn gf-btn-ghost">{{t "返回列表" $.Lang}}</a>
+  </div>
+
+  {{if $.Data.Error}}<div class="gf-alert-danger mt-4">{{t $.Data.Error $.Lang}}</div>{{end}}
+
+  <div class="gf-card mt-4 p-5">
+    <div class="grid gap-3 sm:grid-cols-3">
+      <div><div class="text-xs text-fg-muted">{{t "奖品" $.Lang}}</div><div class="mt-1 text-sm font-medium">{{.Lottery.Prize}}</div></div>
+      <div><div class="text-xs text-fg-muted">{{t "名额" $.Lang}}</div><div class="mt-1 text-sm">{{.Lottery.WinnerCount}}</div></div>
+      <div><div class="text-xs text-fg-muted">{{t "参与消耗" $.Lang}}</div><div class="mt-1 text-sm">{{.Lottery.EntryCost}} {{t "积分" $.Lang}}</div></div>
+      <div><div class="text-xs text-fg-muted">{{t "参与人数" $.Lang}}</div><div class="mt-1 text-sm">{{.EntryCount}}</div></div>
+      <div><div class="text-xs text-fg-muted">{{t "状态" $.Lang}}</div><div class="mt-1 text-sm">{{.Lottery.Status}}</div></div>
+      <div><div class="text-xs text-fg-muted">{{t "截止" $.Lang}}</div><div class="mt-1 text-sm">{{.Lottery.EndsAt.Format "2006-01-02 15:04"}}</div></div>
+    </div>
+
+    {{if eq .Lottery.Status "open"}}
+      {{if .UserEntered}}
+        <div class="gf-alert-success mt-4">{{t "你已参与本次抽奖。" $.Lang}}</div>
+      {{else}}
+        <form method="post" action="/lotteries/{{.Lottery.ID}}/join" class="mt-4">
+          <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+          <button class="gf-btn gf-btn-primary">{{t "参与抽奖" $.Lang}}</button>
+        </form>
+      {{end}}
+    {{else if eq .Lottery.Status "drawn"}}
+      <div class="mt-4">
+        <div class="text-sm font-semibold">{{t "中奖者" $.Lang}}</div>
+        <ul class="mt-2 space-y-1 text-sm">
+          {{range .Winners}}<li class="font-mono">{{.}}</li>{{else}}<li class="text-fg-muted">{{t "无" $.Lang}}</li>{{end}}
+        </ul>
+      </div>
+    {{end}}
+  </div>
+  {{end}}{{end}}
+</div>
+{{end}}

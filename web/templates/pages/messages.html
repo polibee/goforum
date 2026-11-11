@@ -1,0 +1,78 @@
+{{define "page"}}
+<div class="mx-auto max-w-4xl px-4 py-8">
+  {{with .Data}}
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold">{{t "私信" $.Lang}}</h1>
+      <p class="mt-1 text-sm text-fg-muted">{{t "共" $.Lang}} {{.Total}} {{t "个会话。" $.Lang}}</p>
+    </div>
+  </div>
+
+  {{if .Error}}<div class="gf-alert-danger mt-4">{{t .Error $.Lang}}</div>{{end}}
+
+  <form method="post" action="/messages" class="gf-card mt-5 p-4">
+    <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+    <div class="flex flex-col gap-2 sm:flex-row">
+      <div class="relative flex-1">
+        <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="7" r="2.6"/><path d="M3.5 16c.5-2.6 2.2-4 4.5-4s4 1.4 4.5 4" stroke-linecap="round"/></svg>
+        <input id="username" name="username" class="gf-input h-10 pl-9" placeholder="{{t "输入用户名，开始私信" $.Lang}}" aria-label="{{t "对方用户名" $.Lang}}" required>
+      </div>
+      <button class="gf-btn gf-btn-primary h-10 shrink-0">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg>
+        {{t "发起私信" $.Lang}}
+      </button>
+    </div>
+  </form>
+
+  <form method="get" action="/messages" class="mt-4 flex gap-2">
+    <div class="relative flex-1">
+      <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4" stroke-linecap="round"/></svg>
+      <input name="q" value="{{.Query}}" class="gf-input h-10 pl-9" placeholder="{{t "搜索用户名或消息" $.Lang}}">
+    </div>
+    <button class="gf-btn gf-btn-ghost h-10 shrink-0 border border-border bg-surface">{{t "搜索" $.Lang}}</button>
+  </form>
+  <div class="mt-2 flex items-center gap-1.5 text-xs">
+    <a href="/messages{{if .Query}}?q={{urlquery .Query}}{{end}}" class="rounded-full border px-3 py-1.5 transition {{if not .UnreadOnly}}border-brand-600 bg-brand-600 text-white{{else}}border-border bg-surface text-fg-muted hover:text-fg{{end}}">{{t "全部" $.Lang}}</a>
+    <a href="/messages?unread=1{{if .Query}}&q={{urlquery .Query}}{{end}}" class="rounded-full border px-3 py-1.5 transition {{if .UnreadOnly}}border-brand-600 bg-brand-600 text-white{{else}}border-border bg-surface text-fg-muted hover:text-fg{{end}}">{{t "未读" $.Lang}}</a>
+  </div>
+
+  <div class="mt-4 overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+    <div class="divide-y divide-border">
+      {{range .Rows}}
+      <a href="/messages/{{.ID}}" class="group flex items-center gap-3 px-4 py-3.5 transition hover:bg-surface-muted {{if gt .Unread 0}}bg-brand-50/40{{end}}">
+        <div class="relative shrink-0">
+          {{template "avatar" (dict "Name" .OtherName "URL" .OtherAvatarURL "Class" "h-10 w-10 text-sm")}}
+          {{if gt .Unread 0}}<span class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-danger ring-2 ring-surface"></span>{{end}}
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="truncate text-sm font-medium">{{if .OtherName}}{{.OtherName}}{{else}}{{t "会话" $.Lang}}{{end}}</span>
+            {{if gt .Unread 0}}<span class="gf-badge bg-danger/10 text-danger">{{.Unread}}</span>{{end}}
+            <span class="ml-auto shrink-0 text-[11px] text-fg-muted">{{if .LastMessageAt}}{{.LastMessageAt.Format "01-02 15:04"}}{{end}}</span>
+          </div>
+          <p class="mt-0.5 truncate text-xs text-fg-muted">{{.LastExcerpt}}</p>
+        </div>
+        <svg class="h-4 w-4 shrink-0 text-fg-muted/40 transition group-hover:text-fg-muted" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m7.5 4.5 5.5 5.5-5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      {{else}}
+      <div class="px-6 py-14 text-center">
+        <div class="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-surface-muted text-fg-muted">
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5.5h14v9H3v-9Z" stroke-linejoin="round"/><path d="m3.5 6 6.5 5 6.5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="mt-3 text-sm font-medium">{{if .Query}}{{t "没有匹配的会话" $.Lang}}{{else if .UnreadOnly}}{{t "没有未读会话" $.Lang}}{{else}}{{t "还没有私信" $.Lang}}{{end}}</p>
+        <p class="mt-1 text-xs text-fg-muted">{{if .Query}}{{t "换个关键词试试。" $.Lang}}{{else if .UnreadOnly}}{{t "所有私信都已读。" $.Lang}}{{else}}{{t "在上方输入用户名，开始第一次对话。" $.Lang}}{{end}}</p>
+      </div>
+      {{end}}
+    </div>
+  </div>
+
+  {{if gt .TotalPages 1}}
+  <nav class="mt-6 flex items-center justify-center gap-3">
+    {{if gt .Page 1}}<a href="/messages?page={{sub .Page 1}}{{if .Query}}&q={{urlquery .Query}}{{end}}{{if .UnreadOnly}}&unread=1{{end}}" class="gf-btn gf-btn-ghost">{{t "上一页" $.Lang}}</a>{{end}}
+    <span class="text-sm text-fg-muted">{{t "第" $.Lang}} {{.Page}} / {{.TotalPages}} {{t "页" $.Lang}}</span>
+    {{if lt .Page .TotalPages}}<a href="/messages?page={{add .Page 1}}{{if .Query}}&q={{urlquery .Query}}{{end}}{{if .UnreadOnly}}&unread=1{{end}}" class="gf-btn gf-btn-ghost">{{t "下一页" $.Lang}}</a>{{end}}
+  </nav>
+  {{end}}
+  {{end}}
+</div>
+{{end}}

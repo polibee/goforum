@@ -1,0 +1,153 @@
+{{define "page"}}
+<div class="mx-auto max-w-7xl px-4 py-6">
+  <div class="flex flex-col gap-6 lg:flex-row">
+    <aside class="hidden w-14 shrink-0 xl:block">
+      <div class="sticky top-20 flex flex-col items-center gap-2">
+        <a href="/" class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-[10px] font-semibold text-white" title="{{t "全部" $.Lang}}">All</a>
+        {{range .Data.Categories}}
+        <a href="/c/{{.Slug}}" title="{{.Name}}" class="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-xs font-semibold text-fg-muted hover:border-brand-300 hover:text-fg">{{printf "%.1s" .Name}}</a>
+        {{end}}
+      </div>
+    </aside>
+    <div class="min-w-0 flex-1">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 class="text-2xl font-semibold">{{t .Data.Heading $.Lang}}</h1>
+          <p class="mt-1 text-sm text-fg-muted">{{t .Data.Subheading $.Lang}}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="gf-badge gf-badge-neutral">{{.Data.Total}} {{if eq .Data.SearchType "user"}}{{t "个用户" $.Lang}}{{else}}{{t "个主题" $.Lang}}{{end}}</span>
+          {{if .User}}{{if .Data.FollowType}}
+          <button type="button" x-data="follow" data-type="{{.Data.FollowType}}" data-id="{{.Data.FollowID}}" data-active="{{if .Data.Following}}1{{else}}0{{end}}" x-on:click="toggle" class="gf-btn gf-btn-ghost">
+            <span x-show="idle">{{t "关注" $.Lang}}</span><span x-show="active">{{t "已关注" $.Lang}}</span>
+          </button>
+          {{end}}{{end}}
+          {{if .User}}<a href="/new" class="gf-btn gf-btn-primary shrink-0 shadow-sm transition hover:shadow-md"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg><span>{{t "发布主题" $.Lang}}</span></a>{{end}}
+        </div>
+      </div>
+
+      {{if not .Data.Query}}
+      <div class="mt-4 flex flex-wrap items-center gap-3 text-xs">
+        {{if eq .Data.Feed "following"}}
+        <a href="/" class="text-fg-muted hover:text-fg">{{t "最新" $.Lang}}</a>
+        <a href="/?sort=hot" class="text-fg-muted hover:text-fg">{{t "热门" $.Lang}}</a>
+        <a href="/?feed=following" class="font-medium text-fg">{{t "关注" $.Lang}}</a>
+        {{else}}
+        <a href="{{.Data.BasePath}}" class="{{if or (eq .Data.Sort "") (eq .Data.Sort "latest")}}font-medium text-fg{{else}}text-fg-muted hover:text-fg{{end}}">{{t "最新" $.Lang}}</a>
+        <a href="{{.Data.BasePath}}?sort=hot" class="{{if eq .Data.Sort "hot"}}font-medium text-fg{{else}}text-fg-muted hover:text-fg{{end}}">{{t "热门" $.Lang}}</a>
+        {{if .User}}<a href="/?feed=following" class="text-fg-muted hover:text-fg">{{t "关注" $.Lang}}</a>{{end}}
+        {{end}}
+      </div>
+      {{end}}
+
+      <form action="/search" method="get" class="relative mt-4">
+        <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4" stroke-linecap="round"/></svg>
+        <input name="q" value="{{.Data.Query}}" class="gf-input h-10 pl-9 pr-24" placeholder="{{if eq .Data.SearchType "user"}}{{t "搜索用户…" $.Lang}}{{else}}{{t "搜索主题…" $.Lang}}{{end}}">
+        <button type="submit" class="gf-btn gf-btn-primary absolute right-1 top-1/2 h-8 -translate-y-1/2 !rounded-md !px-3 !py-0 text-xs">{{t "搜索" $.Lang}}</button>
+      </form>
+
+      {{if .Data.Query}}
+      <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-1.5">
+          <a href="/search?q={{urlquery .Data.Query}}{{if .Data.Sort}}&sort={{urlquery .Data.Sort}}{{end}}" class="rounded-full border px-3 py-1.5 {{if not .Data.SearchType}}border-brand-600 bg-brand-600 text-white{{else}}border-border text-fg-muted hover:text-fg{{end}}">{{t "全部" $.Lang}}</a>
+          <a href="/search?q={{urlquery .Data.Query}}&type=topic{{if .Data.Sort}}&sort={{urlquery .Data.Sort}}{{end}}" class="rounded-full border px-3 py-1.5 {{if eq .Data.SearchType "topic"}}border-brand-600 bg-brand-600 text-white{{else}}border-border text-fg-muted hover:text-fg{{end}}">{{t "主题" $.Lang}}</a>
+          <a href="/search?q={{urlquery .Data.Query}}&type=post{{if .Data.Sort}}&sort={{urlquery .Data.Sort}}{{end}}" class="rounded-full border px-3 py-1.5 {{if eq .Data.SearchType "post"}}border-brand-600 bg-brand-600 text-white{{else}}border-border text-fg-muted hover:text-fg{{end}}">{{t "回复" $.Lang}}</a>
+          <a href="/search?q={{urlquery .Data.Query}}&type=user" class="rounded-full border px-3 py-1.5 {{if eq .Data.SearchType "user"}}border-brand-600 bg-brand-600 text-white{{else}}border-border text-fg-muted hover:text-fg{{end}}">{{t "用户" $.Lang}}</a>
+        </div>
+        {{if ne .Data.SearchType "user"}}
+        <div class="flex items-center gap-1.5">
+          <span class="text-fg-muted">{{t "排序" $.Lang}}</span>
+          <a href="/search?q={{urlquery .Data.Query}}{{if .Data.SearchType}}&type={{.Data.SearchType}}{{end}}" class="rounded-full border px-2.5 py-1 {{if ne .Data.Sort "latest"}}border-brand-600 text-brand-600{{else}}border-border text-fg-muted hover:text-fg{{end}}">{{t "相关度" $.Lang}}</a>
+          <a href="/search?q={{urlquery .Data.Query}}{{if .Data.SearchType}}&type={{.Data.SearchType}}{{end}}&sort=latest" class="rounded-full border px-2.5 py-1 {{if eq .Data.Sort "latest"}}border-brand-600 text-brand-600{{else}}border-border text-fg-muted hover:text-fg{{end}}">{{t "最新" $.Lang}}</a>
+        </div>
+        {{end}}
+      </div>
+      <div x-data="searchRecent" data-query="{{.Data.Query}}" x-show="items.length" x-cloak class="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-fg-muted">
+        <span>{{t "最近搜索" $.Lang}}</span>
+        <template x-for="item in items" :key="item">
+          <a x-bind:href="href(item)" class="rounded-full border border-border px-2 py-1 hover:text-fg" x-text="item"></a>
+        </template>
+        <button type="button" x-on:click="clear" class="ml-1 hover:text-fg">{{t "清除" $.Lang}}</button>
+      </div>
+      {{end}}
+
+      {{if ne .Data.SearchType "user"}}
+      <div class="mt-4 flex flex-wrap gap-2">
+        <a href="/" class="gf-badge {{if not .Data.ActiveCategory}}bg-brand-600 text-white{{else}}gf-badge-neutral{{end}}">{{t "全部" $.Lang}}</a>
+        {{range .Data.Categories}}
+          <a href="/c/{{.Slug}}" class="gf-badge {{if and $.Data.ActiveCategory (eq $.Data.ActiveCategory.ID .ID)}}bg-brand-600 text-white{{else}}gf-badge-neutral{{end}}">{{.Name}}</a>
+        {{end}}
+      </div>
+      {{end}}
+
+      {{if $.AdSlots}}{{range index $.AdSlots "home_top"}}<div class="mt-4">{{template "ad_slot" (dict "Ad" . "Lang" $.Lang)}}</div>{{end}}{{end}}
+      <div class="mt-5 space-y-3">
+        {{if eq .Data.SearchType "user"}}
+        <div class="grid gap-2 sm:grid-cols-2">
+          {{range .Data.Users}}
+          <a href="/u/{{.Username}}" class="gf-card flex items-center gap-3 p-4 transition hover:border-brand-300 hover:shadow-sm">
+            {{template "avatar" (dict "Name" .Username "URL" .AvatarURL "Class" "h-10 w-10 text-sm")}}
+            <div class="min-w-0">
+              <div class="truncate text-sm font-medium">{{.Username}}</div>
+              <div class="mt-0.5 truncate text-[11px] text-fg-muted">{{if and .Bio .BioEnabled}}{{bioExcerpt .Bio}}{{else}}TL{{.TrustLevel}}{{end}}</div>
+            </div>
+          </a>
+          {{else}}
+          <div class="gf-card p-8 text-center text-sm text-fg-muted sm:col-span-2">{{t "没有匹配的用户" $.Lang}}</div>
+          {{end}}
+        </div>
+        {{else}}
+        <div class="gf-card divide-y divide-border overflow-hidden">
+        {{range .Data.Topics}}
+          <article class="group flex gap-3 px-4 py-3 transition-colors hover:bg-surface-muted/50">
+            {{template "avatar" (dict "Name" .AuthorName "URL" .AuthorAvatar "Class" "h-8 w-8 text-[11px] mt-0.5 hidden sm:flex")}}
+            <div class="min-w-0 flex-1">
+              <div class="flex items-start gap-2">
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    {{if .Unread}}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-500" title="{{t "未读" $.Lang}}" aria-label="{{t "未读" $.Lang}}"></span>{{end}}
+                    {{if .IsPinned}}<span class="gf-badge bg-warning/10 !px-1.5 !py-0 text-[10px] text-warning">{{t "置顶" $.Lang}}</span>{{end}}
+                    {{if .IsFeatured}}<span class="gf-badge bg-brand-50 !px-1.5 !py-0 text-[10px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "精华" $.Lang}}</span>{{end}}
+                    {{if .IsLocked}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{t "已锁定" $.Lang}}</span>{{end}}
+                    <a href="/t/{{.Number}}" class="min-w-0 truncate text-[14px] font-medium leading-snug text-fg transition group-hover:text-brand-600">{{if $.Data.Query}}{{highlight .Title $.Data.Query}}{{else}}{{.Title}}{{end}}</a>
+                  </div>
+                  {{if .Excerpt}}<p class="mt-0.5 line-clamp-1 text-[12px] leading-snug text-fg-muted/90">{{if $.Data.Query}}{{highlight .Excerpt $.Data.Query}}{{else}}{{.Excerpt}}{{end}}</p>{{end}}
+                  <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-fg-muted">
+                    <a href="/c/{{.CategorySlug}}" class="rounded bg-surface-muted px-1.5 py-0.5 text-[10px] hover:text-fg">{{.CategoryName}}</a>
+                    <a href="/u/{{.AuthorName}}" class="hover:text-fg">{{.AuthorName}}</a>
+                    <span class="text-fg-muted/60">·</span>
+                    <time class="tabular-nums" title="{{.CreatedAt.Format "2006-01-02 15:04"}}">{{.CreatedAt.Format "01-02 15:04"}}</time>
+                  </div>
+                </div>
+                <div class="hidden shrink-0 items-center gap-3 pt-0.5 text-right text-[11px] text-fg-muted sm:flex">
+                  <span class="tabular-nums" title="{{t "回复" $.Lang}}">{{.ReplyCount}}<span class="ml-0.5 text-[10px]">{{t "回复" $.Lang}}</span></span>
+                  <span class="tabular-nums" title="{{t "浏览" $.Lang}}">{{.ViewCount}}<span class="ml-0.5 text-[10px]">{{t "浏览" $.Lang}}</span></span>
+                </div>
+              </div>
+            </div>
+          </article>
+        {{else}}
+          <div class="gf-card p-10 text-center">
+            <p class="text-sm text-fg-muted">{{t "还没有主题。" $.Lang}}</p>
+            {{if .User}}<a href="/new" class="gf-btn gf-btn-primary mt-4">{{t "发布第一个主题" $.Lang}}</a>{{end}}
+          </div>
+        {{end}}
+        </div>
+        {{end}}
+      </div>
+
+      {{if gt .Data.TotalPages 1}}
+      <nav class="mt-6 flex items-center justify-center gap-3">
+        {{if gt .Data.Page 1}}<a href="{{pageURL .Data.BasePath (sub .Data.Page 1)}}" class="gf-btn gf-btn-ghost">{{t "上一页" $.Lang}}</a>{{end}}
+        <span class="text-sm text-fg-muted">{{t "第" $.Lang}} {{.Data.Page}} / {{.Data.TotalPages}} {{t "页" $.Lang}}</span>
+        {{if lt .Data.Page .Data.TotalPages}}<a href="{{pageURL .Data.BasePath (add .Data.Page 1)}}" class="gf-btn gf-btn-ghost">{{t "下一页" $.Lang}}</a>{{end}}
+      </nav>
+      {{end}}
+    </div>
+
+    <aside class="w-full shrink-0 space-y-4 lg:w-72">
+      {{template "forum_sidebar" (dict "Root" . "Home" true)}}
+    </aside>
+  </div>
+</div>
+{{end}}

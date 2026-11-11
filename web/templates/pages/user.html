@@ -1,0 +1,217 @@
+{{define "page"}}
+<div class="mx-auto max-w-4xl px-4 py-8">
+  {{with .Data}}
+  <section class="gf-card overflow-hidden">
+    {{if .Profile.CoverURL}}
+    <div class="h-32 overflow-hidden bg-surface-muted"><img src="{{.Profile.CoverURL}}" alt="" loading="lazy" class="h-full w-full object-cover"></div>
+    {{else}}
+    <div class="h-24 bg-gradient-to-br from-brand-100 via-brand-50 to-surface-muted dark:from-brand-900 dark:via-brand-950 dark:to-surface"></div>
+    {{end}}
+    <div class="px-4 pb-5 sm:px-6">
+      <div class="-mt-10 flex flex-wrap items-end gap-4">
+        {{template "avatar" (dict "Name" .Profile.Username "URL" .Profile.AvatarURL "Class" "h-20 w-20 text-2xl ring-4 ring-surface")}}
+        <div class="min-w-0 flex-1 pb-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="truncate text-xl font-semibold">{{.Profile.Username}}</h1>
+            {{if .Profile.SuperAdmin}}<span class="gf-badge bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "超管" $.Lang}}</span>{{end}}
+          </div>
+          <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-muted">
+            <span class="gf-badge gf-badge-neutral">TL{{.Profile.TrustLevel}}</span>
+            <span>{{t "加入于" $.Lang}} {{.Profile.CreatedAt.Format "2006-01-02"}}</span>
+            {{if .Profile.LastSeenAt}}<span class="hidden sm:inline">·</span><span>{{t "最近活跃" $.Lang}} {{.Profile.LastSeenAt.Format "2006-01-02 15:04"}}</span>{{end}}
+          </div>
+        </div>
+        {{if $.User}}{{if ne $.User.ID .Profile.ID}}
+        <div class="flex w-full items-center gap-2 sm:w-auto">
+          <form method="post" action="/messages" class="flex-1 sm:flex-none">
+            <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+            <input type="hidden" name="username" value="{{.Profile.Username}}">
+            <button class="gf-btn gf-btn-primary w-full">
+              <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 5.5h14v9H3v-9Z" stroke-linejoin="round"/><path d="m3.5 6 6.5 5 6.5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              {{t "私信" $.Lang}}
+            </button>
+          </form>
+          <button type="button" x-data="follow" data-type="user" data-id="{{.Profile.ID}}" data-active="{{if .Following}}1{{else}}0{{end}}" x-on:click="toggle" class="gf-btn gf-btn-ghost flex-1 border border-border bg-surface sm:flex-none">
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="7" r="2.6"/><path d="M3.5 16c.5-2.6 2.2-4 4.5-4s4 1.4 4.5 4M15 7v4M13 9h4" stroke-linecap="round"/></svg>
+            <span x-show="idle">{{t "关注" $.Lang}}</span><span x-show="active">{{t "已关注" $.Lang}}</span>
+          </button>
+        </div>
+        {{else if and $.User (eq $.User.ID .Profile.ID)}}
+        <a href="/settings/profile" class="gf-btn gf-btn-ghost w-full border border-border bg-surface sm:w-auto">{{t "编辑资料" $.Lang}}</a>
+        {{end}}{{end}}
+      </div>
+
+      <div class="mt-5 grid grid-cols-5 divide-x divide-border overflow-hidden rounded-lg border border-border bg-surface">
+        <a href="?tab=topics" class="px-2 py-3 text-center transition hover:bg-surface-muted">
+          <div class="text-base font-semibold sm:text-lg">{{.TopicTotal}}</div>
+          <div class="mt-0.5 text-[10px] text-fg-muted sm:text-[11px]">{{t "主题" $.Lang}}</div>
+        </a>
+        <a href="?tab=posts" class="px-2 py-3 text-center transition hover:bg-surface-muted">
+          <div class="text-base font-semibold sm:text-lg">{{.PostTotal}}</div>
+          <div class="mt-0.5 text-[10px] text-fg-muted sm:text-[11px]">{{t "回复" $.Lang}}</div>
+        </a>
+        <div class="px-2 py-3 text-center">
+          <div class="text-base font-semibold sm:text-lg">{{.LikesTotal}}</div>
+          <div class="mt-0.5 text-[10px] text-fg-muted sm:text-[11px]">{{t "获赞" $.Lang}}</div>
+        </div>
+        <a href="?tab=following" class="px-2 py-3 text-center transition hover:bg-surface-muted">
+          <div class="text-base font-semibold sm:text-lg">{{.FollowingCount}}</div>
+          <div class="mt-0.5 text-[10px] text-fg-muted sm:text-[11px]">{{t "关注" $.Lang}}</div>
+        </a>
+        <a href="?tab=followers" class="px-2 py-3 text-center transition hover:bg-surface-muted">
+          <div class="text-base font-semibold sm:text-lg">{{.FollowersCount}}</div>
+          <div class="mt-0.5 text-[10px] text-fg-muted sm:text-[11px]">{{t "粉丝" $.Lang}}</div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  {{if .BioHTML}}
+  <section class="gf-card mt-4 overflow-hidden">
+    <div class="flex items-center gap-2 border-b border-border px-5 py-2.5 text-xs font-medium text-fg-muted">
+      <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6.5"/><path d="M10 9v4M10 6.5v.1" stroke-linecap="round"/></svg>
+      {{t "个人简介" $.Lang}}
+    </div>
+    <div class="gf-prose max-w-none px-5 py-4 text-sm">{{.BioHTML}}</div>
+  </section>
+  {{end}}
+
+  {{if .Badges}}
+  <section class="gf-card mt-4 overflow-hidden">
+    <div class="flex items-center gap-2 border-b border-border px-5 py-2.5 text-xs font-medium text-fg-muted">
+      <span class="text-sm">🏅</span>{{t "徽章" $.Lang}}
+    </div>
+    <div class="flex flex-wrap gap-2 p-4">
+      {{range .Badges}}
+      <span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs" title="{{.Description}}">
+        {{if .Icon}}{{if hasPrefix .Icon "http"}}<img src="{{.Icon}}" alt="" class="h-4 w-4 rounded-sm object-cover">{{else}}<span>{{.Icon}}</span>{{end}}{{else}}<span>🏅</span>{{end}}
+        <span>{{.Name}}</span>
+      </span>
+      {{end}}
+    </div>
+  </section>
+  {{end}}
+
+  {{if .Activity}}
+  <section class="gf-card mt-4 p-4 sm:p-5">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h2 class="text-sm font-semibold">{{t "活跃度" $.Lang}}</h2>
+        <p class="mt-0.5 text-[11px] text-fg-muted">{{t "最近 12 周" $.Lang}}</p>
+      </div>
+      <div class="flex items-center gap-1 text-[10px] text-fg-muted">
+        <span>{{t "少" $.Lang}}</span>
+        <span class="gf-heat-cell"></span><span class="gf-heat-cell gf-heat-1"></span><span class="gf-heat-cell gf-heat-2"></span><span class="gf-heat-cell gf-heat-3"></span><span class="gf-heat-cell gf-heat-4"></span>
+        <span>{{t "多" $.Lang}}</span>
+      </div>
+    </div>
+    <div class="mt-3 overflow-x-auto pb-1">
+      <div class="gf-heatmap">
+        {{range .Activity}}<span class="gf-heat-cell gf-heat-{{.Level}}" title="{{.Date.Format "2006-01-02"}} · {{.Count}}"></span>{{end}}
+      </div>
+    </div>
+  </section>
+  {{end}}
+
+  <div class="mt-6 flex flex-wrap items-center gap-x-5 gap-y-1 border-b border-border text-sm">
+    <a href="?tab=topics" class="flex items-center gap-1.5 pb-2.5 {{if eq .Tab "topics"}}border-b-2 border-brand-600 font-medium text-fg{{else}}text-fg-muted hover:text-fg{{end}}">
+      {{t "主题" $.Lang}}<span class="rounded-full bg-surface-muted px-1.5 py-0.5 text-[10px] text-fg-muted">{{.TopicTotal}}</span>
+    </a>
+    <a href="?tab=posts" class="flex items-center gap-1.5 pb-2.5 {{if eq .Tab "posts"}}border-b-2 border-brand-600 font-medium text-fg{{else}}text-fg-muted hover:text-fg{{end}}">
+      {{t "回复" $.Lang}}<span class="rounded-full bg-surface-muted px-1.5 py-0.5 text-[10px] text-fg-muted">{{.PostTotal}}</span>
+    </a>
+    <a href="?tab=following" class="flex items-center gap-1.5 pb-2.5 {{if eq .Tab "following"}}border-b-2 border-brand-600 font-medium text-fg{{else}}text-fg-muted hover:text-fg{{end}}">
+      {{t "关注" $.Lang}}<span class="rounded-full bg-surface-muted px-1.5 py-0.5 text-[10px] text-fg-muted">{{.FollowingCount}}</span>
+    </a>
+    <a href="?tab=followers" class="flex items-center gap-1.5 pb-2.5 {{if eq .Tab "followers"}}border-b-2 border-brand-600 font-medium text-fg{{else}}text-fg-muted hover:text-fg{{end}}">
+      {{t "粉丝" $.Lang}}<span class="rounded-full bg-surface-muted px-1.5 py-0.5 text-[10px] text-fg-muted">{{.FollowersCount}}</span>
+    </a>
+  </div>
+
+  {{if eq .Tab "topics"}}
+  <section class="mt-4 space-y-2">
+    {{range .Topics}}
+    <a href="/t/{{.Number}}" class="gf-card block p-4 transition hover:border-brand-300 hover:shadow-sm">
+      <div class="flex gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-1.5">
+            {{if .IsPinned}}<span class="gf-badge bg-warning/10 text-[10px] text-warning">{{t "置顶" $.Lang}}</span>{{end}}
+            {{if .IsFeatured}}<span class="gf-badge bg-brand-50 text-[10px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "精华" $.Lang}}</span>{{end}}
+            <span class="truncate text-sm font-medium">{{.Title}}</span>
+          </div>
+          {{if .Excerpt}}<p class="mt-1 line-clamp-2 text-xs text-fg-muted">{{.Excerpt}}</p>{{end}}
+          <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-fg-muted">
+            <span>{{.CategoryName}}</span><span>·</span><span>{{.CreatedAt.Format "2006-01-02"}}</span><span>·</span><span>{{.ViewCount}} {{t "浏览" $.Lang}}</span>
+          </div>
+        </div>
+        <div class="shrink-0 text-right">
+          <div class="text-base font-semibold">{{.ReplyCount}}</div>
+          <div class="text-[10px] text-fg-muted">{{t "回复" $.Lang}}</div>
+        </div>
+      </div>
+    </a>
+    {{else}}
+    <div class="gf-card px-6 py-14 text-center">
+      <div class="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-surface-muted text-fg-muted">
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4.5h12v9H8l-4 3v-12Z" stroke-linejoin="round"/></svg>
+      </div>
+      <p class="mt-3 text-sm font-medium">{{t "还没有发布主题。" $.Lang}}</p>
+      {{if and $.User (eq $.User.ID .Profile.ID)}}<a href="/new" class="gf-btn gf-btn-primary mt-4 !py-1.5 text-xs">{{t "发布第一个主题" $.Lang}}</a>{{end}}
+    </div>
+    {{end}}
+  </section>
+  {{else if eq .Tab "posts"}}
+  <section class="mt-4 space-y-2">
+    {{range .Posts}}
+    <a href="/t/{{.TopicID}}#post-{{.ID}}" class="gf-card block p-4 transition hover:border-brand-300 hover:shadow-sm">
+      <div class="flex items-start gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <span class="truncate text-sm font-medium">{{.TopicTitle}}</span>
+            <span class="ml-auto shrink-0 text-[11px] text-fg-muted">#{{.PostNumber}}</span>
+          </div>
+          <p class="mt-1 line-clamp-2 text-xs text-fg-muted">{{.Raw}}</p>
+          <div class="mt-2 text-[11px] text-fg-muted">{{.CreatedAt.Format "2006-01-02 15:04"}}</div>
+        </div>
+      </div>
+    </a>
+    {{else}}
+    <div class="gf-card px-6 py-14 text-center">
+      <div class="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-surface-muted text-fg-muted">
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8h8M6 11h5M4 4.5h12v11H4v-11Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <p class="mt-3 text-sm font-medium">{{t "还没有回复。" $.Lang}}</p>
+    </div>
+    {{end}}
+  </section>
+  {{else}}
+  <section class="mt-4 grid gap-2 sm:grid-cols-2">
+    {{range .Users}}
+    <a href="/u/{{.Username}}" class="gf-card flex items-center gap-3 p-4 transition hover:border-brand-300 hover:shadow-sm">
+      {{template "avatar" (dict "Name" .Username "URL" .AvatarURL "Class" "h-10 w-10 text-sm")}}
+      <div class="min-w-0">
+        <div class="truncate text-sm font-medium">{{.Username}}</div>
+        {{if .Bio}}<div class="mt-0.5 truncate text-[11px] text-fg-muted">{{.Bio}}</div>{{end}}
+      </div>
+    </a>
+    {{else}}
+    <div class="gf-card px-6 py-14 text-center sm:col-span-2">
+      <div class="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-surface-muted text-fg-muted">
+        <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="7" r="2.6"/><path d="M3.5 16c.5-2.6 2.2-4 4.5-4s4 1.4 4.5 4M15 7v4M13 9h4" stroke-linecap="round"/></svg>
+      </div>
+      <p class="mt-3 text-sm font-medium">{{if eq .Tab "followers"}}{{t "暂无粉丝" $.Lang}}{{else}}{{t "暂无关注" $.Lang}}{{end}}</p>
+    </div>
+    {{end}}
+  </section>
+  {{end}}
+
+  {{if gt .TotalPages 1}}
+  <nav class="mt-6 flex items-center justify-center gap-3">
+    {{if gt .Page 1}}<a href="{{pageURL .BasePath (sub .Page 1)}}" class="gf-btn gf-btn-ghost">{{t "上一页" $.Lang}}</a>{{end}}
+    <span class="text-sm text-fg-muted">{{t "第" $.Lang}} {{.Page}} / {{.TotalPages}} {{t "页" $.Lang}}</span>
+    {{if lt .Page .TotalPages}}<a href="{{pageURL .BasePath (add .Page 1)}}" class="gf-btn gf-btn-ghost">{{t "下一页" $.Lang}}</a>{{end}}
+  </nav>
+  {{end}}
+  {{end}}
+</div>
+{{end}}

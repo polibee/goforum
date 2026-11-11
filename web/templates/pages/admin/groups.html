@@ -1,0 +1,96 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-4">
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold">{{t "用户组与权限" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "用户组权限取并集；未加入任何组的用户使用默认权限。" $.Lang}}</p>
+    </div>
+    <span class="gf-badge gf-badge-neutral">{{len .Groups}} {{t "个用户组" $.Lang}}</span>
+  </div>
+
+  <section class="gf-card p-3">
+    <h3 class="px-1 text-[13px] font-semibold">{{t "新建用户组" $.Lang}}</h3>
+    <form method="post" action="/admin/groups" class="mt-2 space-y-3">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      <div class="grid gap-2 sm:grid-cols-4">
+        <div><label class="gf-label !mb-1 text-[10px]">{{t "名称" $.Lang}}</label><input name="name" class="gf-input !py-1.5 text-xs" required></div>
+        <div><label class="gf-label !mb-1 text-[10px]">Slug</label><input name="slug" class="gf-input !py-1.5 text-xs" placeholder="moderators"></div>
+        <div><label class="gf-label !mb-1 text-[10px]">{{t "颜色" $.Lang}}</label><input name="color" class="gf-input !py-1.5 text-xs" placeholder="#2563eb"></div>
+        <div><label class="gf-label !mb-1 text-[10px]">{{t "优先级" $.Lang}}</label><input name="priority" type="number" value="0" class="gf-input !py-1.5 text-xs"></div>
+      </div>
+      <div>
+        <div class="gf-label !mb-1 text-[10px]">{{t "权限" $.Lang}}</div>
+        <div class="grid gap-1.5 rounded-lg border border-border p-2.5 sm:grid-cols-3 lg:grid-cols-4">
+          {{range .Perms}}
+          <label class="flex items-center gap-2 text-[11px] text-fg-muted">
+            <input type="checkbox" name="perms" value="{{.Key}}" class="h-3.5 w-3.5 rounded border-border">
+            <span class="truncate" title="{{.Key}}">{{.Label}}</span>
+          </label>
+          {{end}}
+        </div>
+      </div>
+      <div class="flex justify-end"><button class="gf-btn gf-btn-primary !px-3 !py-1.5 text-xs">{{t "新建用户组" $.Lang}}</button></div>
+    </form>
+  </section>
+
+  <div class="grid gap-3 lg:grid-cols-2">
+    {{range .Groups}}
+    <article class="gf-card overflow-hidden">
+      <details class="group">
+        <summary class="flex cursor-pointer list-none items-center gap-2.5 px-3 py-2.5 transition hover:bg-surface-muted/60 [&::-webkit-details-marker]:hidden">
+          <span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background: {{if .Color}}{{.Color}}{{else}}var(--gf-brand-600){{end}}"></span>
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-[13px] font-medium">{{.Name}}</span>
+              {{if .IsDefault}}<span class="gf-badge bg-brand-50 !px-1.5 !py-0 text-[9px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "默认组" $.Lang}}</span>{{end}}
+              <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 font-mono text-[9px]">{{.Slug}}</span>
+            </div>
+            <div class="mt-0.5 text-[10px] text-fg-muted">{{len .Permissions}} {{t "个权限" $.Lang}} · {{t "优先级" $.Lang}} {{.Priority}}</div>
+          </div>
+          <span class="shrink-0 text-[11px] text-brand-600 group-open:hidden">{{t "编辑" $.Lang}}</span>
+          <span class="hidden shrink-0 text-[11px] text-fg-muted group-open:inline">{{t "收起" $.Lang}}</span>
+        </summary>
+        <div class="border-t border-border p-3">
+          <form method="post" action="/admin/groups/{{.ID}}" class="space-y-3">
+            <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+            <div class="grid gap-2 sm:grid-cols-3">
+              <div><label class="gf-label !mb-1 text-[10px]">{{t "名称" $.Lang}}</label><input name="name" value="{{.Name}}" class="gf-input !py-1.5 text-xs" required></div>
+              <div><label class="gf-label !mb-1 text-[10px]">{{t "颜色" $.Lang}}</label><input name="color" value="{{.Color}}" class="gf-input !py-1.5 text-xs"></div>
+              <div><label class="gf-label !mb-1 text-[10px]">{{t "优先级" $.Lang}}</label><input name="priority" type="number" value="{{.Priority}}" class="gf-input !py-1.5 text-xs"></div>
+            </div>
+            {{$g := .}}
+            <div>
+              <div class="gf-label !mb-1 text-[10px]">{{t "权限" $.Lang}}</div>
+              <div class="grid max-h-56 gap-1.5 overflow-y-auto rounded-lg border border-border p-2.5 sm:grid-cols-2">
+                {{range $.Data.Perms}}
+                <label class="flex items-center gap-2 text-[11px] text-fg-muted">
+                  <input type="checkbox" name="perms" value="{{.Key}}" {{if contains $g.Permissions .Key}}checked{{end}} class="h-3.5 w-3.5 rounded border-border">
+                  <span class="truncate" title="{{.Key}}">{{.Label}}</span>
+                </label>
+                {{end}}
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-fg-muted">{{len .Permissions}} {{t "个权限" $.Lang}}</span>
+              <button class="gf-btn gf-btn-primary !px-3 !py-1.5 text-xs">{{t "保存" $.Lang}}</button>
+            </div>
+          </form>
+          {{if not .IsDefault}}
+          <form method="post" action="/admin/groups/{{.ID}}/delete" class="mt-2 border-t border-border pt-2 text-right" data-confirm="{{t "确认删除该用户组？" $.Lang}}">
+            <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+            <button class="text-[11px] text-danger hover:underline">{{t "删除用户组" $.Lang}}</button>
+          </form>
+          {{end}}
+        </div>
+      </details>
+    </article>
+    {{else}}
+    <div class="gf-card p-8 text-center text-sm text-fg-muted lg:col-span-2">{{t "还没有用户组" $.Lang}}</div>
+    {{end}}
+  </div>
+</div>
+{{end}}
+{{end}}

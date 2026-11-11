@@ -1,0 +1,103 @@
+{{define "page"}}
+<div class="mx-auto max-w-3xl px-4 py-8">
+  {{with .Data}}
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold">{{t "通知" $.Lang}}</h1>
+      <div class="mt-1 flex flex-wrap items-center gap-2 text-sm text-fg-muted">
+        <span>{{t "共" $.Lang}} {{.Total}} {{t "条，未读" $.Lang}} {{.Unread}} {{t "条。" $.Lang}}</span>
+        <span class="inline-flex items-center gap-1 text-[11px] text-success">
+          <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-success"></span>{{t "实时更新" $.Lang}}
+        </span>
+      </div>
+    </div>
+    {{if gt .Unread 0}}
+    <form method="post" action="/notifications/read">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      <button class="gf-btn gf-btn-ghost border border-border bg-surface">{{t "全部标记已读" $.Lang}}</button>
+    </form>
+    {{end}}
+  </div>
+
+  <div class="mt-4 flex flex-wrap items-center gap-1.5 text-xs">
+    <a href="/notifications" class="rounded-full border px-3 py-1.5 transition {{if not .Filter}}border-brand-600 bg-brand-600 text-white{{else}}border-border bg-surface text-fg-muted hover:text-fg{{end}}">{{t "全部" $.Lang}}</a>
+    {{range .Types}}
+    <a href="/notifications?type={{.Key}}" class="rounded-full border px-3 py-1.5 transition {{if eq $.Data.Filter .Key}}border-brand-600 bg-brand-600 text-white{{else}}border-border bg-surface text-fg-muted hover:text-fg{{end}}">{{t .Short $.Lang}}</a>
+    {{end}}
+  </div>
+
+  <div class="mt-4 overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+    <div class="divide-y divide-border">
+      {{range .Rows}}
+      <div class="flex gap-3 p-4 {{if not .Read}}bg-brand-50/40 dark:bg-brand-950/30{{end}}">
+        <div class="relative shrink-0">
+          {{if .ActorName}}{{template "avatar" (dict "Name" .ActorName "URL" .ActorAvatar "Class" "h-9 w-9 text-xs")}}{{else}}<div class="flex h-9 w-9 items-center justify-center rounded-full bg-brand-50 text-xs">🔔</div>{{end}}
+          {{if not .Read}}<span class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-danger ring-2 ring-surface"></span>{{end}}
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="gf-badge {{if eq .Type "post.reply"}}bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200{{else if eq .Type "post.quote"}}bg-success/10 text-success{{else if eq .Type "post.watch"}}bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200{{else if eq .Type "post.mention"}}bg-warning/10 text-warning{{else if eq .Type "reaction"}}bg-danger/10 text-danger{{else if eq .Type "message.new"}}bg-success/10 text-success{{else if eq .Type "moderation"}}bg-warning/10 text-warning{{else if eq .Type "moderation.report"}}bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200{{else if eq .Type "appeal"}}{{if eq .Action "approve"}}bg-success/10 text-success{{else}}bg-danger/10 text-danger{{end}}{{else}}gf-badge-neutral{{end}}">
+              {{if or (or (eq .Type "post.reply") (eq .Type "post.quote")) (eq .Type "post.watch")}}
+              <svg class="mr-0.5 h-3 w-3" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6 3.5 10 8 14M4 10h7a5 5 0 0 1 5 5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              {{else if eq .Type "post.mention"}}
+              <span class="mr-0.5 text-[11px]">@</span>
+              {{else if eq .Type "reaction"}}
+              <span class="mr-0.5 text-[11px]">♥</span>
+              {{else if eq .Type "message.new"}}
+              <svg class="mr-0.5 h-3 w-3" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 5.5h14v9H3v-9Z" stroke-linejoin="round"/><path d="m3.5 6 6.5 5 6.5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              {{else if eq .Type "moderation"}}
+              <svg class="mr-0.5 h-3 w-3" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 3.5 16 6v4.5c0 3.2-2.4 5.3-6 6-3.6-.7-6-2.8-6-6V6l6-2.5Z" stroke-linejoin="round"/><path d="M10 7v4" stroke-linecap="round"/></svg>
+              {{else if eq .Type "moderation.report"}}
+              <svg class="mr-0.5 h-3 w-3" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 3v14M5 4h9l-1.5 3L14 10H5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              {{else if eq .Type "appeal"}}
+              <svg class="mr-0.5 h-3 w-3" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10" cy="7" r="3"/><path d="M4.5 16c.7-3 2.5-4.5 5.5-4.5s4.8 1.5 5.5 4.5" stroke-linecap="round"/></svg>
+              {{end}}
+              {{t .TypeLabel $.Lang}}
+            </span>
+            <span class="text-[11px] text-fg-muted">{{.CreatedAt.Format "01-02 15:04"}}</span>
+          </div>
+          <p class="mt-1.5 text-sm text-fg">
+            {{if .ActorName}}<a href="/u/{{.ActorName}}" class="font-medium hover:text-brand-600">{{.ActorName}}</a>{{else}}{{t "有人" $.Lang}}{{end}}
+            {{if eq .Type "post.mention"}}{{t "在主题中提到了你" $.Lang}}
+            {{else if eq .Type "reaction"}}{{t "点赞了你的内容" $.Lang}}
+            {{else if eq .Type "post.quote"}}{{t "回复了你的楼层" $.Lang}}
+            {{else if eq .Type "post.watch"}}{{t "回复了你关注的主题" $.Lang}}
+            {{else if eq .Type "message.new"}}{{t "给你发来一条私信" $.Lang}}
+            {{else if eq .Type "moderation"}}{{t "你的内容被版主处理" $.Lang}}{{if eq .Action "hide"}}：{{t "已隐藏" $.Lang}}{{else if eq .Action "delete"}}：{{t "已删除" $.Lang}}{{else if eq .Action "restore"}}：{{t "已恢复" $.Lang}}{{else if eq .Action "suspend"}}：{{t "作者被禁言" $.Lang}}{{else if eq .Action "ban"}}：{{t "作者被封禁" $.Lang}}{{end}}
+            {{else if eq .Type "moderation.report"}}{{t "你的举报已处理" $.Lang}}{{if eq .Action "hide"}}：{{t "已隐藏" $.Lang}}{{else if eq .Action "delete"}}：{{t "已删除" $.Lang}}{{else if eq .Action "restore"}}：{{t "已恢复" $.Lang}}{{else if eq .Action "suspend"}}：{{t "作者被禁言" $.Lang}}{{else if eq .Action "ban"}}：{{t "作者被封禁" $.Lang}}{{else}}：{{t "已处理" $.Lang}}{{end}}
+            {{else if eq .Type "appeal"}}{{t "你的账号申诉" $.Lang}}：{{if eq .Action "approve"}}{{t "已通过" $.Lang}}{{else}}{{t "已拒绝" $.Lang}}{{end}}
+            {{else}}{{t "回复了你的主题" $.Lang}}{{end}}
+            <a href="{{.URL}}" class="font-medium text-brand-600 hover:underline">{{if eq .Type "appeal"}}{{t .Title $.Lang}}{{else}}{{.Title}}{{end}}</a>
+          </p>
+        </div>
+        <div class="flex shrink-0 flex-col items-end gap-1">
+          <a href="{{.URL}}" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "查看" $.Lang}}</a>
+          {{if not .Read}}
+          <form method="post" action="/notifications/{{.ID}}/read">
+            <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+            <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "已读" $.Lang}}</button>
+          </form>
+          {{end}}
+        </div>
+      </div>
+      {{else}}
+      <div class="px-6 py-14 text-center">
+        <div class="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-surface-muted text-fg-muted">
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 8a5 5 0 0 1 10 0c0 4 1.5 5 1.5 5h-13S5 12 5 8Z" stroke-linejoin="round"/><path d="M8.5 16a1.8 1.8 0 0 0 3 0" stroke-linecap="round"/></svg>
+        </div>
+        <p class="mt-3 text-sm font-medium">{{if .Filter}}{{t "该类型暂无通知" $.Lang}}{{else}}{{t "暂无通知" $.Lang}}{{end}}</p>
+      </div>
+      {{end}}
+    </div>
+  </div>
+
+  {{if gt .TotalPages 1}}
+  <nav class="mt-6 flex items-center justify-center gap-3">
+    {{if gt .Page 1}}<a href="/notifications?page={{sub .Page 1}}{{if .Filter}}&type={{.Filter}}{{end}}" class="gf-btn gf-btn-ghost">{{t "上一页" $.Lang}}</a>{{end}}
+    <span class="text-sm text-fg-muted">{{t "第" $.Lang}} {{.Page}} / {{.TotalPages}} {{t "页" $.Lang}}</span>
+    {{if lt .Page .TotalPages}}<a href="/notifications?page={{add .Page 1}}{{if .Filter}}&type={{.Filter}}{{end}}" class="gf-btn gf-btn-ghost">{{t "下一页" $.Lang}}</a>{{end}}
+  </nav>
+  {{end}}
+  {{end}}
+</div>
+{{end}}

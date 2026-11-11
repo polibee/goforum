@@ -1,0 +1,8 @@
+{{define "moderation_tabs"}}
+<div class="flex w-fit flex-wrap gap-1 rounded-xl border border-border bg-surface p-1 shadow-sm">
+  <a href="/admin/review" class="rounded-lg px-3 py-1.5 text-[13px] font-medium {{if eq .Path "/admin/review"}}bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200{{else}}text-fg-muted hover:bg-surface-muted hover:text-fg{{end}}">{{t "审核队列" .Lang}}</a>
+  <a href="/admin/appeals" class="rounded-lg px-3 py-1.5 text-[13px] font-medium {{if eq .Path "/admin/appeals"}}bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200{{else}}text-fg-muted hover:bg-surface-muted hover:text-fg{{end}}">{{t "账号申诉" .Lang}}</a>
+  <a href="/admin/banned-words" class="rounded-lg px-3 py-1.5 text-[13px] font-medium {{if eq .Path "/admin/banned-words"}}bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200{{else}}text-fg-muted hover:bg-surface-muted hover:text-fg{{end}}">{{t "敏感词" .Lang}}</a>
+  <a href="/admin/audit" class="rounded-lg px-3 py-1.5 text-[13px] font-medium {{if eq .Path "/admin/audit"}}bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200{{else}}text-fg-muted hover:bg-surface-muted hover:text-fg{{end}}">{{t "审计日志" .Lang}}</a>
+</div>
+{{end}}

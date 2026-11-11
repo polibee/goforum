@@ -1,0 +1,320 @@
+{{define "page"}}
+{{with .Data}}
+{{$snap := .Snap}}
+<div class="space-y-4">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold">{{t "系统信息" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "运行环境、主机资源、存储与缓存状态。数据在每次打开页面时实时采集。" $.Lang}}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="gf-badge gf-badge-neutral text-[10px]">{{t "采集于" $.Lang}} {{$snap.Collected.Format "15:04:05"}}</span>
+      <a href="/admin/system" class="gf-btn gf-btn-ghost border border-border !px-3 !py-1.5 text-xs">{{t "刷新" $.Lang}}</a>
+    </div>
+  </div>
+
+  <!-- 概览卡片 -->
+  <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="gf-card p-4">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-[11px] font-medium text-fg-muted">{{t "程序" $.Lang}}</div>
+          <div class="mt-1.5 text-[15px] font-semibold">{{$snap.App.Name}}</div>
+          <div class="mt-1 text-[11px] text-fg-muted">v{{$snap.App.Version}} · {{.EnvLabel}}</div>
+        </div>
+        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-900 dark:text-brand-200">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5.5h14v9H3v-9Z" stroke-linejoin="round"/><path d="M6 8.5h4M6 11h6" stroke-linecap="round"/><path d="M13 13.5h3" stroke-linecap="round"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="gf-card p-4">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-[11px] font-medium text-fg-muted">{{t "语言与地区" $.Lang}}</div>
+          <div class="mt-1.5 text-[15px] font-semibold">{{.AppLocale}}</div>
+          <div class="mt-1 text-[11px] text-fg-muted">{{t "可选" $.Lang}} {{len .Locales}} {{t "种语言" $.Lang}} · {{$snap.App.Timezone}}</div>
+        </div>
+        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6.5"/><path d="M3.5 10h13M10 3.5c1.8 2 2.6 4.1 2.6 6.5s-.8 4.5-2.6 6.5c-1.8-2-2.6-4.1-2.6-6.5s.8-4.5 2.6-6.5Z"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="gf-card p-4">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-[11px] font-medium text-fg-muted">{{t "运行时长" $.Lang}}</div>
+          <div class="mt-1.5 text-[15px] font-semibold">{{dur $snap.App.UptimeSeconds}}</div>
+          <div class="mt-1 text-[11px] text-fg-muted">{{t "协程" $.Lang}} {{$snap.Runtime.NumGoroutine}} · GOMAXPROCS {{$snap.Runtime.GOMAXPROCS}}</div>
+        </div>
+        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-300">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6.5"/><path d="M10 6.5V10l2.5 1.8" stroke-linecap="round"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="gf-card p-4">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-[11px] font-medium text-fg-muted">{{t "内存占用" $.Lang}}</div>
+          <div class="mt-1.5 text-[15px] font-semibold">{{if $snap.Process.RSSOK}}{{bytes $snap.Process.RSS}}{{else}}{{bytes $snap.Process.Sys}}{{end}}</div>
+          <div class="mt-1 text-[11px] text-fg-muted">{{t "堆" $.Lang}} {{bytes $snap.Process.HeapAlloc}} · {{$snap.Process.HeapPct}}%</div>
+        </div>
+        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-950 dark:text-violet-300">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="5" width="13" height="4" rx="1"/><rect x="3.5" y="11" width="13" height="4" rx="1"/><path d="M6 7h.01M6 13h.01" stroke-linecap="round"/></svg>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid gap-3 lg:grid-cols-3">
+    <!-- 程序与运行时 -->
+    <section class="gf-card p-4">
+      <h3 class="text-[13px] font-semibold">{{t "程序与运行时" $.Lang}}</h3>
+      <dl class="mt-2.5 space-y-1.5 text-[11px]">
+        {{template "sys_row" dict "K" (t "程序语言" $.Lang) "V" (printf "Go %s" $snap.Runtime.GoVersion)}}
+        {{template "sys_row" dict "K" (t "平台" $.Lang) "V" (printf "%s / %s" $snap.Runtime.GOOS $snap.Runtime.GOARCH)}}
+        {{template "sys_row" dict "K" (t "编译器" $.Lang) "V" $snap.Runtime.Compiler}}
+        {{template "sys_row" dict "K" (t "CPU 核心" $.Lang) "V" (printf "%d" $snap.Runtime.NumCPU)}}
+        {{template "sys_row" dict "K" (t "GOMAXPROCS" $.Lang) "V" (printf "%d" $snap.Runtime.GOMAXPROCS)}}
+        {{template "sys_row" dict "K" (t "模块" $.Lang) "V" $snap.App.GoModule}}
+        {{template "sys_row" dict "K" (t "运行模式" $.Lang) "V" .EnvLabel}}
+        {{template "sys_row" dict "K" (t "监听地址" $.Lang) "V" $snap.App.ServerAddr}}
+        {{template "sys_row" dict "K" "GODEBUG" "V" (or $snap.Runtime.GODEBUG "—")}}
+      </dl>
+    </section>
+
+    <!-- 主机 -->
+    <section class="gf-card p-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-[13px] font-semibold">{{t "主机系统" $.Lang}}</h3>
+        {{if $snap.Host.MemAvailable}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{$snap.Host.MemUsedPct}}%</span>{{end}}
+      </div>
+      <dl class="mt-2.5 space-y-1.5 text-[11px]">
+        {{template "sys_row" dict "K" (t "操作系统" $.Lang) "V" (printf "%s %s" $snap.Host.OSName $snap.Host.OSVersion)}}
+        {{template "sys_row" dict "K" (t "内核" $.Lang) "V" (or $snap.Host.Kernel "—")}}
+        {{template "sys_row" dict "K" (t "架构" $.Lang) "V" $snap.Host.Architecture}}
+        {{template "sys_row" dict "K" (t "主机名" $.Lang) "V" $snap.Host.Hostname}}
+        {{template "sys_row" dict "K" (t "CPU" $.Lang) "V" (printf "%d 核" $snap.Host.CPUs)}}
+        {{if $snap.Host.MemAvailable}}
+        {{template "sys_row" dict "K" (t "物理内存" $.Lang) "V" (printf "%s / %s" (bytes $snap.Host.MemUsed) (bytes $snap.Host.MemTotal))}}
+        {{template "sys_row" dict "K" (t "可用内存" $.Lang) "V" (bytes $snap.Host.MemFree)}}
+        {{end}}
+        {{if not $snap.Host.BootTime.IsZero}}{{template "sys_row" dict "K" (t "开机时间" $.Lang) "V" ($snap.Host.BootTime.Format "2006-01-02 15:04")}}{{end}}
+      </dl>
+      {{if $snap.Host.MemAvailable}}
+      <div class="mt-3">
+        <div class="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
+          <div class="h-full rounded-full bg-brand-600" style="width: {{$snap.Host.MemUsedPct}}%"></div>
+        </div>
+        <div class="mt-1 flex justify-between text-[10px] text-fg-muted"><span>{{t "内存使用率" $.Lang}}</span><span>{{$snap.Host.MemUsedPct}}%</span></div>
+      </div>
+      {{end}}
+    </section>
+
+    <!-- 数据库 -->
+    <section class="gf-card p-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-[13px] font-semibold">{{t "数据库" $.Lang}}</h3>
+        <span class="gf-badge bg-success/10 !px-1.5 !py-0 text-[10px] text-success">{{.DriverLabel}}</span>
+      </div>
+      <dl class="mt-2.5 space-y-1.5 text-[11px]">
+        {{template "sys_row" dict "K" (t "版本" $.Lang) "V" (or $snap.DB.Version .DriverLabel)}}
+        {{template "sys_row" dict "K" (t "连接池" $.Lang) "V" (printf "%d / %d" $snap.DB.OpenConns $snap.DB.MaxOpen)}}
+        {{template "sys_row" dict "K" (t "空闲连接" $.Lang) "V" (printf "%d" $snap.DB.IdleConns)}}
+        {{template "sys_row" dict "K" (t "等待次数" $.Lang) "V" (printf "%d" $snap.DB.WaitCount)}}
+        {{if $snap.DB.FileSizeOK}}{{template "sys_row" dict "K" (t "数据文件" $.Lang) "V" (bytes $snap.DB.FileSize)}}{{end}}
+        {{template "sys_row" dict "K" (t "日志表" $.Lang) "V" (printf "%d 条" .AuditCount)}}
+        {{template "sys_row" dict "K" (t "会话" $.Lang) "V" (printf "%d 个" .SessionCount)}}
+        {{template "sys_row" dict "K" (t "搜索文档" $.Lang) "V" (printf "%d 条" .SearchDocs)}}
+      </dl>
+      <div class="mt-3">
+        <div class="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
+          <div class="h-full rounded-full bg-sky-500" style="width: {{$snap.DB.UsedPct}}%"></div>
+        </div>
+        <div class="mt-1 flex justify-between text-[10px] text-fg-muted"><span>{{t "连接池占用" $.Lang}}</span><span>{{$snap.DB.UsedPct}}%</span></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 磁盘 -->
+  <section class="gf-card overflow-hidden">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+      <div>
+        <h3 class="text-[13px] font-semibold">{{t "磁盘占用" $.Lang}}</h3>
+        <p class="mt-0.5 text-[11px] text-fg-muted">{{t "按挂载点统计可用空间，上传目录单独汇总文件体积。" $.Lang}}</p>
+      </div>
+      <div class="flex items-center gap-2 text-[11px] text-fg-muted">
+        <span>{{t "数据与上传合计" $.Lang}}</span>
+        <span class="font-semibold text-fg">{{bytes .DataSize}}</span>
+      </div>
+    </div>
+    <div class="grid items-start gap-3 p-4 lg:grid-cols-2">
+      {{range $snap.Storage}}
+      <div class="rounded-lg border border-border p-3">
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <div class="text-[12px] font-medium">{{.Label}}</div>
+            <div class="mt-0.5 truncate font-mono text-[10px] text-fg-muted" title="{{.Path}}">{{.Path}}</div>
+          </div>
+          {{if .Available}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{.UsedPct}}%</span>{{else}}<span class="gf-badge bg-warning/10 !px-1.5 !py-0 text-[10px] text-warning">{{t "不可用" $.Lang}}</span>{{end}}
+        </div>
+        {{if .Available}}
+        <div class="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
+          <div class="h-full rounded-full {{if ge .UsedPct 90}}bg-danger{{else if ge .UsedPct 75}}bg-warning{{else}}bg-brand-600{{end}}" style="width: {{.UsedPct}}%"></div>
+        </div>
+        <div class="mt-1.5 grid grid-cols-3 gap-1 text-[10px] text-fg-muted">
+          <div><span class="block text-fg">{{bytes .Used}}</span>{{t "已用" $.Lang}}</div>
+          <div><span class="block text-fg">{{bytes .Free}}</span>{{t "可用" $.Lang}}</div>
+          <div><span class="block text-fg">{{bytes .Total}}</span>{{t "总量" $.Lang}}</div>
+        </div>
+        {{end}}
+      </div>
+      {{end}}
+      <div class="rounded-lg border border-border p-3">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <div class="text-[12px] font-medium">{{t "上传文件体积" $.Lang}}</div>
+            <div class="mt-0.5 text-[10px] text-fg-muted">{{.UploadFiles}} {{t "个文件" $.Lang}} · {{t "含附件与头像" $.Lang}}</div>
+          </div>
+          <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{bytes .UploadSize}}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid items-start gap-3 lg:grid-cols-2">
+    <!-- 内存明细 -->
+    <section class="gf-card p-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-[13px] font-semibold">{{t "进程内存" $.Lang}}</h3>
+        <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">PID {{$snap.Process.PID}}</span>
+      </div>
+      <dl class="mt-2.5 space-y-1.5 text-[11px]">
+        {{if $snap.Process.RSSOK}}{{template "sys_row" dict "K" (t "常驻内存 RSS" $.Lang) "V" (bytes $snap.Process.RSS)}}{{end}}
+        {{template "sys_row" dict "K" (t "堆分配" $.Lang) "V" (bytes $snap.Process.HeapAlloc)}}
+        {{template "sys_row" dict "K" (t "堆保留" $.Lang) "V" (bytes $snap.Process.HeapSys)}}
+        {{template "sys_row" dict "K" (t "堆在用 / 空闲" $.Lang) "V" (printf "%s / %s" (bytes $snap.Process.HeapInuse) (bytes $snap.Process.HeapIdle))}}
+        {{template "sys_row" dict "K" (t "协程栈" $.Lang) "V" (bytes $snap.Process.StackIn)}}
+        {{template "sys_row" dict "K" (t "系统保留" $.Lang) "V" (bytes $snap.Process.Sys)}}
+        {{template "sys_row" dict "K" (t "GC 次数" $.Lang) "V" (printf "%d 次" $snap.Process.NumGC)}}
+        {{template "sys_row" dict "K" (t "平均 GC 停顿" $.Lang) "V" (printf "%.2f ms" $snap.Process.GCPauseMs)}}
+        {{if not $snap.Process.LastGC.IsZero}}{{template "sys_row" dict "K" (t "最近 GC" $.Lang) "V" ($snap.Process.LastGC.Format "15:04:05")}}{{end}}
+      </dl>
+    </section>
+
+    <!-- 缓存与构建 -->
+    <section class="gf-card p-4">
+      <h3 class="text-[13px] font-semibold">{{t "缓存与构建" $.Lang}}</h3>
+      <dl class="mt-2.5 space-y-1.5 text-[11px]">
+        <div class="flex items-baseline justify-between gap-3">
+          <dt class="shrink-0 text-fg-muted">{{t "缓存驱动" $.Lang}}</dt>
+          <dd class="text-right">
+            <span class="gf-badge {{if eq .CacheDriver "redis"}}bg-success/10 text-success{{else}}gf-badge-neutral{{end}} !px-1.5 !py-0 text-[10px]">{{.CacheDriver}}</span>
+          </dd>
+        </div>
+        {{if .CachePrefix}}{{template "sys_row" dict "K" (t "缓存键前缀" $.Lang) "V" .CachePrefix}}{{end}}
+        {{template "sys_row" dict "K" (t "默认 TTL" $.Lang) "V" $snap.Cache.TTL}}
+        <div class="rounded-md bg-surface-muted/60 px-2 py-1.5 text-[10px] leading-snug text-fg-muted">{{.CacheNote}}</div>
+        {{template "sys_row" dict "K" (t "设置快照时间" $.Lang) "V" $snap.Cache.Version}}
+        {{template "sys_row" dict "K" (t "广告轮播缓存" $.Lang) "V" (printf "%d 条 · %s" $snap.Cache.AdsCache $snap.Cache.AdsAge)}}
+        <div class="flex items-baseline justify-between gap-3">
+          <dt class="shrink-0 text-fg-muted">{{t "广告缓存状态" $.Lang}}</dt>
+          <dd class="text-right font-medium">
+            {{if $snap.Cache.AdsWarm}}<span class="gf-badge bg-success/10 !px-1.5 !py-0 text-[10px] text-success">{{t "已预热" $.Lang}}</span>{{else}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{t "冷启动" $.Lang}}</span>{{end}}
+          </dd>
+        </div>
+        {{template "sys_row" dict "K" (t "构建 Go 版本" $.Lang) "V" (or $snap.Build.GoVersion $snap.Runtime.GoVersion)}}
+        {{template "sys_row" dict "K" "VCS" "V" (or $snap.Build.VCS "—")}}
+        {{template "sys_row" dict "K" (t "构建时间" $.Lang) "V" (or $snap.Build.VCSTime "—")}}
+        <div class="flex items-baseline justify-between gap-3">
+          <dt class="shrink-0 text-fg-muted">{{t "工作区" $.Lang}}</dt>
+          <dd class="text-right font-medium">
+            {{if $snap.Build.VCSDirty}}<span class="gf-badge bg-warning/10 !px-1.5 !py-0 text-[10px] text-warning">{{t "有未提交改动" $.Lang}}</span>{{else}}<span class="gf-badge bg-success/10 !px-1.5 !py-0 text-[10px] text-success">{{t "干净" $.Lang}}</span>{{end}}
+          </dd>
+        </div>
+        {{template "sys_row" dict "K" (t "请求体上限" $.Lang) "V" (bytes $snap.App.MaxBodyBytes)}}
+      </dl>
+    </section>
+  </div>
+
+  <!-- 语言与数据表 -->
+  <!-- 运行配置 -->
+  <section class="gf-card overflow-hidden">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+      <div>
+        <h3 class="text-[13px] font-semibold">{{t "运行配置" $.Lang}}</h3>
+        <p class="mt-0.5 text-[11px] text-fg-muted">{{.EnvSourceNote}}</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="gf-badge {{if .EnvFileOK}}bg-success/10 text-success{{else}}bg-warning/10 text-warning{{end}} !px-1.5 !py-0 text-[10px]">{{if .EnvFileOK}}{{t "已加载" $.Lang}}{{else}}{{t "未找到" $.Lang}}{{end}} .env</span>
+        <code class="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] text-fg-muted">{{.EnvFile}}</code>
+      </div>
+    </div>
+    <div class="max-h-80 overflow-y-auto">
+      <table class="gf-table text-[11px]">
+        <thead><tr><th>{{t "配置项" $.Lang}}</th><th class="w-28 font-mono">{{t "键名" $.Lang}}</th><th>{{t "当前值" $.Lang}}</th></tr></thead>
+        <tbody>
+          {{range .ConfigRows}}
+          <tr>
+            <td class="whitespace-nowrap font-medium">{{t .Label $.Lang}}</td>
+            <td class="whitespace-nowrap font-mono text-[10px] text-fg-muted">{{.Key}}</td>
+            <td class="truncate font-mono text-[10px]" title="{{.Value}}">{{.Value}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    <div class="border-t border-border bg-surface-muted/50 px-4 py-2.5 text-[10px] text-fg-muted">
+      {{t "修改数据库、缓存、邮件等基础配置请编辑服务器上的 .env 文件（参考 .env.example），保存后重启程序。站点内容与外观仍在「站点设置」中调整。" $.Lang}}
+    </div>
+  </section>
+
+  <div class="grid items-start gap-3 lg:grid-cols-2">
+    <section class="gf-card p-4">
+      <h3 class="text-[13px] font-semibold">{{t "界面与语言" $.Lang}}</h3>
+      <p class="mt-0.5 text-[11px] text-fg-muted">{{t "当前站点语言与已加载的翻译目录。新增语言只需在 locales 下放置语言包。" $.Lang}}</p>
+      <div class="mt-3 flex flex-wrap gap-1.5">
+        {{range .Locales}}
+        <span class="gf-badge !px-2 !py-0.5 text-[10px] {{if eq . $.Data.AppLocale}}bg-brand-600 text-white{{else}}gf-badge-neutral{{end}}">{{.}}{{if eq . $.Data.DefaultLocale}} · {{t "默认" $.Lang}}{{end}}</span>
+        {{end}}
+      </div>
+      <dl class="mt-3 space-y-1.5 border-t border-border pt-3 text-[11px]">
+        {{template "sys_row" dict "K" (t "站点默认语言" $.Lang) "V" .AppLocale}}
+        {{template "sys_row" dict "K" (t "时区" $.Lang) "V" (or $snap.App.Timezone "—")}}
+        {{template "sys_row" dict "K" (t "站点地址" $.Lang) "V" (or $snap.App.BaseURL "—")}}
+        {{template "sys_row" dict "K" (t "UI 框架" $.Lang) "V" "Alpine.js 3 · Tailwind CSS 3"}}
+        {{template "sys_row" dict "K" (t "UI 资源版本" $.Lang) "V" (or $.AssetVersion "—")}}
+      </dl>
+    </section>
+
+    <section class="gf-card overflow-hidden">
+      <div class="flex items-center justify-between border-b border-border px-4 py-3">
+        <div>
+          <h3 class="text-[13px] font-semibold">{{t "数据表体量" $.Lang}}</h3>
+          <p class="mt-0.5 text-[11px] text-fg-muted">{{.TableTotal}} {{t "张核心表有数据" $.Lang}}</p>
+        </div>
+        <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{len .Tables}}</span>
+      </div>
+      <div class="max-h-72 overflow-y-auto">
+        <table class="gf-table text-[11px]">
+          <thead><tr><th>{{t "数据表" $.Lang}}</th><th class="text-right">{{t "行数" $.Lang}}</th></tr></thead>
+          <tbody>
+            {{range .Tables}}
+            <tr><td class="font-mono text-[10px] text-fg-muted">{{.Name}}</td><td class="text-right tabular-nums">{{.Rows}}</td></tr>
+            {{else}}
+            <tr><td colspan="2" class="py-6 text-center text-fg-muted">{{t "暂无数据" $.Lang}}</td></tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+{{end}}
+{{end}}
+
+{{define "sys_row"}}
+<div class="flex items-baseline justify-between gap-3">
+  <dt class="shrink-0 text-fg-muted">{{.K}}</dt>
+  <dd class="min-w-0 truncate text-right font-medium" title="{{.V}}">{{.V}}</dd>
+</div>
+{{end}}

@@ -1,0 +1,18 @@
+{{define "page"}}
+<div class="gf-card p-6 sm:p-8 text-center">
+  {{with .Data}}
+    <h1 class="text-xl font-semibold">{{.Title}}</h1>
+    <p class="mt-3 text-sm text-fg-muted">{{.Message}}</p>
+    {{if .DevURL}}
+      <div class="gf-alert mt-4 break-all border-warning/30 bg-warning/10 text-left text-warning">
+        <p class="font-medium">{{t "开发模式验证链接" $.Lang}}</p>
+        <a href="{{.DevURL}}" class="mt-1 block underline">{{.DevURL}}</a>
+      </div>
+    {{end}}
+    <div class="mt-6 flex justify-center gap-3">
+      {{if .Link}}<a href="{{.Link}}" class="gf-btn gf-btn-primary">{{.LinkLabel}}</a>{{end}}
+      <a href="/" class="gf-btn gf-btn-ghost">{{t "返回首页" $.Lang}}</a>
+    </div>
+  {{end}}
+</div>
+{{end}}

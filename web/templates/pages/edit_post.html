@@ -1,0 +1,55 @@
+{{define "page"}}
+<div class="mx-auto max-w-3xl px-4 py-8">
+  <h1 class="text-2xl font-semibold">{{t "编辑回复" $.Lang}}</h1>
+  <p class="mt-1 text-sm text-fg-muted">#{{.Data.Post.PostNumber}} · {{.Data.Post.CreatedAt.Format "2006-01-02 15:04"}}</p>
+
+  {{with .Data}}
+    {{if .Error}}<div class="gf-alert-danger mt-4">{{t .Error $.Lang}}</div>{{end}}
+    <form method="post" action="/posts/{{.Post.ID}}/edit" class="mt-6 space-y-5">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      <div>
+        <label class="gf-label" for="raw">{{t "内容" $.Lang}}</label>
+        <div x-data="editor" data-draft-key="gf-draft-post-{{.Post.ID}}" data-invalid-url="{{t "请输入有效的 http/https 链接" $.Lang}}">
+          <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex gap-1">
+              <button type="button" x-on:click="showContent" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "内容" $.Lang}}</button>
+              <button type="button" x-on:click="showPreview" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "预览" $.Lang}}</button>
+              <button type="button" x-on:click="showSplit" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "对照" $.Lang}}</button>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-fg-muted">
+              <span x-show="draftSaved" x-cloak>{{t "草稿已保存" $.Lang}}</span>
+              <button type="button" x-on:click="clearDraft" class="hover:text-fg">{{t "清除草稿" $.Lang}}</button>
+            </div>
+          </div>
+          <div x-show="contentVisible" class="mb-2 flex flex-wrap gap-1">
+            <button type="button" x-on:click="bold" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs font-bold">B</button>
+            <button type="button" x-on:click="italic" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs italic">I</button>
+            <button type="button" x-on:click="strike" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs line-through">S</button>
+            <button type="button" x-on:click="heading" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">H</button>
+            <button type="button" x-on:click="quote" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">❝</button>
+            <button type="button" x-on:click="code" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs font-mono">&lt;/&gt;</button>
+            <button type="button" x-on:click="openLink" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">🔗</button>
+            <button type="button" x-on:click="openImage" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">🖼</button>
+            <button type="button" x-on:click="bullet" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">•</button>
+            <button type="button" x-on:click="ordered" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">1.</button>
+            <span class="mx-1 w-px bg-border"></span>
+            <button type="button" x-on:click="undo" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">↶</button>
+            <button type="button" x-on:click="redo" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">↷</button>
+          </div>
+          <div id="editor-panels" class="grid gap-3">
+            <textarea id="raw" name="raw" x-show="contentVisible" rows="12" class="gf-input font-mono text-sm">{{.Post.Raw}}</textarea>
+            <div x-show="previewVisible" x-cloak class="min-h-[16rem] rounded-md border border-border bg-surface p-4">
+              <div x-show="loading" class="text-sm text-fg-muted">{{t "加载中…" $.Lang}}</div>
+              <div id="preview" class="gf-prose"></div>
+            </div>
+          </div>
+          {{template "editor_modal" $}}
+        </div>
+      <div class="flex justify-end gap-2">
+        <a href="/t/{{.Post.TopicID}}" class="gf-btn gf-btn-ghost">{{t "取消" $.Lang}}</a>
+        <button type="submit" class="gf-btn gf-btn-primary">{{t "保存" $.Lang}}</button>
+      </div>
+    </form>
+  {{end}}
+</div>
+{{end}}

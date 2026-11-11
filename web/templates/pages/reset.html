@@ -1,0 +1,25 @@
+{{define "page"}}
+<div class="gf-card p-6 sm:p-8">
+  <h1 class="text-xl font-semibold">{{t "重置密码" $.Lang}}</h1>
+  <p class="mt-1 text-sm text-fg-muted">{{t "设置一个新的登录密码。" $.Lang}}</p>
+
+  {{with .Data}}
+    {{if .Error}}<div class="gf-alert-danger mt-4">{{t .Error $.Lang}}</div>{{end}}
+    <form method="post" action="/reset-password" class="mt-6 space-y-4">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      <input type="hidden" name="token" value="{{.Token}}">
+      <div>
+        <label class="gf-label" for="password">{{t "新密码" $.Lang}}</label>
+        <input id="password" name="password" type="password" class="gf-input" required autofocus>
+      </div>
+      <div>
+        <label class="gf-label" for="password_confirm">{{t "确认新密码" $.Lang}}</label>
+        <input id="password_confirm" name="password_confirm" type="password" class="gf-input" required>
+      </div>
+      <button type="submit" class="gf-btn gf-btn-primary w-full">{{t "重置密码" $.Lang}}</button>
+    </form>
+  {{end}}
+
+  <p class="mt-6 text-center text-xs text-fg-muted"><a href="/login" class="hover:text-fg">{{t "返回登录" $.Lang}}</a></p>
+</div>
+{{end}}

@@ -1,0 +1,218 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-4" x-data="widgetPresets">
+  {{template "site_tabs" $}}
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <p class="mt-1 text-sm text-fg-muted">{{t "分别管理首页与内容页（主题详情）右侧的卡片；内置卡片可调整标题、排序与显示位置。" $.Lang}}</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <form method="post" action="/admin/site/widget/action">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="action" value="restore">
+        <button class="gf-btn gf-btn-ghost border border-border !py-2 text-xs">{{t "恢复内置卡片" $.Lang}}</button>
+      </form>
+      <button type="button" x-on:click="openPresets" class="gf-btn gf-btn-primary !py-2 text-xs">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg>
+        {{t "新增卡片" $.Lang}}
+      </button>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-surface p-1">
+    {{$loc := .Location}}
+    <a href="/admin/site/sidebar" class="rounded-lg px-3 py-1.5 text-[12px] font-medium transition {{if eq $loc ""}}bg-brand-600 text-white{{else}}text-fg-muted hover:bg-surface-muted hover:text-fg{{end}}">
+      {{t "全部卡片" $.Lang}} <span class="ml-0.5 opacity-70">{{add .HomeCount (add .TopicCount .AllCount)}}</span>
+    </a>
+    <a href="/admin/site/sidebar?location=home" class="rounded-lg px-3 py-1.5 text-[12px] font-medium transition {{if eq $loc "home"}}bg-brand-600 text-white{{else}}text-fg-muted hover:bg-surface-muted hover:text-fg{{end}}">
+      {{t "首页侧边栏" $.Lang}} <span class="ml-0.5 opacity-70">{{add .HomeCount .AllCount}}</span>
+    </a>
+    <a href="/admin/site/sidebar?location=topic" class="rounded-lg px-3 py-1.5 text-[12px] font-medium transition {{if eq $loc "topic"}}bg-brand-600 text-white{{else}}text-fg-muted hover:bg-surface-muted hover:text-fg{{end}}">
+      {{t "内容页侧边栏" $.Lang}} <span class="ml-0.5 opacity-70">{{add .TopicCount .AllCount}}</span>
+    </a>
+    <span class="ml-auto px-2 text-[10px] text-fg-muted">{{t "共" $.Lang}} {{.SelectedCount}} {{t "张" $.Lang}}</span>
+  </div>
+
+  <div class="grid gap-5 lg:grid-cols-5">
+    <section class="space-y-3 lg:col-span-3">
+      {{range .Widgets}}
+      <article class="gf-card p-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="truncate text-[13px] font-semibold">{{.Title}}</h2>
+              {{if .Key}}<span class="gf-badge bg-brand-50 text-[10px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "内置" $.Lang}}</span>{{else}}<span class="gf-badge gf-badge-neutral text-[10px]">{{t "自定义" $.Lang}}</span>{{end}}
+              <span class="gf-badge gf-badge-neutral text-[10px]">
+                {{if eq .Type "links"}}{{t "链接列表" $.Lang}}{{else if eq .Type "text"}}{{t "文本" $.Lang}}{{else if eq .Type "user_card"}}{{t "个人资料卡" $.Lang}}{{else if eq .Type "categories"}}{{t "板块列表" $.Lang}}{{else if eq .Type "trending"}}{{t "热门主题" $.Lang}}{{else if eq .Type "tags"}}{{t "热门标签" $.Lang}}{{else if eq .Type "stats"}}{{t "社区数据" $.Lang}}{{else if eq .Type "ad"}}{{t "广告位" $.Lang}}{{else if eq .Type "promote"}}{{t "自助推广" $.Lang}}{{else if eq .Type "compose"}}{{t "发帖引导" $.Lang}}{{else}}{{.Type}}{{end}}
+              </span>
+              {{if not .Enabled}}<span class="gf-badge bg-surface-muted text-[10px] text-fg-muted">{{t "已停用" $.Lang}}</span>{{end}}
+              {{if eq .Location "home"}}<span class="gf-badge bg-sky-50 !px-1.5 !py-0 text-[10px] text-sky-700 dark:bg-sky-950 dark:text-sky-300">{{t "仅首页" $.Lang}}</span>
+              {{else if eq .Location "topic"}}<span class="gf-badge bg-violet-50 !px-1.5 !py-0 text-[10px] text-violet-700 dark:bg-violet-950 dark:text-violet-300">{{t "仅内容页" $.Lang}}</span>
+              {{else}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{t "全部页面" $.Lang}}</span>{{end}}
+            </div>
+            <div class="mt-1 text-[11px] text-fg-muted">{{t "排序" $.Lang}} <span class="tabular-nums">#{{.Sort}}</span></div>
+          </div>
+          <div class="flex shrink-0 items-center gap-1">
+            <a href="/admin/site/sidebar?widget={{.ID}}" class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs">{{t "编辑" $.Lang}}</a>
+            <form method="post" action="/admin/site/widget/action">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="{{.ID}}">
+              <button class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs">{{if .Enabled}}{{t "停用" $.Lang}}{{else}}{{t "启用" $.Lang}}{{end}}</button>
+            </form>
+            <form method="post" action="/admin/site/widget/action" data-confirm="{{t "确认删除这张卡片？" $.Lang}}">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{.ID}}">
+              <button class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs text-danger">{{t "删除" $.Lang}}</button>
+            </form>
+          </div>
+        </div>
+      </article>
+      {{else}}
+      <div class="gf-card px-6 py-14 text-center">
+        <p class="text-sm font-medium">{{t "还没有侧边栏卡片。" $.Lang}}</p>
+        <p class="mt-1 text-xs text-fg-muted">{{t "可以新增自定义链接卡片，或恢复内置卡片。" $.Lang}}</p>
+      </div>
+      {{end}}
+    </section>
+
+    <section class="gf-card h-fit p-4 lg:sticky lg:top-20 lg:col-span-2">
+      {{if .Editing}}
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h2 class="text-[15px] font-semibold">{{t "编辑卡片" $.Lang}}</h2>
+          <p class="mt-0.5 text-xs text-fg-muted">{{if .Editing.Key}}{{t "内置卡片内容由系统提供，只能调整标题、排序与显示状态。" $.Lang}}{{else}}{{t "调整标题、内容、排序与显示状态。" $.Lang}}{{end}}</p>
+        </div>
+        <a href="/admin/site/sidebar" class="text-xs text-fg-muted hover:text-fg">{{t "取消" $.Lang}}</a>
+      </div>
+      {{end}}
+
+      {{if and .Editing .Editing.Key}}
+      <form method="post" action="/admin/site/widget/action" class="mt-4 space-y-3">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="id" value="{{.Editing.ID}}">
+        <input type="hidden" name="action" value="update">
+        <div>
+          <label class="gf-label" for="widget-title">{{t "卡片标题" $.Lang}}</label>
+          <input id="widget-title" name="title" class="gf-input" value="{{.Editing.Title}}" required>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="gf-label" for="widget-sort">{{t "排序" $.Lang}}</label>
+            <input id="widget-sort" name="sort" type="number" class="gf-input" value="{{.Editing.Sort}}">
+          </div>
+          <div>
+            <label class="gf-label" for="widget-location">{{t "显示位置" $.Lang}}</label>
+            <select id="widget-location" name="location" class="gf-input">
+              <option value="all" {{if or (eq .Editing.Location "") (eq .Editing.Location "all")}}selected{{end}}>{{t "全部页面" $.Lang}}</option>
+              <option value="home" {{if eq .Editing.Location "home"}}selected{{end}}>{{t "仅首页" $.Lang}}</option>
+              <option value="topic" {{if eq .Editing.Location "topic"}}selected{{end}}>{{t "仅内容页" $.Lang}}</option>
+            </select>
+          </div>
+        </div>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" value="1" {{if .Editing.Enabled}}checked{{end}} class="h-4 w-4"> {{t "显示这张卡片" $.Lang}}</label>
+        <button class="gf-btn gf-btn-primary w-full">{{t "保存修改" $.Lang}}</button>
+      </form>
+      {{else if .Editing}}
+      <form method="post" action="/admin/site/widget/action" class="mt-4 space-y-3" x-data="sidebarWidget" data-type="{{if .Editing}}{{.Editing.Type}}{{else}}links{{end}}" data-links="{{toJSON .EditingLinks}}">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        {{if .Editing}}<input type="hidden" name="id" value="{{.Editing.ID}}">{{end}}
+        <input type="hidden" name="action" value="{{if .Editing}}update{{else}}create{{end}}">
+        <div>
+          <label class="gf-label" for="widget-title">{{t "卡片标题" $.Lang}}</label>
+          <input id="widget-title" name="title" class="gf-input" placeholder="{{t "例如：社区资源" $.Lang}}" value="{{if .Editing}}{{.Editing.Title}}{{end}}" required>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="gf-label" for="widget-type">{{t "卡片类型" $.Lang}}</label>
+            <select id="widget-type" name="type" x-model="type" class="gf-input">
+              <option value="links">{{t "链接列表" $.Lang}}</option>
+              <option value="text">{{t "文本" $.Lang}}</option>
+            </select>
+          </div>
+          <div>
+            <label class="gf-label" for="widget-sort">{{t "排序" $.Lang}}</label>
+            <input id="widget-sort" name="sort" type="number" class="gf-input" value="{{if .Editing}}{{.Editing.Sort}}{{end}}">
+          </div>
+        </div>
+        <div>
+          <label class="gf-label" for="widget-location">{{t "显示位置" $.Lang}}</label>
+          <select id="widget-location" name="location" class="gf-input">
+            <option value="all" {{if or (not .Editing) (eq .Editing.Location "") (eq .Editing.Location "all")}}selected{{end}}>{{t "全部页面（首页与内容页）" $.Lang}}</option>
+            <option value="home" {{if and .Editing (eq .Editing.Location "home")}}selected{{end}}>{{t "仅首页" $.Lang}}</option>
+            <option value="topic" {{if and .Editing (eq .Editing.Location "topic")}}selected{{end}}>{{t "仅内容页（主题详情）" $.Lang}}</option>
+          </select>
+        </div>
+
+        <div x-show="type === 'links'" class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="gf-label !mb-0">{{t "链接" $.Lang}}</span>
+            <button type="button" x-on:click="add" class="text-xs text-brand-600 hover:underline">+ {{t "添加一行" $.Lang}}</button>
+          </div>
+          <template x-for="(row, idx) in rows" :key="idx">
+            <div class="flex items-center gap-1.5">
+              <input name="link_label" x-model="row.label" class="gf-input !py-1.5 text-xs" placeholder="{{t "名称" $.Lang}}">
+              <input name="link_url" x-model="row.url" class="gf-input !py-1.5 font-mono text-xs" placeholder="/path">
+              <button type="button" x-on:click="remove(idx)" class="shrink-0 rounded-md p-1.5 text-fg-muted hover:bg-danger/10 hover:text-danger" aria-label="{{t "删除这一行" $.Lang}}">×</button>
+            </div>
+          </template>
+          <p class="gf-hint">{{t "链接支持站内路径（如 /about）或完整 https:// 地址。" $.Lang}}</p>
+        </div>
+
+        <div x-show="type === 'text'" x-cloak>
+          <label class="gf-label" for="widget-text">{{t "文本内容" $.Lang}}</label>
+          <textarea id="widget-text" name="body_text" rows="4" class="gf-input" placeholder="{{t "写一段说明…" $.Lang}}">{{if .Editing}}{{.Editing.Body}}{{end}}</textarea>
+        </div>
+
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" value="1" {{if .Editing}}{{if .Editing.Enabled}}checked{{end}}{{else}}checked{{end}} class="h-4 w-4"> {{t "显示这张卡片" $.Lang}}</label>
+        <button class="gf-btn gf-btn-primary w-full">{{if .Editing}}{{t "保存修改" $.Lang}}{{else}}{{t "添加卡片" $.Lang}}{{end}}</button>
+      </form>
+      {{else}}
+      <div class="mt-6 rounded-xl border border-dashed border-border px-5 py-10 text-center">
+        <div class="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-900 dark:text-brand-200">
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3.5" width="14" height="13" rx="1.5"/><path d="M12 3.5v13M6 7h3M6 10h3" stroke-linecap="round"/></svg>
+        </div>
+        <p class="mt-3 text-sm font-medium">{{t "从卡片库选择一张卡片" $.Lang}}</p>
+        <p class="mt-1 text-xs text-fg-muted">{{t "内置卡片无需填写内容，选择后即可显示。" $.Lang}}</p>
+        <button type="button" x-on:click="openPresets" class="gf-btn gf-btn-primary mt-4 !py-1.5 text-xs">{{t "打开卡片库" $.Lang}}</button>
+      </div>
+      {{end}}
+    </section>
+  </div>
+
+  <div x-show="open" x-cloak x-on:keydown.escape.window="closePresets" class="fixed inset-0 z-[110] flex items-center justify-center px-4">
+    <div x-show="open" x-transition.opacity class="absolute inset-0 bg-black/50" x-on:click="closePresets"></div>
+    <div x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="scale-95 opacity-0" x-transition:enter-end="scale-100 opacity-100" class="relative max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-surface p-5 shadow-2xl">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h2 class="text-base font-semibold">{{t "卡片库" $.Lang}}</h2>
+          <p class="mt-0.5 text-xs text-fg-muted">{{t "选择内置卡片或自定义卡片，添加后可调整标题、排序与显示状态。" $.Lang}}</p>
+        </div>
+        <button type="button" x-on:click="closePresets" class="rounded-lg p-1.5 text-fg-muted hover:bg-surface-muted hover:text-fg" aria-label="{{t "关闭" $.Lang}}">
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 5 10 10M15 5 5 15" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="mt-4 grid gap-2 sm:grid-cols-2">
+        {{range .Presets}}
+        <form method="post" action="/admin/site/widget/action">
+          <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+          <input type="hidden" name="action" value="preset">
+          <input type="hidden" name="preset" value="{{.Key}}">
+          <button type="submit" {{if .Exists}}disabled{{end}} class="flex h-full w-full items-start gap-3 rounded-xl border border-border p-3 text-left transition {{if .Exists}}cursor-not-allowed opacity-55{{else}}hover:border-brand-300 hover:bg-surface-muted{{end}}">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-base">{{.Icon}}</span>
+            <span class="min-w-0 flex-1">
+              <span class="flex items-center gap-2">
+                <span class="truncate text-[13px] font-medium">{{t .Title $.Lang}}</span>
+                {{if .Exists}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{t "已添加" $.Lang}}</span>{{end}}
+              </span>
+              <span class="mt-0.5 block text-[11px] leading-relaxed text-fg-muted">{{t .Description $.Lang}}</span>
+            </span>
+            {{if not .Exists}}<span class="mt-0.5 text-xs text-brand-600">{{t "添加" $.Lang}}</span>{{end}}
+          </button>
+        </form>
+        {{end}}
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+{{end}}

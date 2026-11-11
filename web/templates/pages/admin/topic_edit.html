@@ -1,0 +1,54 @@
+{{define "page"}}
+{{with .Data}}
+<div class="mx-auto max-w-3xl space-y-4">
+  <div>
+    <a href="/admin/topics" class="text-xs text-fg-muted hover:text-fg">← {{t "返回主题管理" $.Lang}}</a>
+  </div>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold">{{t "编辑主题" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "修改标题、板块、状态与首楼正文。" $.Lang}}</p>
+    </div>
+    <a href="/t/{{.Topic.Number}}" target="_blank" class="gf-btn gf-btn-ghost border border-border !py-1.5 text-xs">{{t "查看主题" $.Lang}}</a>
+  </div>
+  {{if .Error}}<div class="gf-alert-danger">{{.Error}}</div>{{end}}
+  <form method="post" class="gf-card space-y-4 p-4">
+    <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+    <div class="grid gap-3 sm:grid-cols-[1fr,14rem]">
+      <div>
+        <label class="gf-label" for="title">{{t "标题" $.Lang}}</label>
+        <input id="title" name="title" class="gf-input" value="{{.Topic.Title}}" required>
+      </div>
+      <div>
+        <label class="gf-label" for="category">{{t "板块" $.Lang}}</label>
+        <select id="category" name="category_id" class="gf-input">
+          {{range .Categories}}<option value="{{.ID}}" {{if eq .ID $.Data.Topic.CategoryID}}selected{{end}}>{{.Name}}</option>{{end}}
+        </select>
+      </div>
+    </div>
+    {{with .FirstPost}}
+    <div>
+      <label class="gf-label" for="body">{{t "正文（Markdown）" $.Lang}}</label>
+      <input type="hidden" name="first_post_id" value="{{.ID}}">
+      <textarea id="body" name="body" rows="14" class="gf-input font-mono text-xs">{{.Raw}}</textarea>
+      <p class="gf-hint">{{t "支持 Markdown；保存后会记录一次编辑修订，并重新渲染正文。" $.Lang}}</p>
+    </div>
+    {{end}}
+    <div class="sm:w-52">
+      <label class="gf-label" for="status">{{t "状态" $.Lang}}</label>
+      <select id="status" name="status" class="gf-input !py-1.5 text-xs">
+        <option value="open" {{if eq .Topic.Status "open"}}selected{{end}}>{{t "开放" $.Lang}}</option>
+        <option value="closed" {{if eq .Topic.Status "closed"}}selected{{end}}>{{t "关闭" $.Lang}}</option>
+        <option value="archived" {{if eq .Topic.Status "archived"}}selected{{end}}>{{t "归档" $.Lang}}</option>
+        <option value="hidden" {{if eq .Topic.Status "hidden"}}selected{{end}}>{{t "隐藏" $.Lang}}</option>
+        <option value="pending" {{if eq .Topic.Status "pending"}}selected{{end}}>{{t "待审核" $.Lang}}</option>
+      </select>
+    </div>
+    <div class="flex justify-end gap-2 border-t border-border pt-3">
+      <a href="/admin/topics" class="gf-btn gf-btn-ghost !py-1.5 text-xs">{{t "取消" $.Lang}}</a>
+      <button class="gf-btn gf-btn-primary !py-1.5 text-xs">{{t "保存修改" $.Lang}}</button>
+    </div>
+  </form>
+</div>
+{{end}}
+{{end}}

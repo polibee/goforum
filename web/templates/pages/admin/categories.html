@@ -1,0 +1,121 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-5">
+  {{template "content_tabs" $}}
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+  <div>
+    <p class="text-sm text-fg-muted">{{t "板块决定内容归属与发帖规则。" $.Lang}}</p>
+  </div>
+
+  <section class="gf-card p-3">
+    <h2 class="px-1 text-[13px] font-semibold">{{t "新建板块" $.Lang}}</h2>
+    <form method="post" action="/admin/categories" class="mt-2 grid gap-2 sm:grid-cols-6">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      <div class="sm:col-span-2">
+        <label class="gf-label !mb-1 text-[10px]" for="name">{{t "名称" $.Lang}}</label>
+        <input id="name" name="name" class="gf-input !py-1.5 text-xs" required>
+      </div>
+      <div>
+        <label class="gf-label !mb-1 text-[10px]" for="slug">Slug</label>
+        <input id="slug" name="slug" class="gf-input !py-1.5 text-xs" placeholder="tech">
+      </div>
+      <div>
+        <label class="gf-label !mb-1 text-[10px]" for="color">{{t "颜色" $.Lang}}</label>
+        <input id="color" name="color" class="gf-input !py-1.5 text-xs" placeholder="#2563eb">
+      </div>
+      <div>
+        <label class="gf-label !mb-1 text-[10px]" for="position">{{t "排序" $.Lang}}</label>
+        <input id="position" name="position" type="number" value="0" class="gf-input !py-1.5 text-xs">
+      </div>
+      <div>
+        <label class="gf-label !mb-1 text-[10px]" for="visibility">{{t "可见性" $.Lang}}</label>
+        <select id="visibility" name="visibility" class="gf-input !py-1.5 text-xs">
+          <option value="public">{{t "公开" $.Lang}}</option>
+          <option value="unlisted">{{t "不列出" $.Lang}}</option>
+        </select>
+      </div>
+      <div class="sm:col-span-4">
+        <label class="gf-label !mb-1 text-[10px]" for="description">{{t "描述" $.Lang}}</label>
+        <input id="description" name="description" class="gf-input !py-1.5 text-xs">
+      </div>
+      <div class="flex items-end gap-3 sm:col-span-2">
+        <label class="flex items-center gap-2 text-[11px] text-fg-muted">
+          <input type="checkbox" name="require_approval" value="1" class="h-4 w-4 rounded border-border"> {{t "发帖需审核" $.Lang}}
+        </label>
+        <button class="gf-btn gf-btn-primary ml-auto !px-3 !py-1.5 text-xs">{{t "新建板块" $.Lang}}</button>
+      </div>
+    </form>
+  </section>
+
+  <div class="grid gap-2 lg:grid-cols-2">
+    {{range .Rows}}
+    <div class="gf-card overflow-hidden">
+      <details class="group">
+        <summary class="flex cursor-pointer list-none items-center gap-3 px-3 py-2.5 transition hover:bg-surface-muted/60 [&::-webkit-details-marker]:hidden">
+          <span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background: {{if .Color}}{{.Color}}{{else}}var(--gf-brand-600){{end}}"></span>
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-[13px] font-medium">{{.Name}}</span>
+              <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{if eq .Visibility "public"}}{{t "公开" $.Lang}}{{else}}{{t "不列出" $.Lang}}{{end}}</span>
+              {{if .RequireApproval}}<span class="gf-badge bg-warning/10 !px-1.5 !py-0 text-[10px] text-warning">{{t "发帖需审核" $.Lang}}</span>{{end}}
+            </div>
+            <div class="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 text-[11px] text-fg-muted">
+              {{if .Description}}<span class="truncate">{{.Description}}</span><span>·</span>{{end}}
+              <span class="font-mono">/c/{{.Slug}}</span><span>·</span>
+              <span>{{.TopicCount}} {{t "主题" $.Lang}}</span>
+            </div>
+          </div>
+          <span class="shrink-0 text-[11px] text-brand-600 group-open:hidden">{{t "编辑" $.Lang}}</span>
+          <span class="hidden shrink-0 text-[11px] text-fg-muted group-open:inline">{{t "收起" $.Lang}}</span>
+        </summary>
+
+        <div class="border-t border-border p-3">
+          <form method="post" action="/admin/categories/{{.ID}}" class="grid gap-2 sm:grid-cols-2">
+            <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+            <div class="sm:col-span-2">
+              <label class="gf-label !mb-1 text-[10px]">{{t "名称" $.Lang}}</label>
+              <input name="name" value="{{.Name}}" class="gf-input !py-1.5 text-xs" required>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="gf-label !mb-1 text-[10px]">{{t "描述" $.Lang}}</label>
+              <input name="description" value="{{.Description}}" class="gf-input !py-1.5 text-xs">
+            </div>
+            <div>
+              <label class="gf-label !mb-1 text-[10px]">{{t "颜色" $.Lang}}</label>
+              <input name="color" value="{{.Color}}" class="gf-input !py-1.5 text-xs">
+            </div>
+            <div>
+              <label class="gf-label !mb-1 text-[10px]">{{t "排序" $.Lang}}</label>
+              <input name="position" type="number" value="{{.Position}}" class="gf-input !py-1.5 text-xs">
+            </div>
+            <div>
+              <label class="gf-label !mb-1 text-[10px]">{{t "可见性" $.Lang}}</label>
+              <select name="visibility" class="gf-input !py-1.5 text-xs">
+                <option value="public" {{if eq .Visibility "public"}}selected{{end}}>{{t "公开" $.Lang}}</option>
+                <option value="unlisted" {{if eq .Visibility "unlisted"}}selected{{end}}>{{t "不列出" $.Lang}}</option>
+              </select>
+            </div>
+            <div class="flex items-end gap-2 sm:col-span-2">
+              <label class="flex items-center gap-1.5 text-[11px] text-fg-muted">
+                <input type="checkbox" name="require_approval" value="1" {{if .RequireApproval}}checked{{end}} class="h-4 w-4 rounded border-border"> {{t "审核" $.Lang}}
+              </label>
+              <button class="gf-btn gf-btn-primary !px-2.5 !py-1.5 text-xs">{{t "保存" $.Lang}}</button>
+            </div>
+          </form>
+          <div class="mt-2 flex items-center justify-between border-t border-border pt-2 text-[11px] text-fg-muted">
+            <span>{{t "板块 ID" $.Lang}} <span class="font-mono">{{.ID}}</span></span>
+            <form method="post" action="/admin/categories/{{.ID}}/delete" data-confirm="{{t "确认删除该板块？" $.Lang}}">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+              <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs text-danger">{{t "删除" $.Lang}}</button>
+            </form>
+          </div>
+        </div>
+      </details>
+    </div>
+    {{else}}
+    <div class="gf-card p-8 text-center text-sm text-fg-muted">{{t "还没有板块" $.Lang}}</div>
+    {{end}}
+  </div>
+</div>
+{{end}}
+{{end}}

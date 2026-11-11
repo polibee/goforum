@@ -1,0 +1,79 @@
+{{define "base"}}
+<!doctype html>
+<html lang="{{if .Lang}}{{.Lang}}{{else}}{{.Site.Locale}}{{end}}" class="{{if .Dark}}dark{{end}}" data-theme="{{.ThemePreset}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}}</title>
+  <meta name="description" content="{{.Description}}">
+  <meta name="robots" content="{{.Robots}}">
+  {{if .Canonical}}<link rel="canonical" href="{{.Canonical}}">{{end}}
+  {{if .Canonical}}
+  <link rel="alternate" hreflang="zh-CN" href="{{langURL .Canonical "zh-CN"}}">
+  <link rel="alternate" hreflang="en-US" href="{{langURL .Canonical "en-US"}}">
+  {{end}}
+  <meta property="og:site_name" content="{{.Site.Name}}">
+  <meta property="og:title" content="{{.Title}}">
+  <meta property="og:description" content="{{.Description}}">
+  <meta property="og:type" content="{{if .OGType}}{{.OGType}}{{else}}website{{end}}">
+  <meta property="og:locale" content="{{if .Lang}}{{.Lang}}{{else}}{{.Site.Locale}}{{end}}">
+  {{if .Canonical}}<meta property="og:url" content="{{.Canonical}}">{{end}}
+  {{if .OGImage}}<meta property="og:image" content="{{.OGImage}}">{{end}}
+  {{if .PublishedAt}}<meta property="article:published_time" content="{{.PublishedAt.Format "2006-01-02T15:04:05Z07:00"}}">{{end}}
+  {{if .ModifiedAt}}<meta property="article:modified_time" content="{{.ModifiedAt.Format "2006-01-02T15:04:05Z07:00"}}">{{end}}
+  <meta name="twitter:card" content="{{if .OGImage}}summary_large_image{{else}}summary{{end}}">
+  <meta name="twitter:title" content="{{.Title}}">
+  <meta name="twitter:description" content="{{.Description}}">
+  {{if .OGImage}}<meta name="twitter:image" content="{{.OGImage}}">{{end}}
+  {{if .Twitter}}<meta name="twitter:site" content="@{{.Twitter}}">{{end}}
+  {{if .Site.GoogleVerify}}<meta name="google-site-verification" content="{{.Site.GoogleVerify}}">{{end}}
+  {{if .Site.BingVerify}}<meta name="msvalidate.01" content="{{.Site.BingVerify}}">{{end}}
+  {{if .Site.BaiduVerify}}<meta name="baidu-site-verification" content="{{.Site.BaiduVerify}}">{{end}}
+  {{if .JSONLD}}<script type="application/ld+json" nonce="{{.Nonce}}">{{.JSONLD}}</script>{{end}}
+  <meta name="csrf-token" content="{{.CSRF}}">
+  <meta name="theme-color" content="{{.Site.BrandColor}}">
+  <link rel="manifest" href="/static/manifest.webmanifest?v={{.AssetVersion}}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" href="{{asset "app.css"}}">
+  <style nonce="{{.Nonce}}">
+    :root { --gf-brand: {{.Site.BrandColor}}; --gf-brand-600: {{.Site.BrandColor}}; --gf-accent: {{.Site.AccentColor}}; }
+    .brand-dot { background: linear-gradient(135deg, var(--gf-brand), var(--gf-accent)); }
+  </style>
+</head>
+<body class="flex min-h-screen flex-col bg-surface pb-14 text-fg md:pb-0" data-auth="{{if .User}}1{{else}}0{{end}}">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-brand-600 focus:px-3 focus:py-2 focus:text-white">{{t "跳到主内容" $.Lang}}</a>
+  {{template "header" .}}
+  {{if .Site.Announcement}}
+  <div class="border-b border-border bg-brand-50 dark:bg-brand-950">
+    <div class="mx-auto max-w-7xl px-4 py-2 text-center text-xs text-fg-muted">{{.Site.Announcement}}</div>
+  </div>
+  {{end}}
+  {{if .AdSlots}}{{range index .AdSlots "header"}}
+  <div class="border-b border-border bg-surface-muted/30 py-2">
+    <div class="mx-auto max-w-7xl px-4">{{template "ad_slot" (dict "Ad" . "Lang" $.Lang)}}</div>
+  </div>
+  {{end}}{{end}}
+  <main id="main" class="flex-1">{{template "page" .}}</main>
+  {{if .AdSlots}}{{range index .AdSlots "footer"}}
+  <div class="border-t border-border bg-surface-muted/30 py-2">
+    <div class="mx-auto max-w-7xl px-4">{{template "ad_slot" (dict "Ad" . "Lang" $.Lang)}}</div>
+  </div>
+  {{end}}{{end}}
+  {{template "footer" .}}
+  <nav class="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-surface text-center text-[11px] text-fg-muted md:hidden">
+    <a href="/" class="py-2 hover:text-fg">{{t "首页" $.Lang}}</a>
+    <a href="/search" class="py-2 hover:text-fg">{{t "搜索" $.Lang}}</a>
+    <a href="{{if .User}}/new{{else}}/login{{end}}" class="py-2 hover:text-fg">{{t "发布" $.Lang}}</a>
+    <a href="/notifications" class="relative py-2 hover:text-fg">{{t "通知" $.Lang}}
+      <span data-notification-unread class="absolute right-1/4 top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[9px] text-white {{if eq .Unread 0}}hidden{{end}}">{{.Unread}}</span>
+    </a>
+    <a href="{{if .User}}/u/{{.User.Username}}{{else}}/login{{end}}" class="py-2 hover:text-fg">{{t "我的" $.Lang}}</a>
+  </nav>
+  {{template "command_palette" .}}
+  {{template "confirm_modal" .}}
+  {{template "flash" .}}
+  <script nonce="{{.Nonce}}" src="{{asset "app.js"}}" defer></script>
+</body>
+</html>
+{{end}}

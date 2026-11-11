@@ -1,0 +1,50 @@
+{{define "page"}}
+<div class="mx-auto max-w-3xl px-4 py-8">
+  {{with .Data}}
+  {{if .Error}}<div class="gf-alert-danger mb-4">{{t .Error $.Lang}}</div>{{end}}
+  <h1 class="text-2xl font-semibold">{{t "悬赏" $.Lang}}</h1>
+  <p class="mt-1 text-sm text-fg-muted">{{t "发布悬赏会冻结积分；采纳回复后结算，也可在结算前退款。" $.Lang}}</p>
+
+  <form method="post" action="/bounties" class="gf-card mt-4 grid gap-3 p-4 sm:grid-cols-4">
+    <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+    <div class="sm:col-span-2">
+      <label class="gf-label" for="topic_id">{{t "主题 ID" $.Lang}}</label>
+      <input id="topic_id" name="topic_id" class="gf-input font-mono" required>
+    </div>
+    <div>
+      <label class="gf-label" for="amount">{{t "悬赏积分" $.Lang}}</label>
+      <input id="amount" name="amount" type="number" min="1" class="gf-input" required>
+    </div>
+    <div class="flex items-end"><button class="gf-btn gf-btn-primary">{{t "冻结并发布" $.Lang}}</button></div>
+  </form>
+
+  <div class="mt-5 space-y-3">
+    {{range .Rows}}
+    <div class="gf-card p-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div class="text-sm font-medium">{{t "主题" $.Lang}} {{.TopicID}}</div>
+          <div class="mt-1 text-xs text-fg-muted">{{t "金额" $.Lang}} {{.Amount}} {{t "· 状态" $.Lang}} {{.Status}}</div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          {{if eq .Status "funded"}}
+          <form method="post" action="/bounties/{{.ID}}/settle" class="flex items-end gap-1">
+            <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+            <input name="post_id" class="gf-input !w-56 !py-1 text-xs" placeholder="{{t "采纳的回复 ID" $.Lang}}" required>
+            <button class="gf-btn gf-btn-primary !px-2 !py-1 text-xs">{{t "结算" $.Lang}}</button>
+          </form>
+          <form method="post" action="/bounties/{{.ID}}/refund">
+            <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+            <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "退款" $.Lang}}</button>
+          </form>
+          {{end}}
+        </div>
+      </div>
+    </div>
+    {{else}}
+    <div class="gf-card p-10 text-center text-sm text-fg-muted">{{t "还没有悬赏" $.Lang}}</div>
+    {{end}}
+  </div>
+  {{end}}
+</div>
+{{end}}

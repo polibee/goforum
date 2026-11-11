@@ -1,0 +1,116 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-4">
+  {{template "moderation_tabs" $}}
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold">{{t "审核队列" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "共" $.Lang}} {{.Total}} {{t "项待处理。举报与新用户内容会进入队列。" $.Lang}}</p>
+    </div>
+    <form method="get" action="/admin/review" class="flex items-end gap-2">
+      <select name="status" class="gf-input !py-1.5 text-xs">
+        <option value="" {{if eq .Status ""}}selected{{end}}>{{t "待处理" $.Lang}}</option>
+        <option value="pending" {{if eq .Status "pending"}}selected{{end}}>{{t "未领取" $.Lang}}</option>
+        <option value="claimed" {{if eq .Status "claimed"}}selected{{end}}>{{t "已领取" $.Lang}}</option>
+        <option value="decided" {{if eq .Status "decided"}}selected{{end}}>{{t "已处理" $.Lang}}</option>
+      </select>
+      <button class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "筛选" $.Lang}}</button>
+    </form>
+  </div>
+
+  <div class="grid grid-cols-3 gap-2.5">
+    <div class="gf-card flex items-center gap-2.5 p-3">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 3.5 16 6v4.5c0 3.2-2.4 5.3-6 6-3.6-.7-6-2.8-6-6V6l6-2.5Z" stroke-linejoin="round"/><path d="M10 7v4M10 13.5v.1" stroke-linecap="round"/></svg></span>
+      <div class="min-w-0"><div class="text-xl font-semibold tabular-nums">{{.Stats.Pending}}</div><div class="text-[11px] text-fg-muted">{{t "待领取" $.Lang}}</div></div>
+    </div>
+    <div class="gf-card flex items-center gap-2.5 p-3">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900 dark:text-brand-200"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10" cy="7" r="3"/><path d="M4.5 16c.7-3 2.5-4.5 5.5-4.5s4.8 1.5 5.5 4.5" stroke-linecap="round"/></svg></span>
+      <div class="min-w-0"><div class="text-xl font-semibold tabular-nums">{{.Stats.Claimed}}</div><div class="text-[11px] text-fg-muted">{{t "处理中" $.Lang}}</div></div>
+    </div>
+    <div class="gf-card flex items-center gap-2.5 p-3">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-success/10 text-success"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 10.5 3 3 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div class="min-w-0"><div class="text-xl font-semibold tabular-nums">{{.Stats.DecidedToday}}</div><div class="text-[11px] text-fg-muted">{{t "今日已处理" $.Lang}}</div></div>
+    </div>
+  </div>
+
+  <div class="space-y-3">
+    {{range .Rows}}
+    <div class="gf-card p-3.5">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{if eq .Item.ItemType "topic"}}{{t "主题" $.Lang}}{{else if eq .Item.ItemType "post"}}{{t "回复" $.Lang}}{{else}}{{.Item.ItemType}}{{end}}</span>
+            <span class="gf-badge {{if eq .Item.Status "pending"}}bg-warning/10 text-warning{{else if eq .Item.Status "decided"}}bg-success/10 text-success{{else}}bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200{{end}} !px-1.5 !py-0 text-[10px]">{{if eq .Item.Status "pending"}}{{t "待领取" $.Lang}}{{else if eq .Item.Status "claimed"}}{{t "处理中" $.Lang}}{{else if eq .Item.Status "decided"}}{{t "已处理" $.Lang}}{{else}}{{.Item.Status}}{{end}}</span>
+            <span class="text-[13px] font-medium">{{.TargetTitle}}</span>
+          </div>
+          <div class="mt-1 text-[11px] text-fg-muted">
+            {{t "作者" $.Lang}} {{.TargetAuthor}} · {{.FlagCount}} {{t "次举报 · 优先级" $.Lang}} {{.Item.Priority}} · {{.Item.CreatedAt.Format "2006-01-02 15:04"}}
+          </div>
+          {{if .Flags}}
+          <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+            {{range .Flags}}
+            <span class="gf-badge gf-badge-neutral">{{.ReasonCode}}</span>
+            {{if .ReasonText}}<span class="text-fg-muted">{{.ReasonText}}</span>{{end}}
+            {{end}}
+          </div>
+          {{end}}
+        </div>
+        {{if eq .Item.Status "pending"}}
+        <form method="post" action="/admin/review/{{.Item.ID}}/claim">
+          <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+          <button class="gf-btn gf-btn-primary !px-2.5 !py-1.5 text-xs">{{t "领取" $.Lang}}</button>
+        </form>
+        {{end}}
+      </div>
+
+      {{if ne .Item.Status "decided"}}
+      <form method="post" action="/admin/review/{{.Item.ID}}/decide" class="mt-3 flex flex-wrap items-end gap-2 border-t border-border pt-3">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <div>
+          <label class="gf-label">{{t "处理" $.Lang}}</label>
+          <select name="action" class="gf-input !py-1.5 text-xs">
+            <option value="dismiss">{{t "驳回举报" $.Lang}}</option>
+            <option value="hide">{{t "隐藏内容" $.Lang}}</option>
+            <option value="delete">{{t "删除内容" $.Lang}}</option>
+            <option value="restore">{{t "恢复/通过" $.Lang}}</option>
+            <option value="suspend">{{t "禁言作者" $.Lang}}</option>
+            <option value="ban">{{t "封禁作者" $.Lang}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="gf-label">{{t "期限" $.Lang}}</label>
+          <select name="duration" class="gf-input !py-1.5 text-xs">
+            <option value="1d">{{t "1 天" $.Lang}}</option>
+            <option value="7d">{{t "7 天" $.Lang}}</option>
+            <option value="30d">{{t "30 天" $.Lang}}</option>
+            <option value="" selected>{{t "永久" $.Lang}}</option>
+          </select>
+        </div>
+        <div class="min-w-48 flex-1">
+          <label class="gf-label">{{t "备注" $.Lang}}</label>
+          <input name="note" class="gf-input !py-1.5 text-xs" placeholder="{{t "处理原因（可选）" $.Lang}}">
+        </div>
+        <button class="gf-btn gf-btn-primary !px-3 !py-1.5 text-xs">{{t "提交" $.Lang}}</button>
+      </form>
+      {{else}}
+      <div class="mt-2 text-xs text-fg-muted">{{t "处理结果：" $.Lang}}{{.Item.Decision}}{{if .Item.Note}} · {{.Item.Note}}{{end}}</div>
+      {{end}}
+    </div>
+    {{else}}
+    <div class="gf-card p-10 text-center text-sm text-fg-muted">{{t "队列为空" $.Lang}}</div>
+    {{end}}
+  </div>
+
+  {{if gt .TotalPages 1}}
+  <nav class="flex flex-wrap items-center justify-center gap-1.5">
+    {{if gt .Page 1}}<a href="/admin/review?page={{sub .Page 1}}&status={{.Status}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "上一页" $.Lang}}</a>{{end}}
+    {{range pageWindow .Page .TotalPages}}
+      {{if eq . 0}}<span class="px-1.5 text-xs text-fg-muted">…</span>{{else}}<a href="/admin/review?page={{.}}&status={{$.Data.Status}}" class="flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-xs {{if eq . $.Data.Page}}border-brand-600 bg-brand-600 text-white{{else}}border-border text-fg-muted hover:border-brand-300 hover:text-fg{{end}}">{{.}}</a>{{end}}
+    {{end}}
+    {{if lt .Page .TotalPages}}<a href="/admin/review?page={{add .Page 1}}&status={{.Status}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "下一页" $.Lang}}</a>{{end}}
+  </nav>
+  {{end}}
+</div>
+{{end}}
+{{end}}

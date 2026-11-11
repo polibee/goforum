@@ -1,0 +1,58 @@
+{{define "page"}}
+<div class="mx-auto max-w-3xl px-4 py-8">
+  {{with .Data}}
+  {{if .Error}}<div class="gf-alert-danger mb-4">{{t .Error $.Lang}}</div>{{end}}
+  {{if .Code}}
+  <div class="gf-alert-success mb-4 break-all">
+    {{t "邀请码已生成：" $.Lang}}<span class="font-mono font-semibold">{{.Code}}</span>
+    <div class="mt-1 text-xs">{{t "注册链接：" $.Lang}}<a class="underline" href="/register?invite={{.Code}}">/register?invite={{.Code}}</a></div>
+  </div>
+  {{end}}
+
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold">{{t "邀请" $.Lang}}</h1>
+      <p class="mt-1 text-sm text-fg-muted">{{t "邀请码 7 天内有效，成功注册后你可获得积分。" $.Lang}}</p>
+    </div>
+  </div>
+
+  <form method="post" action="/invites" class="gf-card mt-4 flex flex-wrap items-end gap-3 p-4">
+    <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+    <div class="min-w-48 flex-1">
+      <label class="gf-label" for="email">{{t "限定邮箱（可选）" $.Lang}}</label>
+      <input id="email" name="email" type="email" class="gf-input" placeholder="{{t "留空则不限邮箱" $.Lang}}">
+    </div>
+    <button class="gf-btn gf-btn-primary">{{t "生成邀请码" $.Lang}}</button>
+  </form>
+
+  <div class="gf-card mt-5 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="gf-table">
+        <thead><tr><th>{{t "邀请码" $.Lang}}</th><th>{{t "状态" $.Lang}}</th><th>{{t "过期时间" $.Lang}}</th><th>{{t "使用者" $.Lang}}</th></tr></thead>
+        <tbody>
+          {{range .Rows}}
+          <tr>
+            <td class="font-mono">{{.Code}}</td>
+            <td><span class="gf-badge gf-badge-neutral">{{.Status}}</span></td>
+            <td class="text-xs text-fg-muted">{{.ExpiresAt.Format "2006-01-02 15:04"}}</td>
+            <td class="text-xs text-fg-muted">{{.UsedBy}}</td>
+          </tr>
+          {{else}}
+          <tr><td colspan="4" class="py-8 text-center text-fg-muted">{{t "还没有邀请码" $.Lang}}</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {{if gt .TotalPages 1}}
+  <nav class="mt-5 flex flex-wrap items-center justify-center gap-1.5">
+    {{if gt .Page 1}}<a href="{{pageURL .BasePath (sub .Page 1)}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "上一页" $.Lang}}</a>{{end}}
+    {{range pageWindow .Page .TotalPages}}
+      {{if eq . 0}}<span class="px-1.5 text-xs text-fg-muted">…</span>{{else}}<a href="{{pageURL $.Data.BasePath .}}" class="flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-xs {{if eq . $.Data.Page}}border-brand-600 bg-brand-600 text-white{{else}}border-border text-fg-muted hover:border-brand-300 hover:text-fg{{end}}">{{.}}</a>{{end}}
+    {{end}}
+    {{if lt .Page .TotalPages}}<a href="{{pageURL .BasePath (add .Page 1)}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "下一页" $.Lang}}</a>{{end}}
+  </nav>
+  {{end}}
+  {{end}}
+</div>
+{{end}}

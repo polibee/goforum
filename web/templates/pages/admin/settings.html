@@ -1,0 +1,260 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-4" x-data="settingsPage">
+  {{if .Saved}}<div class="gf-alert-success">{{t "设置已保存，立即生效。" $.Lang}}</div>{{end}}
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+  {{if .SecretErrors}}
+  <div class="gf-alert-danger">
+    {{t "以下密钥无法用当前 APP_KEY 解密（通常表示更换过密钥），请重新填写后再保存：" $.Lang}}
+    <span class="mt-1 block font-mono text-[11px]">{{range .SecretErrors}}{{.}} {{end}}</span>
+  </div>
+  {{end}}
+
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold">{{t "站点设置" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "调整站点的基础信息、外观与功能开关。只保存你改过的项目，变更会记入审计日志。" $.Lang}}</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="gf-badge gf-badge-neutral text-[10px]">{{len .Groups}} {{t "个分组" $.Lang}}</span>
+      <span x-cloak x-show="dirtyCount > 0" class="gf-badge bg-warning/10 !px-2 !py-0.5 text-[10px] text-warning">
+        <span x-text="dirtyCount"></span> {{t "项未保存" $.Lang}}
+      </span>
+    </div>
+  </div>
+
+  <!-- 新手引导 -->
+  <div class="rounded-xl border border-brand-200/70 bg-brand-50/60 p-3.5 dark:border-brand-800/60 dark:bg-brand-950/30">
+    <div class="flex items-start gap-2.5">
+      <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-600 text-white">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 2.5a5.5 5.5 0 0 0-3.2 9.98V15h6.4v-2.52A5.5 5.5 0 0 0 10 2.5Z" stroke-linejoin="round"/><path d="M8 17.5h4" stroke-linecap="round"/></svg>
+      </span>
+      <div class="min-w-0 flex-1">
+        <p class="text-[12px] font-medium text-brand-900 dark:text-brand-100">{{t "第一次配置？按这个顺序就够了" $.Lang}}</p>
+        <ol class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-brand-800/85 dark:text-brand-200/85">
+          <li>1. {{t "先填「基础信息」的站点名称与地址" $.Lang}}</li>
+          <li class="text-brand-400">→</li>
+          <li>2. {{t "到「外观」挑一个主题配色" $.Lang}}</li>
+          <li class="text-brand-400">→</li>
+          <li>3. {{t "在「注册与登录」决定谁能注册" $.Lang}}</li>
+          <li class="text-brand-400">→</li>
+          <li>4. {{t "需要发信时再配「通知与邮件」" $.Lang}}</li>
+        </ol>
+        <p class="mt-1.5 text-[10px] text-brand-700/70 dark:text-brand-300/70">{{t "数据库、缓存、端口等底层配置在服务器上的 .env 文件中，不在本页。可在「系统 → 系统信息」查看当前生效值。" $.Lang}}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 搜索 -->
+  <div class="sticky top-14 z-10 -mx-1 bg-surface/80 px-1 py-1 backdrop-blur">
+    <div class="relative">
+      <svg class="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-fg-muted" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4" stroke-linecap="round"/></svg>
+      <input type="search" x-ref="search" x-on:input.debounce.120ms="filter($event.target.value)" x-on:keydown.escape="$event.target.value=''; filter('')" class="gf-input !py-2 pl-9 pr-9 text-xs" placeholder="{{t "搜索设置项，例如：站点名称、注册、主题…" $.Lang}}" aria-label="{{t "搜索设置项" $.Lang}}">
+      <button type="button" x-cloak x-show="$refs.search.value" x-on:click="$refs.search.value=''; filter(''); $refs.search.focus()" class="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-fg-muted hover:bg-surface-muted hover:text-fg" aria-label="{{t "清除搜索" $.Lang}}">
+        <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 6 8 8M14 6l-8 8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <p x-cloak x-show="activeFilter" class="mt-1 text-[10px] text-fg-muted">
+      {{t "正在筛选：" $.Lang}}<span class="font-medium text-fg" x-text="activeFilter"></span>
+      · <button type="button" class="text-brand-600 hover:underline" x-on:click="$refs.search.value=''; filter('')">{{t "显示全部" $.Lang}}</button>
+    </p>
+  </div>
+
+  <div class="grid gap-4 xl:grid-cols-[14rem,1fr] xl:items-start">
+    <!-- 分组导航 -->
+    <nav class="hidden xl:sticky xl:top-32 xl:block">
+      <div class="gf-card overflow-hidden p-1.5">
+        <div class="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-fg-muted">{{t "设置分组" $.Lang}}</div>
+        {{range .Groups}}
+        <button type="button" data-nav-group="group-{{.Key}}" data-target="group-{{.Key}}"
+          x-on:click="jump('group-{{.Key}}')"
+          x-bind:class="current === 'group-{{.Key}}' ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-200' : 'text-fg-muted hover:bg-surface-muted hover:text-fg'"
+          class="flex w-full items-center gap-0.5 rounded-md px-2 py-1.5 text-left text-[12px] transition">
+          <span class="truncate">{{t .Label $.Lang}}</span>
+        </button>
+        {{end}}
+      </div>
+    </nav>
+
+    <form method="post" action="/admin/settings" class="min-w-0 space-y-4" x-on:submit="dirtyCount = 0">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+
+      {{range $gi, $g := .Groups}}
+      <section data-settings-group id="group-{{$g.Key}}" class="gf-card scroll-mt-32 overflow-hidden">
+        <!-- 分组标题 -->
+        <div class="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
+          <div class="flex min-w-0 items-start gap-2.5">
+            <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-fg-muted">
+              {{template "settings_icon" $g.Key}}
+            </span>
+            <div class="min-w-0">
+              <h3 class="text-[13px] font-semibold">{{t $g.Label $.Lang}}</h3>
+              <p class="mt-0.5 text-[11px] text-fg-muted">{{t $g.Hint $.Lang}}</p>
+            </div>
+          </div>
+          <span class="shrink-0 font-mono text-[10px] text-fg-muted">{{len $g.Items}} {{t "项" $.Lang}}</span>
+        </div>
+
+        <div class="divide-y divide-border">
+          {{range $item := $g.Items}}
+          <div data-setting-row data-search="{{$item.Label}} {{$item.Key}} {{$item.Description}}"
+               x-bind:class="isDirty('{{$item.Key}}') ? 'bg-warning/[0.04]' : ''"
+               class="grid gap-2 px-4 py-3.5 transition-colors sm:grid-cols-[15rem,1fr] sm:items-start sm:gap-4">
+
+            <!-- 标签列 -->
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <label class="text-[12px] font-medium text-fg" for="set-{{$item.Key}}">{{t $item.Label $.Lang}}</label>
+                {{if $item.Restart}}<span class="gf-badge bg-warning/10 !px-1.5 !py-0 text-[9px] text-warning" title="{{t "修改后需重启程序才能生效" $.Lang}}">{{t "需重启" $.Lang}}</span>{{end}}
+                {{if $item.Secret}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[9px]">{{t "敏感" $.Lang}}</span>{{end}}
+                <span x-cloak x-show="isDirty('{{$item.Key}}')" class="gf-badge bg-warning/10 !px-1.5 !py-0 text-[9px] text-warning">{{t "已修改" $.Lang}}</span>
+              </div>
+              {{if $item.Description}}<p class="mt-0.5 text-[11px] leading-snug text-fg-muted">{{t $item.Description $.Lang}}</p>{{end}}
+              <p class="mt-1 truncate font-mono text-[10px] text-fg-muted/70" title="{{$item.Key}}">{{$item.Key}}</p>
+            </div>
+
+            <!-- 控件列 -->
+            <div class="min-w-0">
+              {{if eq $item.Type "bool"}}
+                <label class="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border px-3 py-2 transition hover:border-brand-300 has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/50 dark:has-[:checked]:bg-brand-950/30">
+                  <input type="hidden" name="setting.{{$item.Key}}" value="false">
+                  <input id="set-{{$item.Key}}" type="checkbox" name="setting.{{$item.Key}}" value="true" {{if $item.Value}}checked{{end}}
+                         x-on:change="mark('{{$item.Key}}', $event.target.checked ? 'true' : 'false', '{{$item.DefaultText}}')"
+                         class="h-4 w-4 rounded border-border text-brand-600 focus:ring-brand-500">
+                  <span class="text-[12px] text-fg">{{if $item.Value}}{{t "已启用" $.Lang}}{{else}}{{t "已关闭" $.Lang}}{{end}}</span>
+                </label>
+
+              {{else if eq $item.Type "enum"}}
+                <select id="set-{{$item.Key}}" name="setting.{{$item.Key}}" class="gf-input !py-2 text-xs"
+                        x-on:change="mark('{{$item.Key}}', $event.target.value, '{{$item.DefaultText}}')">
+                  {{range $item.Enum}}<option value="{{.}}" {{if eq . $item.Value}}selected{{end}}>{{if index $item.EnumLabels .}}{{t (index $item.EnumLabels .) $.Lang}}{{else}}{{.}}{{end}}</option>{{end}}
+                </select>
+
+              {{else if eq $item.Type "secret"}}
+                <div class="flex gap-1.5">
+                  <input id="set-{{$item.Key}}" type="password" name="setting.{{$item.Key}}"
+                         x-ref="secret-{{$item.Key}}"
+                         placeholder="{{if $item.Configured}}{{t "已设置，留空则保持不变" $.Lang}}{{else}}{{t "尚未设置" $.Lang}}{{end}}"
+                         x-on:input="mark('{{$item.Key}}', $event.target.value, '')"
+                         class="gf-input !py-2 font-mono text-xs" autocomplete="new-password" spellcheck="false">
+                  <button type="button" x-on:click="toggleSecret('secret-{{$item.Key}}')"
+                          class="gf-btn gf-btn-ghost shrink-0 border border-border !px-2.5 !py-2"
+                          aria-label="{{t "显示或隐藏" $.Lang}}">
+                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 10s2.8-5 7.5-5 7.5 5 7.5 5-2.8 5-7.5 5-7.5-5-7.5-5Z" stroke-linejoin="round"/><circle cx="10" cy="10" r="2"/></svg>
+                  </button>
+                </div>
+
+              {{else if or (eq $item.Type "text") (eq $item.Type "json")}}
+                <textarea id="set-{{$item.Key}}" name="setting.{{$item.Key}}" rows="{{if eq $item.Type "json"}}4{{else}}3{{end}}"
+                          x-on:input="mark('{{$item.Key}}', $event.target.value, '{{$item.DefaultText}}')"
+                          class="gf-input text-xs {{if eq $item.Type "json"}}font-mono{{end}}">{{if eq $item.Type "json"}}{{toJSON $item.Value}}{{else}}{{$item.Value}}{{end}}</textarea>
+
+              {{else if eq $item.Type "color"}}
+                <div class="flex items-center gap-2" x-data="{ hex: '{{$item.Value}}' }">
+                  <input id="set-{{$item.Key}}" name="setting.{{$item.Key}}" x-model="hex"
+                         x-on:input="mark('{{$item.Key}}', hex, '{{$item.DefaultText}}')"
+                         class="gf-input !w-36 !py-2 font-mono text-xs" spellcheck="false">
+                  <input type="color" x-model="hex"
+                         x-on:input="mark('{{$item.Key}}', hex, '{{$item.DefaultText}}')"
+                         class="h-9 w-12 cursor-pointer rounded-md border border-border bg-surface p-1" aria-label="{{t "选择颜色" $.Lang}}">
+                  <span class="h-6 w-6 shrink-0 rounded-full border border-border" x-bind:style="'background:' + hex" aria-hidden="true"></span>
+                </div>
+
+              {{else if eq $item.Type "int"}}
+                <input id="set-{{$item.Key}}" type="number" name="setting.{{$item.Key}}" value="{{$item.Value}}"
+                       x-on:input="mark('{{$item.Key}}', $event.target.value, '{{$item.DefaultText}}')"
+                       class="gf-input !w-40 !py-2 text-xs">
+
+              {{else if eq $item.Type "url"}}
+                <input id="set-{{$item.Key}}" type="url" name="setting.{{$item.Key}}" value="{{$item.Value}}" placeholder="https://"
+                       x-on:input="mark('{{$item.Key}}', $event.target.value, '{{$item.DefaultText}}')"
+                       class="gf-input !py-2 text-xs">
+
+              {{else if eq $item.Type "email"}}
+                <input id="set-{{$item.Key}}" type="email" name="setting.{{$item.Key}}" value="{{$item.Value}}" placeholder="name@example.com"
+                       x-on:input="mark('{{$item.Key}}', $event.target.value, '{{$item.DefaultText}}')"
+                       class="gf-input !py-2 text-xs">
+
+              {{else}}
+                <input id="set-{{$item.Key}}" name="setting.{{$item.Key}}" value="{{$item.Value}}"
+                       x-on:input="mark('{{$item.Key}}', $event.target.value, '{{$item.DefaultText}}')"
+                       class="gf-input !py-2 text-xs">
+              {{end}}
+
+              <div class="mt-1 flex flex-wrap items-center justify-between gap-2">
+                <p class="text-[10px] text-fg-muted">
+                  {{if $item.Modified}}<span class="text-warning">{{t "当前值已偏离默认" $.Lang}}</span>{{else}}{{t "使用默认值" $.Lang}}{{end}}
+                  {{if and (ne $item.Type "secret") (ne $item.Type "bool") $item.DefaultText}}· <span class="font-mono">{{$item.DefaultText}}</span>{{end}}
+                </p>
+                <span class="flex items-center gap-2">
+                  {{if $item.RegisterURL}}
+                  <a href="{{$item.RegisterURL}}" target="_blank" rel="sponsored noopener" class="text-[10px] font-medium text-brand-600 hover:underline">{{t "前往注册" $.Lang}} ↗</a>
+                  {{end}}
+                  <button type="button" x-cloak x-show="isDirty('{{$item.Key}}')"
+                          x-on:click="revertField('{{$item.Key}}', '{{$item.Type}}')"
+                          class="text-[10px] text-fg-muted hover:text-fg hover:underline">{{t "撤销修改" $.Lang}}</button>
+                  {{if and $item.Modified (ne $item.Type "secret")}}
+                  <button type="button" x-on:click="resetField('{{$item.Key}}', '{{$item.DefaultText}}', '{{$item.Type}}')"
+                          class="text-[10px] text-brand-600 hover:underline">{{t "恢复默认" $.Lang}}</button>
+                  {{end}}
+                </span>
+              </div>
+            </div>
+          </div>
+          {{end}}
+
+          {{if not $g.Items}}
+          <div class="px-4 py-6 text-center text-[11px] text-fg-muted">{{t "该分组暂无设置项。" $.Lang}}</div>
+          {{end}}
+        </div>
+      </section>
+      {{end}}
+
+      <!-- 无匹配结果 -->
+      <div x-cloak x-show="noMatch" class="gf-card px-4 py-10 text-center">
+        <svg class="mx-auto h-8 w-8 text-fg-muted/50" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4" stroke-linecap="round"/></svg>
+        <p class="mt-2 text-[13px] font-medium">{{t "没有匹配的设置项" $.Lang}}</p>
+        <p class="mt-0.5 text-[11px] text-fg-muted">{{t "换个关键词试试，比如「注册」「邮件」「主题」。" $.Lang}}</p>
+        <button type="button" class="gf-btn gf-btn-ghost mt-3 !py-1.5 text-xs" x-on:click="$refs.search.value=''; filter('')">{{t "清除搜索" $.Lang}}</button>
+      </div>
+
+      <!-- 保存栏 -->
+      <div class="h-2"></div>
+    <div class="sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-surface/95 p-2.5 shadow-lg backdrop-blur">
+        <p class="px-1 text-[11px] text-fg-muted">
+          <span x-cloak x-show="dirtyCount > 0" class="text-warning"><span x-text="dirtyCount"></span> {{t "项待保存" $.Lang}}</span>
+          <span x-show="dirtyCount === 0">{{t "未检测到修改。" $.Lang}}</span>
+        </p>
+        <div class="flex gap-2">
+          <a href="/admin" class="gf-btn gf-btn-ghost !py-1.5 text-xs">{{t "取消" $.Lang}}</a>
+          <button type="submit" class="gf-btn gf-btn-primary !py-1.5 text-xs">{{t "保存设置" $.Lang}}</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{{end}}
+{{end}}
+
+{{define "settings_icon"}}
+{{if eq . "general"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6.5"/><path d="M3.5 10h13M10 3.5c1.8 2 2.6 4.1 2.6 6.5s-.8 4.5-2.6 6.5c-1.8-2-2.6-4.1-2.6-6.5s.8-4.5 2.6-6.5Z"/></svg>
+{{else if eq . "registration"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="7" r="3"/><path d="M3 16c.6-2.8 2.4-4.2 5-4.2s4.4 1.4 5 4.2M14 6.5a2.4 2.4 0 0 1 0 4.6M15.5 16c-.2-1.4-.7-2.4-1.5-3.2" stroke-linecap="round"/></svg>
+{{else if eq . "verification"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="4.5" width="15" height="11" rx="1.5"/><path d="m3.5 6 6.5 4.5L16.5 6" stroke-linecap="round" stroke-linejoin="round"/><path d="m12.5 12.5 1.3 1.3 2.2-2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+{{else if eq . "content"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 3.5h10v13H5v-13Z" stroke-linejoin="round"/><path d="M7.5 7h5M7.5 10h5M7.5 13h3" stroke-linecap="round"/></svg>
+{{else if eq . "appearance"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3a7 7 0 1 0 0 14c1 0 1.6-.7 1.6-1.4 0-.4-.2-.7-.4-1-.2-.3-.4-.6-.4-1 0-.8.6-1.4 1.4-1.4H14a3 3 0 0 0 3-3c0-3.3-3.1-6-7-6Z" stroke-linejoin="round"/><circle cx="6.8" cy="9" r=".9" fill="currentColor" stroke="none"/><circle cx="9.5" cy="6.5" r=".9" fill="currentColor" stroke="none"/><circle cx="13" cy="7.5" r=".9" fill="currentColor" stroke="none"/></svg>
+{{else if eq . "navigation"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5h14M3 10h14M3 15h9" stroke-linecap="round"/></svg>
+{{else if eq . "notification"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5.5 8a4.5 4.5 0 0 1 9 0c0 3 1 4.5 1 4.5H4.5S5.5 11 5.5 8Z" stroke-linejoin="round"/><path d="M8 15.5a2 2 0 0 0 4 0" stroke-linecap="round"/></svg>
+{{else if eq . "seo"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="9" r="5.5"/><path d="m13.5 13.5 3.5 3.5" stroke-linecap="round"/><path d="M7 9h4M9 7v4" stroke-linecap="round"/></svg>
+{{else if eq . "antispam"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3.5 16 6v4.5c0 3.2-2.4 5.3-6 6-3.6-.7-6-2.8-6-6V6l6-2.5Z" stroke-linejoin="round"/><path d="m7.5 10 1.8 1.8 3.2-3.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+{{else if eq . "media"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="14" height="10" rx="1.5"/><path d="m5.5 12.5 2.5-2.5 2 2 2.5-3 2 3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+{{else if eq . "payment"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="5" width="15" height="10" rx="1.5"/><path d="M2.5 8.5h15" stroke-linecap="round"/></svg>
+{{else if eq . "search"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4" stroke-linecap="round"/></svg>
+{{else if eq . "security"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="9" width="10" height="7" rx="1.5"/><path d="M7.5 9V7a2.5 2.5 0 0 1 5 0v2" stroke-linecap="round"/></svg>
+{{else if eq . "integrations"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7.5 3v3.5M12.5 3v3.5" stroke-linecap="round"/><path d="M6 6.5h8v4a4 4 0 0 1-8 0v-4Z" stroke-linejoin="round"/><path d="M10 14.5V17" stroke-linecap="round"/></svg>
+{{else if eq . "maintenance"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M11.5 4.2a3.4 3.4 0 0 1 4.5 4.5L9 15.7l-4.2.5.5-4.2 6.2-7.8Z" stroke-linejoin="round"/></svg>
+{{else if eq . "ops"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3.5 14.5 7 9l3 2.5 3.5-5 3 3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.5 16.5h13" stroke-linecap="round"/></svg>
+{{else if eq . "trust"}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3.5 12.3 8l4.7.7-3.4 3.3.8 4.7-4.4-2.3-4.4 2.3.8-4.7L3 8.7 7.7 8 10 3.5Z" stroke-linejoin="round"/></svg>
+{{else}}<svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6.5"/><path d="M10 13.5v.1M10 6.5v4" stroke-linecap="round"/></svg>
+{{end}}
+{{end}}
+

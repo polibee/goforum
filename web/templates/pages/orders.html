@@ -1,0 +1,56 @@
+{{define "page"}}
+<div class="mx-auto max-w-5xl px-4 py-8">
+  {{with .Data}}
+  {{if .Error}}<div class="gf-alert-danger mb-4">{{t .Error $.Lang}}</div>{{end}}
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div>
+      <h1 class="text-2xl font-semibold">{{t "我的订单" $.Lang}}</h1>
+      <p class="mt-1 text-sm text-fg-muted">{{t "查看充值、套餐购买与退款记录。" $.Lang}}</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="/pricing" class="gf-btn gf-btn-primary">{{t "购买套餐" $.Lang}}</a>
+      <a href="/billing/subscription" class="gf-btn gf-btn-ghost">{{t "我的订阅" $.Lang}}</a>
+    </div>
+  </div>
+
+  <div class="gf-card mt-6 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="gf-table">
+        <thead><tr><th>{{t "订单号" $.Lang}}</th><th>{{t "商品" $.Lang}}</th><th>{{t "金额" $.Lang}}</th><th>{{t "渠道" $.Lang}}</th><th>{{t "状态" $.Lang}}</th><th>{{t "创建时间" $.Lang}}</th><th></th></tr></thead>
+        <tbody>
+          {{range .Rows}}
+          <tr>
+            <td class="whitespace-nowrap font-mono text-xs">{{.OutTradeNo}}</td>
+            <td class="text-sm">{{.ProductName}}</td>
+            <td class="whitespace-nowrap text-sm">¥{{money .AmountMinor}}{{if gt .DiscountMinor 0}}<div class="text-[11px] text-success">{{t "已优惠 ¥" $.Lang}}{{money .DiscountMinor}}</div>{{end}}</td>
+            <td class="text-xs text-fg-muted">{{.ChannelCode}}</td>
+            <td>
+              <span class="gf-badge {{if eq .Status "paid"}}bg-success/10 text-success{{else if eq .Status "refunded"}}bg-warning/10 text-warning{{else if eq .Status "pending"}}bg-accent/10 text-accent{{else}}bg-surface-muted text-fg-muted{{end}}">
+                {{if eq .Status "paid"}}{{t "已支付" $.Lang}}{{else if eq .Status "pending"}}{{t "待支付" $.Lang}}{{else if eq .Status "created"}}{{t "待支付" $.Lang}}{{else if eq .Status "refunded"}}{{t "已退款" $.Lang}}{{else if eq .Status "failed"}}{{t "失败" $.Lang}}{{else}}{{.Status}}{{end}}
+              </span>
+            </td>
+            <td class="whitespace-nowrap text-xs text-fg-muted">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+            <td class="text-right">
+              {{if or (eq .Status "pending") (eq .Status "created")}}<a href="/checkout/{{.OutTradeNo}}" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "去支付" $.Lang}}</a>{{end}}
+              {{if eq .Status "paid"}}<a href="/checkout/{{.OutTradeNo}}" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "详情" $.Lang}}</a>{{end}}
+            </td>
+          </tr>
+          {{else}}
+          <tr><td colspan="7" class="py-10 text-center text-fg-muted">{{t "暂无订单" $.Lang}}</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {{if gt .TotalPages 1}}
+  <nav class="mt-5 flex flex-wrap items-center justify-center gap-1.5">
+    {{if gt .Page 1}}<a href="{{pageURL .BasePath (sub .Page 1)}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "上一页" $.Lang}}</a>{{end}}
+    {{range pageWindow .Page .TotalPages}}
+      {{if eq . 0}}<span class="px-1.5 text-xs text-fg-muted">…</span>{{else}}<a href="{{pageURL $.Data.BasePath .}}" class="flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-xs {{if eq . $.Data.Page}}border-brand-600 bg-brand-600 text-white{{else}}border-border text-fg-muted hover:border-brand-300 hover:text-fg{{end}}">{{.}}</a>{{end}}
+    {{end}}
+    {{if lt .Page .TotalPages}}<a href="{{pageURL .BasePath (add .Page 1)}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "下一页" $.Lang}}</a>{{end}}
+  </nav>
+  {{end}}
+  {{end}}
+</div>
+{{end}}

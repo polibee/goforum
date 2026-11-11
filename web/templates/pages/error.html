@@ -1,0 +1,13 @@
+{{define "page"}}
+{{with .Data}}
+<section class="mx-auto max-w-xl px-4 py-24 text-center">
+  <div class="text-6xl font-bold text-brand-600">{{.Code}}</div>
+  <h1 class="mt-4 text-xl font-semibold">{{t .Message $.Lang}}</h1>
+  {{if .RequestID}}<p class="mt-2 text-xs text-fg-muted">{{t "请求 ID：" $.Lang}}{{.RequestID}}</p>{{end}}
+  <div class="mt-8 flex justify-center gap-3">
+    <a href="/" class="gf-btn gf-btn-primary">{{t "返回首页" $.Lang}}</a>
+    <a href="/admin/login" class="gf-btn gf-btn-ghost">{{t "登录后台" $.Lang}}</a>
+  </div>
+</section>
+{{end}}
+{{end}}

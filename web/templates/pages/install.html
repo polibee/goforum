@@ -1,0 +1,74 @@
+{{define "page"}}
+{{with .Data}}
+<div class="gf-card p-6 sm:p-8">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-semibold">{{t "安装 GoForum" $.Lang}}</h1>
+      <p class="mt-1 text-sm text-fg-muted">{{t "选择数据库并创建第一个管理员账号。" $.Lang}}</p>
+    </div>
+    <span class="gf-badge gf-badge-neutral">M0</span>
+  </div>
+
+  {{if .Error}}<div class="gf-alert-danger mt-4">{{t .Error $.Lang}}</div>{{end}}
+
+  <form method="post" action="/install" class="mt-6 space-y-5">
+    <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+
+    <div>
+      <h2 class="text-xs font-semibold uppercase tracking-wider text-fg-muted">{{t "数据库" $.Lang}}</h2>
+      <div class="mt-3 grid gap-4 sm:grid-cols-[10rem,1fr]">
+        <div>
+          <label class="gf-label" for="driver">{{t "驱动" $.Lang}}</label>
+          <select id="driver" name="driver" class="gf-input">
+            {{$d := .}}
+            {{range .Drivers}}<option value="{{.}}" {{if eq . $d.Driver}}selected{{end}}>{{.}}</option>{{end}}
+          </select>
+        </div>
+        <div>
+          <label class="gf-label" for="dsn">DSN</label>
+          <input id="dsn" name="dsn" value="{{.DSN}}" class="gf-input font-mono text-xs" required>
+          <p class="gf-hint">SQLite：<code>./data/goforum.db</code>{{t "；MySQL/PostgreSQL 填完整连接串。" $.Lang}}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-border pt-5">
+      <h2 class="text-xs font-semibold uppercase tracking-wider text-fg-muted">{{t "站点" $.Lang}}</h2>
+      <div class="mt-3 grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="gf-label" for="site_name">{{t "站点名称" $.Lang}}</label>
+          <input id="site_name" name="site_name" value="{{.SiteName}}" class="gf-input" required>
+        </div>
+        <div>
+          <label class="gf-label" for="base_url">{{t "站点 URL（可留空）" $.Lang}}</label>
+          <input id="base_url" name="base_url" value="{{.BaseURL}}" class="gf-input" placeholder="https://forum.example.com">
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-border pt-5">
+      <h2 class="text-xs font-semibold uppercase tracking-wider text-fg-muted">{{t "管理员" $.Lang}}</h2>
+      <div class="mt-3 space-y-4">
+        <div>
+          <label class="gf-label" for="username">{{t "用户名" $.Lang}}</label>
+          <input id="username" name="username" value="{{.Username}}" class="gf-input" required autocomplete="username">
+        </div>
+        <div>
+          <label class="gf-label" for="email">{{t "邮箱" $.Lang}}</label>
+          <input id="email" name="email" type="email" value="{{.Email}}" class="gf-input" required autocomplete="email">
+        </div>
+        <div>
+          <label class="gf-label" for="password">{{t "密码" $.Lang}}</label>
+          <input id="password" name="password" type="password" class="gf-input" required autocomplete="new-password">
+          <p class="gf-hint">{{t "至少 10 个字符。使用 Argon2id 存储。" $.Lang}}</p>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="gf-btn gf-btn-primary w-full">{{t "完成安装" $.Lang}}</button>
+  </form>
+
+  <p class="mt-5 text-xs text-fg-muted">{{t "安装完成后会写入" $.Lang}} <code>configs/goforum.yaml</code>{{t "，并锁定安装入口。" $.Lang}}</p>
+</div>
+{{end}}
+{{end}}

@@ -1,0 +1,1331 @@
+SMTP 服务地址
+更新时间：2026-04-02 18:02:39
+复制 MD 格式
+产品详情
+我的收藏
+本文介绍不同站点的SMTP服务地址。
+
+
+
+区域
+
+地址
+
+华东 1（杭州）
+
+smtpdm.aliyun.com
+
+新加坡（新）
+
+smtpdm-ap-southeast-1.aliyuncs.com
+
+美国（弗吉尼亚）（新）
+
+smtpdm-us-east-1.aliyuncs.com
+
+德国（法兰克福）
+
+smtpdm-eu-central-1.aliyuncs.com
+
+SMTP端口号：25，80，465（SSL加密）
+
+说明
+ECS 基于安全考虑，目前已默认禁用 25 端口。如果您的发送程序部署在阿里云 ECS 上，建议您不勾选 SSL 时，使用 80 端口，勾选 SSL 时，使用 465 端口。云虚拟主机服务器同上。
+
+此外，我们支持通过smtp命令“STARTTLS”在端口25或80上开启显式SSL/TLS功能。
+
+请根据控制台选择的服务区域选择对应的服务器地址
+
+中国香港等其他区域发信，请参考：如何选择发信区域
+
+说明
+旧服务器（新用户不建议使用）：
+
+新加坡：smtpdm-ap-southeast-1.aliyun.com
+
+美国（原悉尼）：smtpdm-ap-southeast-2.aliyun.com
+
+若遇到无法联通等问题，请参考以下网络和端口测试命令并截图执行结果：
+
+1、获取IP：ping smtpdm.aliyun.com
+
+2、检查服务器网络和端口连通性：telnet smtpdm.aliyun.com 80
+
+3、检查路由丢包情况：mtr -n -i 1 -c 100 smtpdm.aliyun.com
+
+4、抓包分析（使用端口80或25非加密端口抓包，需要抓复现问题的包）：tcpdump -i any -n host smtpdm.aliyun.com and port 80 -w package.pcap
+
+说明
+注意替换为实际使用的服务器地址和端口。SMTP 之 Nodejs 调用示例
+更新时间：2019-05-22 17:19:59
+复制 MD 格式
+产品详情
+我的收藏
+使用 Nodejs 通过 SMTP 协议发信
+ 
+// load nodemailer as follows
+// npm install nodemailer --save
+var nodemailer = require('nodemailer');
+// create reusable transporter object using SMTP transport
+var transporter = nodemailer.createTransport({
+    "host": "smtpdm.aliyun.com",
+    "port": 25,
+    //"secureConnection": true, // use SSL, the port is 465
+    "auth": {
+        "user": 'username@userdomain', // user name
+        "pass": 'xxxxxxx'         // password
+    }
+});
+// NB! No need to recreate the transporter object. You can use
+// the same transporter object for all e-mails
+// setup e-mail data with unicode symbols
+var mailOptions = {
+    from: 'NickName<username@userdomain>', // sender address mailfrom must be same with the user
+    to: 'x@x.com, xx@xx.com', // list of receivers
+    cc:'haha<xxx@xxx.com>', // copy for receivers
+    bcc:'haha<xxxx@xxxx.com>', // secret copy for receivers
+    subject: 'Hello', // Subject line
+    text: 'Hello world', // plaintext body
+    replyTo:'xxxxx@xxxxx.com',//custom reply address
+    html:'<b>Hello world</b><img src="cid:01" style="width:200px;height:auto">', // html body
+    attachments: [
+        {
+            filename: 'text0.txt',
+            content: 'hello world!'
+        },
+        {
+            filename: 'text1.txt',
+            path: './app.js'
+        },{
+            filename:'test.JPG',
+            path:'./Desert.jpg',
+            cid:'01'
+       }
+    ],
+};
+// send mail with defined transport object
+transporter.sendMail(mailOptions, function(error, info){
+    if(error){
+        return console.log(error);
+    }
+    console.log('Message sent: ' + info.response);
+});
+
+
+API概览
+更新时间：2026-08-14 14:14:58
+复制 MD 格式
+产品详情
+我的收藏
+API标准及多语言预置SDK
+本产品（Dm/2015-11-23）的OpenAPI采用RPC签名风格。我们已经为开发者封装了常见编程语言的SDK，开发者可通过下载SDK直接调用本产品OpenAPI而无需关心技术细节。如果现有SDK不能满足使用需求，可通过签名机制进行自签名对接。由于自签名细节非常复杂，需花费 5个工作日左右。因此建议加入我们的服务钉钉群（147535001692），在专家指导下进行签名对接。
+
+在使用API前，您需要准备好身份账号及访问密钥（AccessKey），才能有效通过客户端工具（SDK、CLI等）访问API。细节请参见获取AccessKey。
+
+自定义签名场景
+若您的业务场景有特殊需求，需通过自签名方式对接 API，建议优先咨询我们的技术支持团队（服务钉钉群：147535001692），获取专业指导以确保高效接入。
+
+账号与安全准备
+阿里云账号具备对所有资源的完全管理权限。一旦 AccessKey 泄露，所有相关资源都将面临未经授权访问的风险。为确保安全，建议创建一个仅具备 API 访问权限的RAM用户并配置其 AccessKey，同时基于最小权限原则 (PoLP) 配置 RAM 策略。仅在明确需要阿里云账号权限的特定场景下，才使用阿里云账号。
+
+账户
+
+
+
+API
+
+标题
+
+API概述
+
+DescAccountSummary	获取账户信息	获取账户信息。
+UpdateUser	更新用户信息	更新用户相关的信息，包括设置等信息。
+GetUser	获取用户信息	获取用户相关的信息，包含设置等信息。
+白名单
+
+
+
+API
+
+标题
+
+API概述
+
+AddIpfilter	添加IP白名单	添加 IP 白名单。
+DeleteIpfilterByEdmId	删除IP白名单	删除IP保护信息。
+IP防护
+
+
+
+API
+
+标题
+
+API概述
+
+UpdateIpProtection	开启或者关闭IP保护功能	开启或者关闭IP保护功能。
+GetIpProtection	获取IP防护功能是否开启	获取IP防护功能是否开启。
+GetIpfilterList	获取 IP 筛选器列表	获取 IP 筛选器列表。
+任务
+
+
+
+API
+
+标题
+
+API概述
+
+QueryTaskByParam	查询任务	查询任务。
+邮件
+
+
+
+API
+
+标题
+
+API概述
+
+ 统计	统计	
+SenderStatisticsByTagNameAndBatchID	获取指定条件下的发送数据	获取指定条件下的发送数据。
+SenderStatisticsDetailByParam	获取发送详情	获取发送详情。
+GetTrackList	邮件跟踪获取发送数据	邮件跟踪获取发送数据。
+GetTrackListByMailFromAndTagName	根据发信地址和标签获取邮件跟踪发送数据	邮件跟踪获取指定条件下的发送数据。
+SingleSendMail	发送单条邮件	发送单条邮件。
+BatchSendMail	批量发送邮件	批量发送邮件。
+SendTestByTemplate	发送测试邮件	发送测试邮件。
+域名
+
+
+
+API
+
+标题
+
+API概述
+
+CreateDomain	创建域名	创建域名。
+DeleteDomain	删除域名	删除域名。
+ModifyPWByDomain	设置域名的 SMTP 的密码	设置域名的SMTP的密码。
+QueryDomainByParam	查询域名列表信息	查询域名列表信息。
+CheckDomain	验证域名	验证域名。
+DescDomain	配置域名	配置域名。
+地址
+
+
+
+API
+
+标题
+
+API概述
+
+CreateMailAddress	创建发信地址	创建发信地址。
+DeleteMailAddress	删除发信地址	删除发信地址。
+ModifyMailAddress	设置发信地址SMTP密码和回信地址	设置发信地址SMTP密码和回信地址。
+QueryInvalidAddress	获取无效地址信息	获取无效地址信息。
+QueryMailAddressByParam	查询发信地址列表	查询发信地址列表。
+ApproveReplyMailAddress	验证回信地址	验证回信地址。
+CheckReplyToMailAddress	验证回信地址发送邮件	验证回信地址发送邮件。
+DeleteInvalidAddress	删除无效地址	从全局无效地址库移除无效地址。
+收件人
+
+
+
+API
+
+标题
+
+API概述
+
+CreateReceiver	创建收件人列表	创建收件人列表。
+DeleteReceiver	删除收件人列表	删除收件人列表。
+DeleteReceiverDetail	删除单个收件人	删除单个收件人。
+QueryReceiverByParam	查询收件人列表	查询收件人列表。
+QueryReceiverDetail	查询某个收件人列表详情	查询某个收件人列表详情。
+SaveReceiverDetail	创建单个收件人	创建单个收件人。
+标签
+
+
+
+API
+
+标题
+
+API概述
+
+CreateTag	创建标签	创建标签。
+DeleteTag	删除标签	删除标签。
+ModifyTag	修改标签	修改标签。
+QueryTagByParam	获取标签	获取标签。
+独立IP
+
+
+
+API
+
+标题
+
+API概述
+
+DedicatedIpPoolCreate	创建IP池	IP池创建。
+DedicatedIpPoolDelete	删除IP池	IP池删除。
+DedicatedIpPoolUpdate	更新IP池	更新IP池。
+DedicatedIpPoolList	列出IP池	列出IP池。
+DedicatedIpNonePoolList	列出未加入IP池IP	列出未加入IP池IP，用于IP池设置。
+DedicatedIpAutoRenewal	设置IP自动续费	设置IP自动续费。
+DedicatedIpChangeWarmupType	更新已购买IP预热方式	更新已购买IP预热方式。
+DedicatedIpList	列出购买IP列表	列出购买IP列表。
+无效地址
+
+
+
+API
+
+标题
+
+API概述
+
+ListUserSuppression	列出个人和系统无效地址	列出用户手动录入和系统判别的无效地址。
+CreateUserSuppression	创建无效地址或域名	创建无效地址或域名。
+RemoveUserSuppression	移除个人和系统无效地址	删除个人级别无效地址库（“系统判别”和“个人录入”）。
+UnblockSending	解除发信限制	解除退订、举报等发信限制。
+ListBlockSending	获取发信黑名单	获取发信黑名单列表。
+配置集
+
+
+
+API
+
+标题
+
+API概述
+
+ConfigSetCreate	创建配置集	创建配置集，上限100个。
+ConfigSetDelete	删除配置集	配置集删除。
+ConfigSetUpdate	更新配置集	更新配置集。
+ConfigSetDetail	获取配置集	获取配置集详情。
+ConfigSetList	列出配置集列表	列出配置集列表。
+ConfigSetRelationFromAddress	配置集关联发信地址	关联配置集和发信地址。
+ConfigSetCancelRelationFromAddress	配置集取消关联发信地址	取消配置集关联发信地址。
+模板
+
+
+
+API
+
+标题
+
+API概述
+
+DeleteTemplate	模板删除API	查看模板信息
+ModifyTemplate	修改邮件模板	修改邮件模板。
+CreateTemplate	创建邮件模板	在邮件推送服务中创建新的邮件模板。
+DescTemplate	查看模板信息	查看模板信息。
+QueryTemplateByParam	分页查询模板列表信息	模板列表信息分页查询。
+地址校验
+API
+
+标题
+
+API概述
+
+API
+
+标题
+
+API概述
+
+GetValidationQuota	获取校验额度	获取电子邮件校验额度。
+ValidateEmail	校验电子邮件	校验电子邮件地址。
+SendValidateFile	上传检验文件	上传所需校验的地址列表。
+GetValidateFileStatus	获取校验结果文件状态	获取校验文件的状态。
+GetValidateFile	获取校验结果文件	获取批量校验任务的结果文件。
+DeleteValidateFile	删除校验结果文件	在校验完成后，删除校验文件。
+其他
+
+
+
+API
+
+标题
+
+API概述
+
+ListValidateFile	列出上传的校验文件	获取上传的校验文件的列表服务接入点
+更新时间：2026-07-29 17:51:29
+复制 MD 格式
+产品详情
+我的收藏
+亚太
+
+
+
+
+地域名称
+
+地域ID
+
+公网接入地址
+
+VPC接入地址
+
+新加坡	ap-southeast-1	dm.ap-southeast-1.aliyuncs.com	dm-vpc.ap-southeast-1.aliyuncs.com
+澳大利亚（悉尼）已关停	ap-southeast-2	dm.ap-southeast-2.aliyuncs.com	dm-vpc.ap-southeast-2.aliyuncs.com
+华东1（杭州）	cn-hangzhou	dm.aliyuncs.com	dm-vpc.cn-hangzhou.aliyuncs.com
+欧洲与美洲
+
+
+
+
+地域名称
+
+地域ID
+
+公网接入地址
+
+VPC接入地址
+
+美国（弗吉尼亚）	us-east-1	dm.us-east-1.aliyuncs.com	dm-vpc.us-east-1.aliyuncs.com
+德国（法兰克福）	eu-central-1	dm.eu-central-1.aliyuncs.com	dm-vpc.eu-central-1.aliyuncs.com授权信息
+更新时间：2026-08-18 17:11:07
+复制 MD 格式
+产品详情
+我的收藏
+访问控制（RAM）是阿里云提供的管理用户身份与资源访问权限的服务。使用 RAM 可以让您避免与其他用户共享阿里云账号密钥，并可按需为用户授予最小权限。RAM 中使用权限策略描述授权的具体内容。
+
+本文为您介绍 邮件推送 为 RAM 权限策略定义的操作（Action）、资源（Resource）和条件（Condition）。 邮件推送 的 RAM 代码（RamCode）为 dm ，支持的授权粒度为 操作级 。
+
+权限策略通用结构
+权限策略支持 JSON 格式，其通用结构如下：
+
+ 
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "<Effect>",
+      "Action": "<Action>",
+      "Resource": "<Resource>",
+      "Condition": {
+        "<Condition_operator>": {
+          "<Condition_key>": [
+            "<Condition_value>"
+          ]
+        }
+      }
+    }
+  ]
+}        
+各字段含义如下：
+
+Effect：权限策略效果。取值：Allow（允许）、Deny（拒绝）。
+
+Action：授予允许或拒绝权限的具体操作。具体信息，请参见操作（Action）。
+
+Resource：受操作影响的具体对象，您可以使用资源 ARN 来描述指定资源。具体信息，请参见资源（Resource）。
+
+Condition：指授权生效的条件。可选字段。具体信息，请参见条件（Condition）。
+
+Condition_operator：条件运算符，不同类型的条件对应不同的条件运算符。具体信息，请参见权限策略基本元素。
+
+Condition_key：条件关键字。
+
+Condition_value：条件关键字对应的值。
+
+操作（Action）
+下表是邮件推送定义的操作，这些操作可以在 RAM 权限策略语句的Action元素中使用，用来授予执行该操作的权限。下面对表中的具体项提供说明：
+
+操作：是指具体的权限点。
+
+API：是指操作对应的 API 接口。
+
+访问级别：是指每个操作的访问级别，取值为写入（Write）、读取（Read）或列出（List）。
+
+资源类型：是指操作中支持授权的资源类型。具体说明如下：
+
+对于必选的资源类型，用前面加 * 表示。
+
+对于不支持资源级授权的操作，用全部资源表示。
+
+条件关键字：是指云产品自身定义的条件关键字。该列不体现适用于任何操作的通用条件关键字。
+
+关联操作：是指成功执行操作所需要的其他权限。操作者必须同时具备关联操作的权限，操作才能成功。
+
+
+
+
+
+
+
+操作
+
+API
+
+访问级别
+
+资源类型
+
+条件关键字
+
+关联操作
+
+dm:ModifyTag	ModifyTag	update	
+*全部资源
+
+*
+
+无	无
+dm:ListUserSuppression	ListUserSuppression	list	
+*全部资源
+
+*
+
+无	无
+dm:DeleteDomain	DeleteDomain	delete	
+*全部资源
+
+*
+
+无	无
+dm:ConfigSetDelete	ConfigSetDelete	delete	
+*全部资源
+
+*
+
+无	无
+dm:GetIpfilterList	GetIpfilterList	get	
+*全部资源
+
+*
+
+无	无
+dm:ModifyMailAddress	ModifyMailAddress	update	
+*全部资源
+
+*
+
+无	无
+dm:ConfigSetUpdate	ConfigSetUpdate	update	
+*全部资源
+
+*
+
+无	无
+dm:GetIpProtection	GetIpProtection	get	
+*全部资源
+
+*
+
+无	无
+dm:CheckReplyToMailAddress	CheckReplyToMailAddress		
+*全部资源
+
+*
+
+无	无
+dm:RemoveUserSuppression	RemoveUserSuppression	delete	
+*全部资源
+
+*
+
+无	无
+dm:AddIpfilter	AddIpfilter	create	
+*全部资源
+
+*
+
+无	无
+dm:GetValidationQuota	GetValidationQuota	get	
+*全部资源
+
+*
+
+无	无
+dm:DedicatedIpPoolList	DedicatedIpPoolList	none	
+*全部资源
+
+*
+
+无	无
+dm:CreateTag	CreateTag	create	
+*全部资源
+
+*
+
+无	无
+dm:GetValidateFile	GetValidateFile	get	
+*全部资源
+
+*
+
+无	无
+dm:BatchSendMail	BatchSendMail	none	
+*全部资源
+
+*
+
+无	无
+dm:DescTemplate	DescTemplate	get	
+*全部资源
+
+*
+
+无	无
+dm:ConfigSetCancelRelationFromAddress	ConfigSetCancelRelationFromAddress	update	
+*全部资源
+
+*
+
+无	无
+dm:DedicatedIpPoolDelete	DedicatedIpPoolDelete	none	
+*全部资源
+
+*
+
+无	无
+dm:DeleteTemplate	DeleteTemplate		
+*全部资源
+
+*
+
+无	无
+dm:ConfigSetList	ConfigSetList	none	
+*全部资源
+
+*
+
+无	无
+dm:DeleteInvalidAddress	DeleteInvalidAddress		
+*全部资源
+
+*
+
+无	无
+dm:DescDomain	DescDomain	get	
+*全部资源
+
+*
+
+无	无
+dm:QueryReceiverDetail	QueryReceiverDetail	get	
+*全部资源
+
+*
+
+无	无
+dm:DeleteReceiverDetail	DeleteReceiverDetail	delete	
+*全部资源
+
+*
+
+无	无
+dm:GetTrackList	GetTrackList	list	
+*全部资源
+
+*
+
+无	无
+dm:ModifyTemplate	ModifyTemplate		
+*全部资源
+
+*
+
+无	无
+dm:ModifyPWByDomain	ModifyPWByDomain	update	
+*全部资源
+
+*
+
+无	无
+dm:CreateMailAddress	CreateMailAddress	create	
+*全部资源
+
+*
+
+无	无
+dm:DedicatedIpChangeWarmupType	DedicatedIpChangeWarmupType	update	
+*全部资源
+
+*
+
+无	无
+dm:QueryMailAddressByParam	QueryMailAddressByParam	get	
+*全部资源
+
+*
+
+无	无
+dm:CheckDomain	CheckDomain		
+*全部资源
+
+*
+
+无	无
+dm:SenderStatisticsDetailByParam	SenderStatisticsDetailByParam	list	
+*全部资源
+
+*
+
+无	无
+dm:ConfigSetCreate	ConfigSetCreate	create	
+*全部资源
+
+*
+
+无	无
+dm:ListValidateFile	ListValidateFile	get	
+*全部资源
+
+*
+
+无	无
+dm:CreateTemplate	CreateTemplate	create	
+*全部资源
+
+*
+
+无	无
+dm:QueryDomainByParam	QueryDomainByParam	get	
+*全部资源
+
+*
+
+无	无
+dm:DedicatedIpPoolUpdate	DedicatedIpPoolUpdate	update	
+*全部资源
+
+*
+
+无	无
+dm:GetValidateFileStatus	GetValidateFileStatus	get	
+*全部资源
+
+*
+
+无	无
+dm:CreateDomain	CreateDomain	create	
+*全部资源
+
+*
+
+无	无
+dm:SingleSendMail	SingleSendMail	none	
+*全部资源
+
+*
+
+无	无
+dm:GetTrackListByMailFromAndTagName	GetTrackListByMailFromAndTagName	list	
+*全部资源
+
+*
+
+无	无
+dm:DeleteReceiver	DeleteReceiver	delete	
+*全部资源
+
+*
+
+无	无
+dm:GetUser	GetUser	none	
+*全部资源
+
+*
+
+无	无
+dm:ConfigSetDetail	ConfigSetDetail	none	
+*全部资源
+
+*
+
+无	无
+dm:DescAccountSummary	DescAccountSummary	get	
+*全部资源
+
+*
+
+无	无
+dm:SenderStatisticsByTagNameAndBatchID	SenderStatisticsByTagNameAndBatchID	list	
+*全部资源
+
+*
+
+无	无
+dm:ListBlockSending	ListBlockSending	list	
+*全部资源
+
+*
+
+无	无
+dm:UpdateIpProtection	UpdateIpProtection	update	
+*全部资源
+
+*
+
+无	无
+dm:DeleteTag	DeleteTag	delete	
+*全部资源
+
+*
+
+无	无
+dm:DedicatedIpAutoRenewal	DedicatedIpAutoRenewal	update	
+*全部资源
+
+*
+
+无	无
+dm:UpdateUser	UpdateUser	none	
+*全部资源
+
+*
+
+无	无
+dm:CreateReceiver	CreateReceiver	create	
+*全部资源
+
+*
+
+无	无
+dm:DedicatedIpList	DedicatedIpList	none	
+*全部资源
+
+*
+
+无	无
+dm:SaveReceiverDetail	SaveReceiverDetail	create	
+*全部资源
+
+*
+
+无	无
+dm:ValidateEmail	ValidateEmail	none	
+*全部资源
+
+*
+
+无	无
+dm:UnblockSending	UnblockSending	delete	
+*全部资源
+
+*
+
+无	无
+dm:DeleteValidateFile	DeleteValidateFile	delete	
+*全部资源
+
+*
+
+无	无
+dm:DedicatedIpPoolCreate	DedicatedIpPoolCreate	create	
+*全部资源
+
+*
+
+无	无
+dm:QueryTagByParam	QueryTagByParam	get	
+*全部资源
+
+*
+
+无	无
+dm:ConfigSetRelationFromAddress	ConfigSetRelationFromAddress	create	
+*全部资源
+
+*
+
+无	无
+dm:DeleteMailAddress	DeleteMailAddress	delete	
+*全部资源
+
+*
+
+无	无
+dm:QueryInvalidAddress	QueryInvalidAddress	get	
+*全部资源
+
+*
+
+无	无
+dm:DeleteIpfilterByEdmId	DeleteIpfilterByEdmId	delete	
+*全部资源
+
+*
+
+无	无
+dm:QueryTemplateByParam	QueryTemplateByParam	get	
+*全部资源
+
+*
+
+无	无
+dm:SendTestByTemplate	SendTestByTemplate	get	
+*全部资源
+
+*
+
+无	无
+dm:QueryReceiverByParam	QueryReceiverByParam	get	
+*全部资源
+
+*
+
+无	无
+dm:DedicatedIpNonePoolList	DedicatedIpNonePoolList	none	
+*全部资源
+
+*
+
+无	无
+dm:CreateUserSuppression	CreateUserSuppression	create	
+*全部资源
+
+*
+
+无	无
+dm:SendValidateFile	SendValidateFile	create	
+*全部资源
+
+*
+
+无	无
+dm:ApproveReplyMailAddress	ApproveReplyMailAddress		
+*全部资源
+
+*
+
+无	无
+dm:QueryTaskByParam	QueryTaskByParam	get	
+*全部资源
+
+*
+
+无	无
+资源（Resource）
+下表是邮件推送定义的资源，这些资源可以在 RAM 权限策略语句的Resource元素中使用，用来授予对该资源执行具体操作的权限。 其中，资源 ARN 是资源在阿里云上的唯一标识。具体说明如下：
+
+{#}为变量标识，需要您替换为实际值。例如：{#ramcode}需要您替换为实际的云服务RAM代码。
+
+*表示全部。例如：
+
+{#resourceType}为*时：表示全部资源。
+
+{#regionId}为*时：表示全部地域。
+
+{#accountId}为*时：表示全部阿里云账号。
+
+
+
+资源类型
+
+资源 ARN
+
+条件（Condition）
+邮件推送未定义产品级别的条件关键字。如需查看适用于所有云产品的通用条件关键字，请参见通用条件关键字。
+
+相关操作
+您可以创建自定义权限策略，并将权限策略授予 RAM 用户、RAM 用户组或 RAM 角色。具体操作如下：
+
+创建自定义权限策略
+
+为 RAM 用户授权
+
+为 RAM 用户组授权
+
+为 RAM 角色授权DescAccountSummary - 获取账户信息
+更新时间：2026-01-07 16:42:09
+复制 MD 格式
+产品详情
+我的收藏
+获取账户信息。
+
+调试
+您可以在OpenAPI Explorer中直接运行该接口，免去您计算签名的困扰。运行成功后，OpenAPI Explorer可以自动生成SDK代码示例。
+
+ 调试
+授权信息
+下表是API对应的授权信息，可以在RAM权限策略语句的Action元素中使用，用来给RAM用户或RAM角色授予调用此API的权限。具体说明如下：
+
+操作：是指具体的权限点。
+
+访问级别：是指每个操作的访问级别，取值为写入（Write）、读取（Read）或列出（List）。
+
+资源类型：是指操作中支持授权的资源类型。具体说明如下：
+
+对于必选的资源类型，用前面加 * 表示。
+
+对于不支持资源级授权的操作，用全部资源表示。
+
+条件关键字：是指云产品自身定义的条件关键字。
+
+关联操作：是指成功执行操作所需要的其他权限。操作者必须同时具备关联操作的权限，操作才能成功。
+
+
+
+
+
+
+操作
+
+访问级别
+
+资源类型
+
+条件关键字
+
+关联操作
+
+dm:DescAccountSummary
+
+get
+
+*全部资源
+
+*
+
+无	无
+请求参数
+
+
+
+
+
+名称
+
+类型
+
+必填
+
+描述
+
+示例值
+
+当前API无需请求参数
+
+返回参数
+
+
+
+
+名称
+
+类型
+
+描述
+
+示例值
+
+object
+
+EnableTimes	
+integer
+
+生效时间
+
+0
+
+SmsSign	
+integer
+
+已废弃，兼容性原因保留。
+
+0
+
+MonthQuota	
+integer
+
+月额度
+
+60000
+
+Receivers	
+integer
+
+收件人数量
+
+0
+
+DayuStatus	
+integer
+
+大鱼状态（已废弃，兼容性原因保留。）
+
+0
+
+DailyQuota	
+integer
+
+日额度
+
+2000
+
+SmsRecord	
+integer
+
+已废弃，兼容性原因保留。
+
+0
+
+Tags	
+integer
+
+标签数量
+
+0
+
+Templates	
+integer
+
+模板数量
+
+1
+
+MailAddresses	
+integer
+
+发信地址数量
+
+0
+
+RequestId	
+string
+
+请求 ID
+
+82B295BB-7E69-491F-9896-ECEAFF09E1A4
+
+QuotaLevel	
+integer
+
+信誉度等级
+
+2
+
+MaxQuotaLevel	
+integer
+
+最高等级
+
+10
+
+Domains	
+integer
+
+域名数量
+
+1
+
+UserStatus	
+integer
+
+用户状态： 0 正常 1 冻结 2 欠费 4 限制外发 8 逻辑删除
+
+0
+
+SmsTemplates	
+integer
+
+已废弃，兼容性原因保留。
+
+0
+
+RemainFreeQuota	
+integer
+
+总免费额度剩余量
+
+1910
+
+DailyRemainFreeQuota	
+integer
+
+日免费额度剩余量
+
+100
+
+IpChannelType	
+string
+
+所在出口 IP 通道类型。
+
+backup：备用 IP 通道，不进行日常维护。使用该通道的客户建议购买独立 IP 以确保稳定性。
+
+normal：正常 IP 通道，由邮件推送团队持续维护，保障通道稳定可靠。
+
+normal
+
+示例
+正常返回示例
+
+JSON格式
+
+ 
+{
+  "EnableTimes": 0,
+  "SmsSign": 0,
+  "MonthQuota": 60000,
+  "Receivers": 0,
+  "DayuStatus": 0,
+  "DailyQuota": 2000,
+  "SmsRecord": 0,
+  "Tags": 0,
+  "Templates": 1,
+  "MailAddresses": 0,
+  "RequestId": "82B295BB-7E69-491F-9896-ECEAFF09E1A4",
+  "QuotaLevel": 2,
+  "MaxQuotaLevel": 10,
+  "Domains": 1,
+  "UserStatus": 0,
+  "SmsTemplates": 0,
+  "RemainFreeQuota": 1910,
+  "DailyRemainFreeQuota": 100,
+  "IpChannelType": "normal"
+}
+错误码
+HTTP status code
+
+错误码
+
+错误信息
+
+描述
+
+HTTP status code
+
+错误码
+
+错误信息
+
+描述
+
+500	InternalError	The request processing has failed due to some unknown error.	
+403	User.Blacklisted	The specified user is in the blacklist.	
+403	User.RegisterTooMuch	The specified user has registered more than one DirectMail account.	
+访问错误中心查看更多错误码。
+
+变更历史
+更多信息，参考变更详情。UpdateUser - 更新用户信息
+更新时间：2025-07-21 10:46:23
+复制 MD 格式
+产品详情
+我的收藏
+更新用户相关的信息，包括设置等信息。
+
+调试
+您可以在OpenAPI Explorer中直接运行该接口，免去您计算签名的困扰。运行成功后，OpenAPI Explorer可以自动生成SDK代码示例。
+
+调试
+授权信息
+下表是API对应的授权信息，可以在RAM权限策略语句的Action元素中使用，用来给RAM用户或RAM角色授予调用此API的权限。具体说明如下：
+
+操作：是指具体的权限点。
+访问级别：是指每个操作的访问级别，取值为写入（Write）、读取（Read）或列出（List）。
+资源类型：是指操作中支持授权的资源类型。具体说明如下：
+对于必选的资源类型，用前面加 * 表示。
+对于不支持资源级授权的操作，用全部资源表示。
+条件关键字：是指云产品自身定义的条件关键字。
+关联操作：是指成功执行操作所需要的其他权限。操作者必须同时具备关联操作的权限，操作才能成功。
+操作	访问级别	资源类型	条件关键字	关联操作
+dm:UpdateUser	none	
+*全部资源
+*
+无
+无
+请求参数
+名称	类型	必填	描述	示例值
+User	object	否	
+用户信息
+
+EnableEventbridge	boolean	否	
+是否启用了 EventBridge
+
+true
+返回参数
+名称	类型	描述	示例值
+object	
+Schema of Response
+
+RequestId	string	
+请求 ID
+
+7BC346F6-1092-5852-B6E2-CCE2E5AAE51F
+示例
+正常返回示例
+
+JSON格式
+
+ 
+{
+  "RequestId": "7BC346F6-1092-5852-B6E2-CCE2E5AAE51F"
+}
+错误码
+访问错误中心查看更多错误码。
+
+变更历史
+变更时间	变更内容概要	操作
+暂无变更历史GetUser - 获取用户信息
+更新时间：2025-07-21 10:46:35
+复制 MD 格式
+产品详情
+我的收藏
+获取用户相关的信息，包含设置等信息。
+
+调试
+您可以在OpenAPI Explorer中直接运行该接口，免去您计算签名的困扰。运行成功后，OpenAPI Explorer可以自动生成SDK代码示例。
+
+调试
+授权信息
+下表是API对应的授权信息，可以在RAM权限策略语句的Action元素中使用，用来给RAM用户或RAM角色授予调用此API的权限。具体说明如下：
+
+操作：是指具体的权限点。
+访问级别：是指每个操作的访问级别，取值为写入（Write）、读取（Read）或列出（List）。
+资源类型：是指操作中支持授权的资源类型。具体说明如下：
+对于必选的资源类型，用前面加 * 表示。
+对于不支持资源级授权的操作，用全部资源表示。
+条件关键字：是指云产品自身定义的条件关键字。
+关联操作：是指成功执行操作所需要的其他权限。操作者必须同时具备关联操作的权限，操作才能成功。
+操作	访问级别	资源类型	条件关键字	关联操作
+dm:GetUser	none	
+*全部资源
+*
+无
+无
+请求参数
+名称	类型	必填	描述	示例值
+当前API无需请求参数
+返回参数
+名称	类型	描述	示例值
+object	
+Schema of Response
+
+RequestId	string	
+请求 ID
+
+10A1AD70-E48E-476D-98D9-39BD92193837
+Data	object	
+返回内容
+
+EnableEventbridge	boolean	
+是否启用了 EventBridge
+
+true
+示例
+正常返回示例
+
+JSON格式
+
+ 
+{
+  "RequestId": "10A1AD70-E48E-476D-98D9-39BD92193837",
+  "Data": {
+    "EnableEventbridge": true
+  }
+}
+错误码
+访问错误中心查看更多错误码。
+
+变更历史
+变更时间	变更内容概要	操作
+暂无变更历史

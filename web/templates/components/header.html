@@ -1,0 +1,117 @@
+{{define "header"}}
+<header class="sticky top-0 z-40 border-b border-border bg-surface">
+  <div class="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4">
+    <a href="/" class="flex min-w-0 items-center gap-2">
+      {{if .Site.LogoLight}}
+        <img src="{{.Site.LogoLight}}" alt="{{.Site.Name}}" class="h-7">
+      {{else}}
+        <span class="brand-dot inline-flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold text-white">{{initial .Site.Name}}</span>
+        <span class="hidden truncate text-sm font-semibold sm:inline">{{.Site.Name}}</span>
+      {{end}}
+    </a>
+
+    <nav class="hidden items-center gap-1 md:flex">
+      {{if .NavHeader}}
+        {{range .NavHeader}}
+          {{if or (eq .Permission "") (and $.User (hasPerm $.User .Permission))}}
+            <a href="{{.URL}}" class="gf-btn {{if eq .URL "/new"}}gf-btn-primary ml-1{{else}}gf-btn-ghost{{end}}" {{if .External}}target="_blank" rel="noopener"{{end}}>{{if eq .URL "/new"}}<svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg>{{end}}<span>{{.Label}}</span></a>
+          {{end}}
+        {{end}}
+      {{else}}
+        <a href="/" class="gf-btn gf-btn-ghost">{{t "首页" $.Lang}}</a>
+        <a href="/search" class="gf-btn gf-btn-ghost">{{t "搜索" $.Lang}}</a>
+        <a href="/pricing" class="gf-btn gf-btn-ghost">{{t "充值" $.Lang}}</a>
+        {{if .User}}<a href="/new" class="gf-btn gf-btn-primary ml-1"><svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg><span>{{t "发布" $.Lang}}</span></a>{{end}}
+      {{end}}
+    </nav>
+
+    <div class="flex items-center gap-1">
+      <details class="relative md:hidden" data-menu>
+        <summary class="gf-btn gf-btn-ghost cursor-pointer list-none" aria-label="{{t "打开导航" $.Lang}}">{{t "菜单" $.Lang}}</summary>
+        <div class="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
+          <a href="/" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "首页" $.Lang}}</a>
+          <a href="/search" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "搜索" $.Lang}}</a>
+          <a href="/pricing" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "充值" $.Lang}}</a>
+          {{if .User}}
+            <a href="/new" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "发布" $.Lang}}</a>
+            <a href="/bookmarks" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "我的收藏" $.Lang}}</a>
+            <a href="/following" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "我的关注" $.Lang}}</a>
+            <a href="/promote" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "自助推广" $.Lang}}</a>
+            <a href="/messages" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "私信" $.Lang}}</a>
+            <a href="/billing/orders" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "我的订单" $.Lang}}</a>
+            <a href="/settings/profile" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "个人资料" $.Lang}}</a>
+            <a href="/settings/security" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "账号安全" $.Lang}}</a>
+          {{end}}
+          <a href="?theme=default&lang={{.Lang}}" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "默认风格" $.Lang}}</a>
+          <a href="?theme=wechat&lang={{.Lang}}" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "微信绿" $.Lang}}</a>
+          <a href="?theme=douyin&lang={{.Lang}}" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "抖音简约" $.Lang}}</a>
+          <a href="?theme=minimal&lang={{.Lang}}" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "简约白" $.Lang}}</a>
+          <button type="button" x-data="theme" x-on:click="toggle" class="block w-full px-3 py-2 text-left text-sm hover:bg-surface-muted">{{t "浅色 / 深色" $.Lang}}</button>
+          <div class="my-1 border-t border-border"></div>
+          <a href="?lang=zh-CN" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "简体中文" $.Lang}}</a>
+          <a href="?lang=en-US" class="block px-3 py-2 text-sm hover:bg-surface-muted">English</a>
+        </div>
+      </details>
+      <button type="button" x-data x-on:click="$dispatch('open-command')" class="gf-btn gf-btn-ghost hidden md:inline-flex" aria-label="{{t "搜索" $.Lang}}">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5.5"/><path d="m13 13 4 4" stroke-linecap="round"/></svg>
+        <kbd class="ml-1 hidden rounded border border-border bg-surface-muted px-1 py-0.5 text-[10px] text-fg-muted lg:inline">⌘K</kbd>
+      </button>
+      <details class="relative hidden sm:block" data-menu>
+        <summary class="gf-btn gf-btn-ghost cursor-pointer list-none">{{if eq .Lang "en-US"}}EN{{else}}{{t "中文" $.Lang}}{{end}}</summary>
+        <div class="absolute right-0 mt-2 w-32 overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
+          <a href="?lang=zh-CN" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "简体中文" $.Lang}}</a>
+          <a href="?lang=en-US" class="block px-3 py-2 text-sm hover:bg-surface-muted">English</a>
+        </div>
+      </details>
+      <details class="relative hidden sm:block" data-menu>
+        <summary class="gf-btn gf-btn-ghost cursor-pointer list-none">{{t "主题外观" $.Lang}}</summary>
+        <div class="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
+          <a href="?theme=default&lang={{.Lang}}" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "默认风格" $.Lang}}{{if eq .ThemePreset "default"}} ✓{{end}}</a>
+          <a href="?theme=wechat&lang={{.Lang}}" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "微信绿" $.Lang}}{{if eq .ThemePreset "wechat"}} ✓{{end}}</a>
+          <a href="?theme=douyin&lang={{.Lang}}" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "抖音简约" $.Lang}}{{if eq .ThemePreset "douyin"}} ✓{{end}}</a>
+          <a href="?theme=minimal&lang={{.Lang}}" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "简约白" $.Lang}}{{if eq .ThemePreset "minimal"}} ✓{{end}}</a>
+          <button type="button" x-data="theme" x-on:click="toggle" class="block w-full px-3 py-2 text-left text-sm hover:bg-surface-muted">{{t "浅色 / 深色" $.Lang}}</button>
+        </div>
+      </details>
+      {{if .User}}
+        <details class="relative" data-menu>
+          <summary class="gf-btn gf-btn-ghost cursor-pointer list-none !px-2 sm:!px-3.5">{{template "avatar" (dict "Name" .User.Username "URL" .User.AvatarURL "Class" "h-6 w-6 text-[10px]")}}<span class="hidden sm:inline">{{.User.Username}}</span></summary>
+          <div class="absolute right-0 mt-2 w-44 overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
+            <a href="/u/{{.User.Username}}" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "我的主页" $.Lang}}</a>
+            <a href="/notifications" class="flex items-center justify-between px-3 py-2 text-sm hover:bg-surface-muted">
+              <span>{{t "通知" $.Lang}}</span>
+              <span data-notification-unread class="gf-badge bg-danger/10 text-danger {{if eq .Unread 0}}hidden{{end}}">{{.Unread}}</span>
+            </a>
+            <a href="/points" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "积分与签到" $.Lang}}</a>
+            <a href="/promote" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "自助推广" $.Lang}}</a>
+            <a href="/pricing" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "充值 / 套餐" $.Lang}}</a>
+            <a href="/billing/orders" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "我的订单" $.Lang}}</a>
+            <a href="/billing/subscription" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "我的订阅" $.Lang}}</a>
+            <a href="/invites" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "邀请" $.Lang}}</a>
+            <a href="/lotteries" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "抽奖" $.Lang}}</a>
+            <a href="/bounties" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "悬赏" $.Lang}}</a>
+            <a href="/bookmarks" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "我的收藏" $.Lang}}</a>
+            <a href="/following" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "我的关注" $.Lang}}</a>
+            <a href="/messages" class="flex items-center justify-between px-3 py-2 text-sm hover:bg-surface-muted">
+              <span>{{t "私信" $.Lang}}</span>
+              {{if gt .MsgUnread 0}}<span class="gf-badge bg-danger/10 text-danger">{{.MsgUnread}}</span>{{end}}
+            </a>
+            <a href="/settings/profile" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "个人资料" $.Lang}}</a>
+            <a href="/settings/security" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "账号安全" $.Lang}}</a>
+            <a href="/settings/notifications" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "通知设置" $.Lang}}</a>
+            {{if hasPerm .User "moderation.queue.view"}}<a href="/admin/review" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "审核队列" $.Lang}}</a>{{end}}
+            {{if hasPerm .User "admin.access"}}<a href="/admin" class="block px-3 py-2 text-sm hover:bg-surface-muted">{{t "管理后台" $.Lang}}</a>{{end}}
+            <form method="post" action="/logout">
+              <input type="hidden" name="_csrf" value="{{.CSRF}}">
+              <button class="block w-full px-3 py-2 text-left text-sm text-danger hover:bg-surface-muted">{{t "退出登录" $.Lang}}</button>
+            </form>
+          </div>
+        </details>
+      {{else}}
+        <a href="/login" class="gf-btn gf-btn-ghost">{{t "登录" $.Lang}}</a>
+        <a href="/register" class="gf-btn gf-btn-primary">{{t "注册" $.Lang}}</a>
+      {{end}}
+    </div>
+  </div>
+</header>
+{{end}}

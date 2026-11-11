@@ -1,0 +1,81 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-4">
+  {{template "moderation_tabs" $}}
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold">{{t "敏感词" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "命中后可直接拦截，或转入审核队列。" $.Lang}}</p>
+    </div>
+    <span class="gf-badge gf-badge-neutral">{{.Total}} {{t "个敏感词" $.Lang}}</span>
+  </div>
+
+  <form method="post" action="/admin/banned-words" class="gf-card grid gap-2 p-3 sm:grid-cols-6">
+    <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+    <div class="sm:col-span-2">
+      <label class="gf-label !mb-1 text-[10px]" for="word">{{t "词/正则" $.Lang}}</label>
+      <input id="word" name="word" class="gf-input !py-1.5 text-xs" required>
+    </div>
+    <div>
+      <label class="gf-label !mb-1 text-[10px]" for="match_type">{{t "匹配" $.Lang}}</label>
+      <select id="match_type" name="match_type" class="gf-input !py-1.5 text-xs">
+        <option value="contains">{{t "包含" $.Lang}}</option>
+        <option value="exact">{{t "完全匹配" $.Lang}}</option>
+        <option value="regex">{{t "正则" $.Lang}}</option>
+      </select>
+    </div>
+    <div>
+      <label class="gf-label !mb-1 text-[10px]" for="action">{{t "动作" $.Lang}}</label>
+      <select id="action" name="action" class="gf-input !py-1.5 text-xs">
+        <option value="block">{{t "拦截" $.Lang}}</option>
+        <option value="review">{{t "转审核" $.Lang}}</option>
+      </select>
+    </div>
+    <div class="sm:col-span-2 flex items-end">
+      <button class="gf-btn gf-btn-primary !px-3 !py-1.5 text-xs">{{t "添加敏感词" $.Lang}}</button>
+    </div>
+  </form>
+
+  <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+    {{range .Rows}}
+    <article class="gf-card flex items-center gap-2.5 p-3">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg {{if eq .Action "block"}}bg-danger/10 text-danger{{else}}bg-warning/10 text-warning{{end}}">
+        {{if eq .Action "block"}}
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10" cy="10" r="6.5"/><path d="m5.5 5.5 9 9" stroke-linecap="round"/></svg>
+        {{else}}
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 3.5 16 6v4.5c0 3.2-2.4 5.3-6 6-3.6-.7-6-2.8-6-6V6l6-2.5Z" stroke-linejoin="round"/><path d="M10 7v4M10 13.5v.1" stroke-linecap="round"/></svg>
+        {{end}}
+      </span>
+      <div class="min-w-0 flex-1">
+        <div class="truncate font-mono text-[13px]">{{.Word}}</div>
+        <div class="mt-0.5 flex flex-wrap items-center gap-1">
+          <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{if eq .MatchType "contains"}}{{t "包含" $.Lang}}{{else if eq .MatchType "exact"}}{{t "完全匹配" $.Lang}}{{else if eq .MatchType "regex"}}{{t "正则" $.Lang}}{{else}}{{.MatchType}}{{end}}</span>
+          <span class="gf-badge {{if eq .Action "block"}}bg-danger/10 text-danger{{else}}bg-warning/10 text-warning{{end}} !px-1.5 !py-0 text-[10px]">{{if eq .Action "block"}}{{t "拦截" $.Lang}}{{else}}{{t "转审核" $.Lang}}{{end}}</span>
+          <span class="gf-badge {{if .Enabled}}bg-success/10 text-success{{else}}bg-surface-muted text-fg-muted{{end}} !px-1.5 !py-0 text-[10px]">{{if .Enabled}}{{t "启用" $.Lang}}{{else}}{{t "停用" $.Lang}}{{end}}</span>
+        </div>
+      </div>
+      <form method="post" action="/admin/banned-words/{{.ID}}/delete" data-confirm="{{t "确认删除该敏感词？" $.Lang}}">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <button class="rounded-md p-1.5 text-fg-muted transition hover:bg-danger/10 hover:text-danger" aria-label="{{t "删除" $.Lang}}">
+          <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4.5 6h11M8 6V4.5h4V6M6 6l.8 10h6.4L14 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </form>
+    </article>
+    {{else}}
+    <div class="gf-card px-6 py-12 text-center text-sm text-fg-muted sm:col-span-2 xl:col-span-3">{{t "还没有敏感词" $.Lang}}</div>
+    {{end}}
+  </div>
+
+  {{if gt .TotalPages 1}}
+  <nav class="flex flex-wrap items-center justify-center gap-1.5">
+    {{if gt .Page 1}}<a href="{{pageURL .BasePath (sub .Page 1)}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "上一页" $.Lang}}</a>{{end}}
+    {{range pageWindow .Page .TotalPages}}
+      {{if eq . 0}}<span class="px-1.5 text-xs text-fg-muted">…</span>{{else}}<a href="{{pageURL $.Data.BasePath .}}" class="flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-xs {{if eq . $.Data.Page}}border-brand-600 bg-brand-600 text-white{{else}}border-border text-fg-muted hover:border-brand-300 hover:text-fg{{end}}">{{.}}</a>{{end}}
+    {{end}}
+    {{if lt .Page .TotalPages}}<a href="{{pageURL .BasePath (add .Page 1)}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "下一页" $.Lang}}</a>{{end}}
+  </nav>
+  {{end}}
+</div>
+{{end}}
+{{end}}

@@ -1,0 +1,256 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-4" x-data="opsPanel">
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold">{{t "运营面板" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "积分规则、等级、徽章、邀请、抽奖与悬赏。" $.Lang}}</p>
+    </div>
+    <span class="gf-badge bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{len .Rules}} {{t "条积分规则" $.Lang}}</span>
+  </div>
+
+  <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="gf-card flex items-center gap-3 p-3.5">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900 dark:text-brand-200">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 3.5v13M6.5 6.5h5.5a2 2 0 0 1 0 4H7.5a2 2 0 0 0 0 4h6" stroke-linecap="round"/></svg>
+      </span>
+      <div><div class="text-[11px] text-fg-muted">{{t "积分规则" $.Lang}}</div><div class="text-xl font-semibold tabular-nums">{{len .Rules}}</div></div>
+    </div>
+    <div class="gf-card flex items-center gap-3 p-3.5">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 14.5 7 10l3 3 6-7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.5 5.5H16V9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <div><div class="text-[11px] text-fg-muted">{{t "等级" $.Lang}}</div><div class="text-xl font-semibold tabular-nums">{{len .Levels}}</div></div>
+    </div>
+    <div class="gf-card flex items-center gap-3 p-3.5">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-300">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m10 3.5 2 4 4.5.7-3.2 3.1.7 4.4L10 13.6l-4 2.1.7-4.4L3.5 8.2 8 7.5l2-4Z" stroke-linejoin="round"/></svg>
+      </span>
+      <div><div class="text-[11px] text-fg-muted">{{t "徽章" $.Lang}}</div><div class="text-xl font-semibold tabular-nums">{{len .Badges}}</div></div>
+    </div>
+    <div class="gf-card flex items-center gap-3 p-3.5">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-300">
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="7" width="13" height="9.5" rx="1.5"/><path d="M3.5 11h13M10 7v9.5M10 7C8.5 4.5 6 4 5 5.2 4 6.4 6 7 10 7Zm0 0c1.5-2.5 4-3 5-1.8 1 1.2-1 1.8-5 1.8Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <div><div class="text-[11px] text-fg-muted">{{t "悬赏" $.Lang}}</div><div class="text-xl font-semibold tabular-nums">{{len .Bounties}}</div></div>
+    </div>
+  </div>
+
+  <div class="flex w-fit max-w-full flex-wrap gap-1 overflow-x-auto rounded-xl border border-border bg-surface p-1 shadow-sm">
+    {{$tabs := list "rules" "levels" "badges" "invites" "lotteries" "bounties"}}
+    {{range $tabs}}
+    <button type="button" x-on:click="tab = '{{.}}'" x-bind:class="tab === '{{.}}' ? 'bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200' : 'text-fg-muted hover:bg-surface-muted hover:text-fg'" class="whitespace-nowrap rounded-lg px-3 py-1.5 text-[13px] font-medium transition">
+      {{if eq . "rules"}}{{t "积分规则" $.Lang}}{{else if eq . "levels"}}{{t "等级阈值" $.Lang}}{{else if eq . "badges"}}{{t "徽章" $.Lang}}{{else if eq . "invites"}}{{t "邀请" $.Lang}}{{else if eq . "lotteries"}}{{t "抽奖" $.Lang}}{{else}}{{t "悬赏" $.Lang}}{{end}}
+    </button>
+    {{end}}
+  </div>
+
+  <section x-show="tab === 'rules'" x-cloak class="gf-card overflow-hidden">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
+      <h3 class="text-[13px] font-semibold">{{t "积分规则" $.Lang}}</h3>
+      <span class="text-[10px] text-fg-muted">{{t "积分可为负；每日上限 0 表示不限" $.Lang}}</span>
+    </div>
+    <div class="divide-y divide-border">
+      {{range .Rules}}
+      <form method="post" action="/admin/gamification/action" class="grid items-end gap-2 px-4 py-2.5 sm:grid-cols-6">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="action" value="update_rule">
+        <input type="hidden" name="rule_id" value="{{.ID}}">
+        <div class="sm:col-span-2">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[13px] font-medium">{{.Name}}</span>
+            {{if .Enabled}}<span class="h-1.5 w-1.5 rounded-full bg-success"></span>{{else}}<span class="h-1.5 w-1.5 rounded-full bg-border"></span>{{end}}
+          </div>
+          <div class="font-mono text-[10px] text-fg-muted">{{.Code}}</div>
+        </div>
+        <div><label class="gf-label !mb-1 text-[10px]">{{t "积分" $.Lang}}</label><input name="points" type="number" value="{{.Points}}" class="gf-input !py-1.5 text-xs tabular-nums"></div>
+        <div><label class="gf-label !mb-1 text-[10px]">{{t "每日上限" $.Lang}}</label><input name="daily_limit" type="number" value="{{.DailyLimit}}" class="gf-input !py-1.5 text-xs tabular-nums"></div>
+        <label class="flex items-center gap-1.5 pb-1.5 text-[11px] text-fg-muted"><input type="checkbox" name="enabled" value="1" {{if .Enabled}}checked{{end}} class="h-3.5 w-3.5"> {{t "启用" $.Lang}}</label>
+        <div class="flex justify-end"><button class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs">{{t "保存" $.Lang}}</button></div>
+      </form>
+      {{else}}
+      <div class="px-4 py-10 text-center text-xs text-fg-muted">{{t "暂无积分规则" $.Lang}}</div>
+      {{end}}
+    </div>
+  </section>
+
+  <section x-show="tab === 'levels'" x-cloak class="gf-card overflow-hidden">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
+      <h3 class="text-[13px] font-semibold">{{t "等级阈值" $.Lang}}</h3>
+      <span class="text-[10px] text-fg-muted">{{t "达到最低积分自动升级" $.Lang}}</span>
+    </div>
+    <div class="divide-y divide-border">
+      {{range .Levels}}
+      <form method="post" action="/admin/gamification/action" class="grid items-end gap-2 px-4 py-2.5 sm:grid-cols-6">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="action" value="update_level">
+        <input type="hidden" name="level" value="{{.Level}}">
+        <div class="sm:col-span-2">
+          <span class="inline-flex items-center gap-2 rounded-md px-2 py-1 text-[11px] font-semibold" style="background: {{if .Color}}color-mix(in srgb, {{.Color}} 12%, transparent){{else}}var(--gf-surface-muted){{end}}; color: {{if .Color}}{{.Color}}{{else}}var(--gf-fg-muted){{end}}">
+            Lv{{.Level}}
+          </span>
+        </div>
+        <div class="sm:col-span-2"><label class="gf-label !mb-1 text-[10px]">{{t "名称" $.Lang}}</label><input name="name" value="{{.Name}}" class="gf-input !py-1.5 text-xs"></div>
+        <div><label class="gf-label !mb-1 text-[10px]">{{t "最低积分" $.Lang}}</label><input name="min_points" type="number" value="{{.MinPoints}}" class="gf-input !py-1.5 text-xs tabular-nums"></div>
+        <div class="flex items-end gap-1.5">
+          <input name="color" value="{{.Color}}" class="gf-input !w-24 !py-1.5 font-mono text-xs">
+          <button class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs">{{t "保存" $.Lang}}</button>
+        </div>
+      </form>
+      {{else}}
+      <div class="px-4 py-10 text-center text-xs text-fg-muted">{{t "暂无等级" $.Lang}}</div>
+      {{end}}
+    </div>
+  </section>
+
+  <section x-show="tab === 'badges'" x-cloak class="grid gap-3 lg:grid-cols-5">
+    <div class="gf-card p-4 lg:col-span-2">
+      <h3 class="text-[13px] font-semibold">{{t "新建徽章" $.Lang}}</h3>
+      <p class="mt-0.5 text-[11px] text-fg-muted">{{t "徽章会展示在用户主页与卡片中。" $.Lang}}</p>
+      <form method="post" action="/admin/gamification/action" class="mt-3 space-y-2">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="action" value="create_badge">
+        <div><label class="gf-label !mb-1 text-[10px]">{{t "名称" $.Lang}}</label><input name="name" class="gf-input !py-1.5 text-xs" required></div>
+        <div><label class="gf-label !mb-1 text-[10px]">Slug</label><input name="slug" class="gf-input !py-1.5 font-mono text-xs" placeholder="{{t "可留空" $.Lang}}"></div>
+        <div><label class="gf-label !mb-1 text-[10px]">{{t "描述" $.Lang}}</label><input name="description" class="gf-input !py-1.5 text-xs"></div>
+        <button class="gf-btn gf-btn-primary w-full !py-1.5 text-xs">{{t "新建徽章" $.Lang}}</button>
+      </form>
+    </div>
+    <div class="gf-card p-4 lg:col-span-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-[13px] font-semibold">{{t "已有徽章" $.Lang}}</h3>
+        <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{len .Badges}}</span>
+      </div>
+      <div class="mt-3 grid gap-2 sm:grid-cols-2">
+        {{range .Badges}}
+        <div class="flex items-center gap-2.5 rounded-lg border border-border p-2.5">
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-base">🏅</span>
+          <div class="min-w-0">
+            <div class="truncate text-[12px] font-medium">{{.Name}}</div>
+            <div class="truncate font-mono text-[10px] text-fg-muted">{{.Slug}}</div>
+          </div>
+        </div>
+        {{else}}
+        <div class="px-2 py-8 text-center text-xs text-fg-muted sm:col-span-2">{{t "还没有徽章" $.Lang}}</div>
+        {{end}}
+      </div>
+    </div>
+  </section>
+
+  <section x-show="tab === 'invites'" x-cloak class="gf-card overflow-hidden">
+    <div class="flex items-center justify-between border-b border-border px-4 py-2.5">
+      <h3 class="text-[13px] font-semibold">{{t "邀请" $.Lang}}</h3>
+      <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{len .Invites}}</span>
+    </div>
+    <div class="max-h-96 divide-y divide-border overflow-y-auto">
+      {{range .Invites}}
+      <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-xs">
+        <span class="font-mono text-[12px]">{{.Code}}</span>
+        <span class="gf-badge {{if eq .Status "used"}}bg-success/10 text-success{{else if eq .Status "expired"}}bg-surface-muted text-fg-muted{{else}}bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200{{end}} !px-1.5 !py-0 text-[10px]">
+          {{if eq .Status "used"}}{{t "已使用" $.Lang}}{{else if eq .Status "expired"}}{{t "已过期" $.Lang}}{{else if eq .Status "pending"}}{{t "待使用" $.Lang}}{{else}}{{.Status}}{{end}}
+        </span>
+      </div>
+      {{else}}
+      <div class="px-4 py-10 text-center text-xs text-fg-muted">{{t "暂无邀请" $.Lang}}</div>
+      {{end}}
+    </div>
+  </section>
+
+  <section x-show="tab === 'lotteries'" x-cloak class="grid gap-3 lg:grid-cols-5">
+    <div class="gf-card p-4 lg:col-span-2">
+      <h3 class="text-[13px] font-semibold">{{t "创建抽奖" $.Lang}}</h3>
+      <form method="post" action="/admin/gamification/action" class="mt-3 space-y-2">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="action" value="create_lottery">
+        <div class="grid grid-cols-2 gap-2">
+          <div class="col-span-2"><label class="gf-label !mb-1 text-[10px]">{{t "标题" $.Lang}}</label><input name="title" class="gf-input !py-1.5 text-xs" required></div>
+          <div class="col-span-2"><label class="gf-label !mb-1 text-[10px]">{{t "奖品" $.Lang}}</label><input name="prize" class="gf-input !py-1.5 text-xs" required></div>
+          <div><label class="gf-label !mb-1 text-[10px]">{{t "名额" $.Lang}}</label><input name="winner_count" type="number" value="1" class="gf-input !py-1.5 text-xs"></div>
+          <div><label class="gf-label !mb-1 text-[10px]">{{t "消耗积分" $.Lang}}</label><input name="entry_cost" type="number" value="0" class="gf-input !py-1.5 text-xs"></div>
+          <div><label class="gf-label !mb-1 text-[10px]">{{t "最低等级" $.Lang}}</label><input name="min_level" type="number" value="0" class="gf-input !py-1.5 text-xs"></div>
+          <div><label class="gf-label !mb-1 text-[10px]">{{t "截止时间" $.Lang}}</label><input name="ends_at" type="datetime-local" class="gf-input !py-1.5 text-xs"></div>
+        </div>
+        <button class="gf-btn gf-btn-primary w-full !py-1.5 text-xs">{{t "创建抽奖" $.Lang}}</button>
+      </form>
+    </div>
+    <div class="gf-card p-4 lg:col-span-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-[13px] font-semibold">{{t "抽奖列表" $.Lang}}</h3>
+        <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{len .Lotteries}}</span>
+      </div>
+      <div class="mt-3 space-y-2">
+        {{range .Lotteries}}
+        <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border px-3 py-2.5">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="truncate text-[12px] font-medium">{{.Title}}</span>
+              <span class="gf-badge {{if eq .Status "open"}}bg-success/10 text-success{{else}}gf-badge-neutral{{end}} !px-1.5 !py-0 text-[10px]">{{if eq .Status "open"}}{{t "进行中" $.Lang}}{{else if eq .Status "drawn"}}{{t "已开奖" $.Lang}}{{else}}{{.Status}}{{end}}</span>
+            </div>
+            <div class="mt-0.5 truncate text-[10px] text-fg-muted">{{.Prize}} · {{.WinnerCount}} {{t "个名额" $.Lang}}{{if .EndsAt}} · {{t "截止" $.Lang}} {{.EndsAt.Format "2006-01-02 15:04"}}{{end}}</div>
+          </div>
+          {{if eq .Status "open"}}
+          <form method="post" action="/admin/gamification/action">
+            <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+            <input type="hidden" name="action" value="draw_lottery">
+            <input type="hidden" name="lottery_id" value="{{.ID}}">
+            <button class="gf-btn gf-btn-primary !px-2.5 !py-1.5 text-xs">{{t "开奖" $.Lang}}</button>
+          </form>
+          {{end}}
+        </div>
+        {{else}}
+        <div class="px-2 py-8 text-center text-xs text-fg-muted">{{t "暂无抽奖" $.Lang}}</div>
+        {{end}}
+      </div>
+    </div>
+  </section>
+
+  <section x-show="tab === 'bounties'" x-cloak class="gf-card overflow-hidden">
+    <div class="flex items-center justify-between border-b border-border px-4 py-2.5">
+      <h3 class="text-[13px] font-semibold">{{t "悬赏" $.Lang}}</h3>
+      <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{len .Bounties}}</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="gf-table gf-table-cards text-xs">
+        <thead><tr><th>{{t "主题" $.Lang}}</th><th>{{t "金额" $.Lang}}</th><th>{{t "状态" $.Lang}}</th><th class="text-right">{{t "操作" $.Lang}}</th></tr></thead>
+        <tbody>
+          {{range .Bounties}}
+          <tr>
+            <td class="font-mono text-[11px]" data-label="{{t "主题" $.Lang}}">{{.TopicID}}</td>
+            <td class="tabular-nums" data-label="{{t "金额" $.Lang}}">{{.Amount}}</td>
+            <td data-label="{{t "状态" $.Lang}}">
+              <span class="gf-badge {{if eq .Status "funded"}}bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200{{else if eq .Status "settled"}}bg-success/10 text-success{{else}}gf-badge-neutral{{end}} !px-1.5 !py-0 text-[10px]">{{if eq .Status "funded"}}{{t "待结算" $.Lang}}{{else if eq .Status "settled"}}{{t "已结算" $.Lang}}{{else if eq .Status "refunded"}}{{t "已退款" $.Lang}}{{else}}{{.Status}}{{end}}</span>
+            </td>
+            <td class="text-right">
+              {{if eq .Status "funded"}}
+              <div class="flex flex-wrap items-center justify-end gap-1.5">
+                <form method="post" action="/admin/gamification/action" class="flex items-center gap-1">
+                  <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                  <input type="hidden" name="action" value="settle_bounty">
+                  <input type="hidden" name="bounty_id" value="{{.ID}}">
+                  <input name="post_id" class="gf-input !w-40 !py-1 text-[11px]" placeholder="{{t "采纳回复 ID" $.Lang}}">
+                  <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-[11px]">{{t "结算" $.Lang}}</button>
+                </form>
+                <form method="post" action="/admin/gamification/action" data-confirm="{{t "确认退还该悬赏金额？" $.Lang}}">
+                  <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                  <input type="hidden" name="action" value="refund_bounty">
+                  <input type="hidden" name="bounty_id" value="{{.ID}}">
+                  <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-[11px] text-danger">{{t "退款" $.Lang}}</button>
+                </form>
+              </div>
+              {{else}}
+              <span class="text-[10px] text-fg-muted">—</span>
+              {{end}}
+            </td>
+          </tr>
+          {{else}}
+          <tr><td colspan="4" class="py-10 text-center text-fg-muted">{{t "暂无悬赏" $.Lang}}</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{{end}}
+{{end}}

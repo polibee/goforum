@@ -1,0 +1,32 @@
+{{define "auth"}}
+<!doctype html>
+<html lang="{{if .Lang}}{{.Lang}}{{else}}{{.Site.Locale}}{{end}}" class="{{if .Dark}}dark{{end}}" data-theme="{{.ThemePreset}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}}</title>
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="csrf-token" content="{{.CSRF}}">
+  <link rel="stylesheet" href="{{asset "app.css"}}">
+  <style nonce="{{.Nonce}}">
+    :root { --gf-brand: {{.Site.BrandColor}}; --gf-accent: {{.Site.AccentColor}}; }
+  </style>
+</head>
+<body class="min-h-screen bg-surface-muted text-fg">
+  <div class="flex min-h-screen flex-col items-center justify-center px-4 py-10">
+    <a href="/" class="mb-8 flex items-center gap-3">
+      {{if .Site.LogoLight}}
+        <img src="{{.Site.LogoLight}}" alt="{{.Site.Name}}" class="h-9">
+      {{else}}
+        <span class="brand-dot inline-block h-9 w-9 rounded-xl"></span>
+        <span class="text-xl font-semibold">{{.Site.Name}}</span>
+      {{end}}
+    </a>
+    <div class="w-full max-w-md">{{template "page" .}}</div>
+    <p class="mt-8 text-xs text-fg-muted">&copy; {{year}} {{.Site.Name}}</p>
+  </div>
+  {{template "flash" .}}
+  <script nonce="{{.Nonce}}" src="{{asset "app.js"}}" defer></script>
+</body>
+</html>
+{{end}}

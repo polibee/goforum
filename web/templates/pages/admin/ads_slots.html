@@ -1,0 +1,121 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-5">
+  {{template "ads_tabs" $}}
+  {{if .Saved}}<div class="gf-alert-success">{{t "广告位设置已保存。" $.Lang}}</div>{{end}}
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <p class="text-sm text-fg-muted">{{t "管理广告位是否展示、是否开放销售、文字/图片广告数量与 USD 月价。" $.Lang}}</p>
+  </div>
+
+  <div class="grid gap-5 lg:grid-cols-5">
+    <section class="space-y-3 lg:col-span-3">
+      {{range .Slots}}
+      <article class="gf-card p-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="text-[14px] font-semibold">{{.Name}}</h2>
+              <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px] font-mono">{{.Key}}</span>
+              <span class="gf-badge {{if .Enabled}}bg-success/10 text-success{{else}}bg-surface-muted text-fg-muted{{end}} !px-1.5 !py-0 text-[10px]">{{if .Enabled}}{{t "展示中" $.Lang}}{{else}}{{t "已隐藏" $.Lang}}{{end}}</span>
+              <span class="gf-badge {{if .SellEnabled}}bg-brand-50 text-brand-700 dark:bg-brand-900 dark:text-brand-200{{else}}bg-surface-muted text-fg-muted{{end}} !px-1.5 !py-0 text-[10px]">{{if .SellEnabled}}{{t "销售中" $.Lang}}{{else}}{{t "已下架" $.Lang}}{{end}}</span>
+            </div>
+            <div class="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-fg-muted">
+              <span>{{.Size}}</span><span>·</span>
+              <span>{{t "可投放" $.Lang}}：{{t "文字" $.Lang}} {{.MaxText}} · {{t "图片" $.Lang}} {{.MaxImage}}</span><span>·</span>
+              <span>{{t "文字" $.Lang}} {{usd .PriceText}} · {{t "图片" $.Lang}} {{usd .PriceImage}}</span>
+            </div>
+          </div>
+          <div class="flex shrink-0 flex-wrap items-center gap-1">
+            <a href="/admin/ads/slots?edit={{.ID}}" class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs">{{t "编辑" $.Lang}}</a>
+            <form method="post" action="/admin/ads/slots/action">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="key" value="{{.Key}}"><input type="hidden" name="action" value="toggle_visible">
+              <button class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs">{{if .Enabled}}{{t "隐藏" $.Lang}}{{else}}{{t "显示" $.Lang}}{{end}}</button>
+            </form>
+            <form method="post" action="/admin/ads/slots/action">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="key" value="{{.Key}}"><input type="hidden" name="action" value="toggle_sell">
+              <button class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs">{{if .SellEnabled}}{{t "下架销售" $.Lang}}{{else}}{{t "开放销售" $.Lang}}{{end}}</button>
+            </form>
+            <form method="post" action="/admin/ads/slots/action" data-confirm="{{t "确认删除该广告位？已有广告的广告位不能删除。" $.Lang}}">
+              <input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="key" value="{{.Key}}"><input type="hidden" name="action" value="delete">
+              <button class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs text-danger">{{t "删除" $.Lang}}</button>
+            </form>
+          </div>
+        </div>
+      </article>
+      {{else}}
+      <div class="gf-card px-6 py-14 text-center">
+        <p class="text-sm font-medium">{{t "还没有广告位。" $.Lang}}</p>
+      </div>
+      {{end}}
+    </section>
+
+    <section class="gf-card h-fit p-5 lg:sticky lg:top-24 lg:col-span-2">
+      {{if .Editing}}
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h2 class="text-[15px] font-semibold">{{t "编辑广告位" $.Lang}}</h2>
+          <p class="mt-0.5 text-xs text-fg-muted">{{t "广告位 Key 与前端渲染位置绑定，不可修改。" $.Lang}}</p>
+        </div>
+        <a href="/admin/ads/slots" class="text-xs text-fg-muted hover:text-fg">{{t "取消" $.Lang}}</a>
+      </div>
+      <form method="post" action="/admin/ads/slots/save" class="mt-4 space-y-3">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="key" value="{{.Editing.Key}}">
+        <div>
+          <label class="gf-label" for="slot-name">{{t "名称" $.Lang}}</label>
+          <input id="slot-name" name="name" class="gf-input" value="{{.Editing.Name}}" required>
+        </div>
+        <div>
+          <label class="gf-label" for="slot-desc">{{t "描述" $.Lang}}</label>
+          <input id="slot-desc" name="description" class="gf-input" value="{{.Editing.Description}}">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="gf-label" for="slot-height">{{t "高度" $.Lang}}</label>
+            <input id="slot-height" name="height" type="number" min="0" class="gf-input" value="{{.Editing.Height}}">
+          </div>
+          <div>
+            <label class="gf-label" for="slot-sort">{{t "排序" $.Lang}}</label>
+            <input id="slot-sort" name="sort" type="number" class="gf-input" value="{{.Editing.Sort}}">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="gf-label" for="slot-max-text">{{t "文字广告数量" $.Lang}}</label>
+            <input id="slot-max-text" name="max_text" type="number" min="0" max="10" class="gf-input" value="{{.Editing.MaxText}}">
+          </div>
+          <div>
+            <label class="gf-label" for="slot-max-image">{{t "图片广告数量" $.Lang}}</label>
+            <input id="slot-max-image" name="max_image" type="number" min="0" max="10" class="gf-input" value="{{.Editing.MaxImage}}">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="gf-label" for="slot-price-text">{{t "文字月价（USD）" $.Lang}}</label>
+            <input id="slot-price-text" name="price_text" type="number" min="0" step="0.01" class="gf-input" value="{{usdInput .Editing.PriceText}}">
+          </div>
+          <div>
+            <label class="gf-label" for="slot-price-image">{{t "图片月价（USD）" $.Lang}}</label>
+            <input id="slot-price-image" name="price_image" type="number" min="0" step="0.01" class="gf-input" value="{{usdInput .Editing.PriceImage}}">
+          </div>
+        </div>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" value="1" {{if .Editing.Enabled}}checked{{end}} class="h-4 w-4"> {{t "在前台展示该广告位" $.Lang}}</label>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="sell_enabled" value="1" {{if .Editing.SellEnabled}}checked{{end}} class="h-4 w-4"> {{t "开放自助购买" $.Lang}}</label>
+        <button class="gf-btn gf-btn-primary w-full">{{t "保存修改" $.Lang}}</button>
+      </form>
+      {{else}}
+      <div class="rounded-xl border border-dashed border-border px-5 py-10 text-center">
+        <div class="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-900 dark:text-brand-200">
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="14" height="4" rx="1"/><path d="M5 11h10M5 14h6" stroke-linecap="round"/></svg>
+        </div>
+        <p class="mt-3 text-sm font-medium">{{t "选择一个广告位进行编辑" $.Lang}}</p>
+        <p class="mt-1 text-xs text-fg-muted">{{t "可设置展示状态、销售状态、数量上限与美元价格。" $.Lang}}</p>
+      </div>
+      {{end}}
+    </section>
+  </div>
+</div>
+{{end}}
+{{end}}

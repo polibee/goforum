@@ -1,0 +1,109 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-4">
+  {{template "content_tabs" $}}
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold">{{t "回复管理" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "隐藏、删除与恢复回复。" $.Lang}}</p>
+    </div>
+    <span class="gf-badge gf-badge-neutral">{{.Total}} {{t "条回复" $.Lang}}</span>
+  </div>
+
+  <form method="get" action="/admin/posts" class="gf-card flex flex-wrap items-end gap-2.5 p-3">
+    <div>
+      <label class="gf-label !mb-1 text-[10px]" for="status">{{t "状态" $.Lang}}</label>
+      <select id="status" name="status" class="gf-input !py-1.5 text-xs">
+        <option value="" {{if eq .Status ""}}selected{{end}}>{{t "全部" $.Lang}}</option>
+        <option value="visible" {{if eq .Status "visible"}}selected{{end}}>{{t "可见" $.Lang}}</option>
+        <option value="hidden" {{if eq .Status "hidden"}}selected{{end}}>{{t "已隐藏" $.Lang}}</option>
+        <option value="deleted" {{if eq .Status "deleted"}}selected{{end}}>{{t "已删除" $.Lang}}</option>
+      </select>
+    </div>
+    <button class="gf-btn gf-btn-primary !px-3 !py-1.5 text-xs">{{t "筛选" $.Lang}}</button>
+    <a href="/admin/posts" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "重置" $.Lang}}</a>
+  </form>
+
+  <form id="bulk-posts" method="post" action="/admin/posts/bulk" class="gf-card flex flex-wrap items-center gap-2 p-2.5">
+    <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+    <input type="hidden" name="back" value="{{.Back}}">
+    <select name="action" class="gf-input !w-36 !py-1.5 text-xs">
+      <option value="hide">{{t "隐藏" $.Lang}}</option>
+      <option value="visible">{{t "显示" $.Lang}}</option>
+      <option value="delete">{{t "删除" $.Lang}}</option>
+      <option value="restore">{{t "恢复" $.Lang}}</option>
+    </select>
+    <button class="gf-btn gf-btn-ghost border border-border !px-2.5 !py-1.5 text-xs">{{t "批量执行" $.Lang}}</button>
+    <span class="text-[11px] text-fg-muted">{{t "勾选下方回复后执行。" $.Lang}}</span>
+  </form>
+
+  <div class="gf-card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="gf-table gf-table-cards text-xs">
+        <thead>
+          <tr><th class="w-8"><input type="checkbox" x-data="bulk" x-on:change="toggleAll($event.target.checked)" class="h-3.5 w-3.5 rounded border-border" aria-label="{{t "全选" $.Lang}}"></th><th>{{t "内容" $.Lang}}</th><th>{{t "主题" $.Lang}}</th><th>{{t "作者" $.Lang}}</th><th>{{t "状态" $.Lang}}</th><th>{{t "时间" $.Lang}}</th><th class="text-right">{{t "操作" $.Lang}}</th></tr>
+        </thead>
+        <tbody>
+          {{range .Rows}}
+          <tr class="align-top">
+            <td><input type="checkbox" name="ids" value="{{.ID}}" form="bulk-posts" data-bulk class="h-3.5 w-3.5 rounded border-border" aria-label="{{t "选择回复" $.Lang}}"></td>
+            <td class="max-w-sm" data-label="{{t "内容" $.Lang}}">
+              <p class="line-clamp-2 text-[12px] leading-relaxed">{{.Excerpt}}</p>
+              <span class="mt-0.5 block text-[10px] text-fg-muted">#{{.PostNumber}}</span>
+            </td>
+            <td class="max-w-xs" data-label="{{t "主题" $.Lang}}">
+              <a href="/t/{{.TopicID}}" class="text-[12px] hover:text-brand-600">{{.TopicTitle}}</a>
+            </td>
+            <td data-label="{{t "作者" $.Lang}}" class="text-[12px]">{{.AuthorName}}</td>
+            <td data-label="{{t "状态" $.Lang}}">
+              <span class="gf-badge {{if eq .Status "visible"}}bg-success/10 text-success{{else if eq .Status "hidden"}}bg-warning/10 text-warning{{else if eq .Status "deleted"}}bg-danger/10 text-danger{{else}}gf-badge-neutral{{end}} !px-1.5 !py-0 text-[10px]">
+                {{if eq .Status "visible"}}{{t "可见" $.Lang}}{{else if eq .Status "hidden"}}{{t "已隐藏" $.Lang}}{{else if eq .Status "deleted"}}{{t "已删除" $.Lang}}{{else}}{{.Status}}{{end}}
+              </span>
+            </td>
+            <td class="whitespace-nowrap text-[10px] text-fg-muted" data-label="{{t "时间" $.Lang}}">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+            <td class="text-right">
+              <div class="flex items-center justify-end gap-1">
+                {{if not .Deleted}}<a href="/posts/{{.ID}}/edit" class="gf-btn gf-btn-ghost !px-2 !py-1 text-[11px]">{{t "编辑" $.Lang}}</a>{{end}}
+                {{if not .Deleted}}
+                <form method="post" action="/admin/posts/{{.ID}}/action">
+                  <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                  <input type="hidden" name="back" value="{{$.Data.Back}}">
+                  <input type="hidden" name="action" value="{{if eq .Status "hidden"}}visible{{else}}hide{{end}}">
+                  <button class="rounded-md border border-border p-1.5 text-fg-muted transition hover:border-brand-300 hover:text-fg" title="{{if eq .Status "hidden"}}{{t "显示" $.Lang}}{{else}}{{t "隐藏" $.Lang}}{{end}}" aria-label="{{if eq .Status "hidden"}}{{t "显示" $.Lang}}{{else}}{{t "隐藏" $.Lang}}{{end}}">
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M2.5 10s2.8-5 7.5-5 7.5 5 7.5 5-2.8 5-7.5 5-7.5-5-7.5-5Z" stroke-linejoin="round"/><circle cx="10" cy="10" r="2"/></svg>
+                  </button>
+                </form>
+                {{end}}
+                <form method="post" action="/admin/posts/{{.ID}}/action" data-confirm="{{t "确认删除/恢复该回复？" $.Lang}}">
+                  <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+                  <input type="hidden" name="back" value="{{$.Data.Back}}">
+                  <input type="hidden" name="action" value="{{if .Deleted}}restore{{else}}delete{{end}}">
+                  <button class="rounded-md border border-border p-1.5 transition {{if .Deleted}}text-fg-muted hover:border-brand-300 hover:text-fg{{else}}text-danger hover:border-danger/40{{end}}" title="{{if .Deleted}}{{t "恢复" $.Lang}}{{else}}{{t "删除" $.Lang}}{{end}}" aria-label="{{if .Deleted}}{{t "恢复" $.Lang}}{{else}}{{t "删除" $.Lang}}{{end}}">
+                    <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4.5 6h11M8 6V4.5h4V6M6 6l.8 10h6.4L14 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {{else}}
+          <tr><td colspan="7" class="py-10 text-center text-fg-muted">{{t "没有匹配的回复" $.Lang}}</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {{if gt .TotalPages 1}}
+  <nav class="flex flex-wrap items-center justify-center gap-1.5">
+    {{if gt .Page 1}}<a href="{{pageURL .BasePath (sub .Page 1)}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "上一页" $.Lang}}</a>{{end}}
+    {{range pageWindow .Page .TotalPages}}
+      {{if eq . 0}}<span class="px-1.5 text-xs text-fg-muted">…</span>{{else}}<a href="{{pageURL $.Data.BasePath .}}" class="flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-xs {{if eq . $.Data.Page}}border-brand-600 bg-brand-600 text-white{{else}}border-border text-fg-muted hover:border-brand-300 hover:text-fg{{end}}">{{.}}</a>{{end}}
+    {{end}}
+    {{if lt .Page .TotalPages}}<a href="{{pageURL .BasePath (add .Page 1)}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "下一页" $.Lang}}</a>{{end}}
+  </nav>
+  {{end}}
+</div>
+{{end}}
+{{end}}

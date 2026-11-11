@@ -1,0 +1,210 @@
+{{define "page"}}
+<div class="mx-auto max-w-3xl px-4 py-8">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold">{{t "个人资料" $.Lang}}</h1>
+      <p class="mt-1 text-sm text-fg-muted">{{t "这些信息会公开展示在你的主页与回复中。" $.Lang}}</p>
+    </div>
+    <a href="/u/{{.User.Username}}" class="gf-btn gf-btn-ghost border border-border">
+      <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10" cy="10" r="6.5"/><path d="M3.5 10h13M10 3.5c1.8 2 2.6 4.1 2.6 6.5s-.8 4.5-2.6 6.5c-1.8-2-2.6-4.1-2.6-6.5s.8-4.5 2.6-6.5Z"/></svg>
+      {{t "查看主页" $.Lang}}
+    </a>
+  </div>
+
+  {{with .Data}}
+    {{if .Saved}}<div class="gf-alert-success mt-4">{{t "资料已保存。" $.Lang}}</div>{{end}}
+    {{if .Error}}<div class="gf-alert-danger mt-4">{{t .Error $.Lang}}</div>{{end}}
+
+    <!-- 账号概览 -->
+    <section class="gf-card mt-5 overflow-hidden">
+      <div class="relative h-24 bg-gradient-to-r from-brand-500 via-brand-600 to-brand-700">
+        {{if .User.CoverURL}}<img src="{{.User.CoverURL}}" alt="" class="h-full w-full object-cover">{{end}}
+      </div>
+      <div class="relative flex flex-wrap items-end gap-3 px-5 pb-4">
+        <span class="relative z-10 -mt-8 flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-surface bg-brand-100 text-xl font-semibold text-brand-700 shadow-sm dark:bg-brand-900 dark:text-brand-200">
+          {{if .User.AvatarURL}}<img src="{{.User.AvatarURL}}" alt="" class="h-full w-full object-cover">{{else}}{{initial .User.Username}}{{end}}
+        </span>
+        <div class="min-w-0 flex-1 pt-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="truncate text-[15px] font-semibold">{{.User.Username}}</span>
+            <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">TL{{.User.TrustLevel}}</span>
+            {{if .User.SuperAdmin}}<span class="gf-badge bg-brand-50 !px-1.5 !py-0 text-[10px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "超管" $.Lang}}</span>{{end}}
+          </div>
+          <div class="mt-0.5 truncate text-[11px] text-fg-muted">{{.User.Email}}</div>
+        </div>
+      </div>
+    </section>
+
+    <form method="post" action="/settings/profile" class="space-y-4"
+          x-data="profileForm({ bio: {{toJSON .Bio}}, signature: {{toJSON .User.Signature}} })"
+          x-on:input="watch()" x-on:change="watch()">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+
+      <!-- 形象 -->
+      <section class="gf-card overflow-hidden">
+        <div class="border-b border-border px-4 py-3">
+          <h2 class="text-[13px] font-semibold">{{t "形象" $.Lang}}</h2>
+          <p class="mt-0.5 text-[11px] text-fg-muted">{{t "头像显示在回复旁，封面显示在主页顶部。支持拖拽上传。" $.Lang}}</p>
+        </div>
+
+        <div class="grid gap-4 p-4 sm:grid-cols-2">
+          <!-- 头像 -->
+          <div x-data="imageField">
+            <label class="gf-label !mb-2 text-[11px]" for="avatar_url">{{t "头像" $.Lang}}</label>
+            <div class="flex items-start gap-3">
+              <span class="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-muted text-lg font-semibold text-fg-muted">
+                <img x-ref="preview" src="{{.User.AvatarURL}}" alt="" class="h-full w-full object-cover {{if not .User.AvatarURL}}hidden{{end}}">
+                <span x-show="{{if .User.AvatarURL}}false{{else}}true{{end}}" class="pointer-events-none absolute">{{initial .User.Username}}</span>
+              </span>
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap gap-1.5">
+                  <label class="gf-btn gf-btn-ghost cursor-pointer border border-border !px-2.5 !py-1.5 text-[11px]">
+                    <input type="file" accept="image/*" x-on:change="upload(); $dispatch('profile-change')" class="sr-only">
+                    {{t "上传" $.Lang}}
+                  </label>
+                  <button type="button" class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-[11px]" x-on:click="clear()">{{t "移除" $.Lang}}</button>
+                  <span x-cloak x-show="uploading" class="self-center text-[10px] text-fg-muted">{{t "上传中…" $.Lang}}</span>
+                </div>
+                <input x-ref="input" id="avatar_url" name="avatar_url" value="{{.User.AvatarURL}}" x-on:input="sync(); $dispatch('profile-change')"
+                       class="gf-input mt-1.5 !py-1 font-mono text-[10px]" placeholder="{{t "或粘贴图片地址" $.Lang}}">
+              </div>
+            </div>
+            <p class="gf-hint text-[10px]">{{t "建议正方形，至少 128×128。" $.Lang}}</p>
+          </div>
+
+          <!-- 封面 -->
+          <div x-data="imageField" x-on:dragover.prevent="dragging = true" x-on:dragleave.prevent="dragging = false"
+               x-on:drop.prevent="onDrop($event)"
+               x-bind:class="dragging ? 'ring-2 ring-brand-500 ring-offset-2' : ''" class="rounded-lg">
+            <label class="gf-label !mb-2 text-[11px]" for="cover_url">{{t "主页封面" $.Lang}}</label>
+            <div class="relative flex h-16 w-full items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-surface-muted">
+              <img x-ref="preview" src="{{.User.CoverURL}}" alt="" class="h-full w-full object-cover {{if not .User.CoverURL}}hidden{{end}}">
+              <span x-show="{{if .User.CoverURL}}false{{else}}true{{end}}" class="text-[10px] text-fg-muted">{{t "拖入图片或点击上传" $.Lang}}</span>
+            </div>
+            <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <label class="gf-btn gf-btn-ghost cursor-pointer border border-border !px-2.5 !py-1 text-[11px]">
+                <input type="file" accept="image/*" x-on:change="upload(); $dispatch('profile-change')" class="sr-only">
+                {{t "上传" $.Lang}}
+              </label>
+              <button type="button" class="gf-btn gf-btn-ghost !px-2.5 !py-1 text-[11px]" x-on:click="clear()">{{t "移除" $.Lang}}</button>
+              <span x-cloak x-show="uploading" class="text-[10px] text-fg-muted">{{t "上传中…" $.Lang}}</span>
+            </div>
+            <input x-ref="input" id="cover_url" name="cover_url" value="{{.User.CoverURL}}" x-on:input="sync(); $dispatch('profile-change')"
+                   class="gf-input mt-1.5 !py-1 font-mono text-[10px]" placeholder="{{t "或粘贴图片地址" $.Lang}}">
+            <p class="gf-hint text-[10px]">{{t "建议 1200×300，横版效果最好。" $.Lang}}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 简介与签名 -->
+      <section class="gf-card overflow-hidden">
+        <div class="border-b border-border px-4 py-3">
+          <h2 class="text-[13px] font-semibold">{{t "自我介绍" $.Lang}}</h2>
+          <p class="mt-0.5 text-[11px] text-fg-muted">{{t "两处都支持 Markdown，保存后会渲染为富文本。" $.Lang}}</p>
+        </div>
+
+        <div class="space-y-4 p-4">
+          <div>
+            <div class="flex items-end justify-between gap-2">
+              <label class="gf-label !mb-0 text-[11px]" for="bio">{{t "个人简介" $.Lang}}</label>
+              <span class="text-[10px]" x-bind:class="bioOver ? 'text-danger' : 'text-fg-muted'">
+                <span x-text="bioCount"></span> / {{1000}}
+              </span>
+            </div>
+            <textarea id="bio" name="bio" rows="6" maxlength="1000" x-model="bio"
+                      x-bind:class="bioOver ? '!border-danger' : ''"
+                      class="gf-input mt-1 text-sm" placeholder="{{t "介绍一下你自己：擅长什么、在做什么、想认识谁…" $.Lang}}">{{.Bio}}</textarea>
+            <div class="mt-1.5 flex flex-wrap items-center justify-between gap-2">
+              <p class="text-[10px] text-fg-muted">{{t "支持标题、粗体、列表、链接、代码与图片。" $.Lang}}</p>
+              <label class="flex cursor-pointer items-center gap-1.5 text-[11px] text-fg-muted">
+                <input type="checkbox" name="bio_enabled" value="1" {{if .User.BioEnabled}}checked{{end}} class="h-3.5 w-3.5 rounded border-border text-brand-600 focus:ring-brand-500">
+                {{t "在主页展示简介" $.Lang}}
+              </label>
+            </div>
+          </div>
+
+          <div class="border-t border-border pt-4">
+            <div class="flex items-end justify-between gap-2">
+              <label class="gf-label !mb-0 text-[11px]" for="signature">{{t "回复签名" $.Lang}}</label>
+              <span class="text-[10px]" x-bind:class="sigOver ? 'text-danger' : 'text-fg-muted'">
+                <span x-text="sigCount"></span> / 300 · <span x-text="sigLineCount"></span> / 6 {{t "行" $.Lang}}
+              </span>
+            </div>
+            <textarea id="signature" name="signature" rows="3" maxlength="300" x-model="signature"
+                      x-bind:class="sigOver ? '!border-danger' : ''"
+                      class="gf-input mt-1 text-sm" placeholder="{{t "一句话介绍，会显示在你的每条回复下方" $.Lang}}">{{.User.Signature}}</textarea>
+            <p class="mt-1 text-[10px] text-fg-muted">{{t "支持粗体、斜体、代码、链接、引用和列表；不支持图片；最多 6 行。" $.Lang}}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 偏好 -->
+      <section class="gf-card overflow-hidden">
+        <div class="border-b border-border px-4 py-3">
+          <h2 class="text-[13px] font-semibold">{{t "偏好设置" $.Lang}}</h2>
+        </div>
+        <div class="p-4">
+          <label class="gf-label !mb-1 text-[11px]" for="locale">{{t "界面语言" $.Lang}}</label>
+          <select id="locale" name="locale" class="gf-input !w-full !py-2 text-xs sm:!w-64">
+            <option value="" {{if eq .User.Locale ""}}selected{{end}}>{{t "跟随站点默认" $.Lang}}</option>
+            <option value="zh-CN" {{if eq .User.Locale "zh-CN"}}selected{{end}}>{{t "简体中文" $.Lang}}</option>
+            <option value="en-US" {{if eq .User.Locale "en-US"}}selected{{end}}>English</option>
+          </select>
+          <p class="gf-hint text-[10px]">{{t "只影响你自己看到的界面文案。" $.Lang}}</p>
+        </div>
+      </section>
+
+      <!-- 打赏 -->
+      <section class="gf-card overflow-hidden">
+        <div class="flex items-start justify-between gap-3 border-b border-border px-4 py-3">
+          <div>
+            <h2 class="text-[13px] font-semibold">{{t "接受打赏" $.Lang}}</h2>
+            <p class="mt-0.5 text-[11px] text-fg-muted">{{t "开启后，主页与回复旁会出现支持入口。" $.Lang}}</p>
+          </div>
+          <label class="flex shrink-0 cursor-pointer items-center gap-2 text-[11px] text-fg-muted">
+            <input type="checkbox" name="donate_enabled" value="1" {{if .User.DonateEnabled}}checked{{end}} class="h-4 w-4 rounded border-border text-brand-600 focus:ring-brand-500">
+            {{t "启用" $.Lang}}
+          </label>
+        </div>
+        <div class="grid gap-3 p-4 sm:grid-cols-2">
+          <div>
+            <label class="gf-label !mb-1 text-[11px]" for="donate_message">{{t "打赏说明" $.Lang}}</label>
+            <input id="donate_message" name="donate_message" value="{{.User.DonateMessage}}" maxlength="200"
+                   class="gf-input !py-2 text-xs" placeholder="{{t "例如：你的支持是我更新的动力" $.Lang}}">
+          </div>
+          <div>
+            <label class="gf-label !mb-1 text-[11px]" for="donate_url">{{t "外部打赏链接" $.Lang}}</label>
+            <input id="donate_url" name="donate_url" type="url" value="{{.User.DonateURL}}"
+                   class="gf-input !py-1.5 font-mono text-[11px]" placeholder="https://afdian.com/a/...">
+          </div>
+        </div>
+        <p class="border-t border-border bg-surface-muted/40 px-4 py-2 text-[10px] text-fg-muted">
+          {{t "读者可以用积分打赏；填写外部链接后，主页会显示「前往打赏」按钮并跳转到该平台。" $.Lang}}
+        </p>
+      </section>
+
+      <!-- 常规保存按钮 -->
+      <div class="flex flex-wrap items-center justify-end gap-2 pt-1">
+        <a href="/settings/security" class="gf-btn gf-btn-ghost !py-1.5 text-xs">{{t "账号安全" $.Lang}}</a>
+        <button type="submit" class="gf-btn gf-btn-primary !py-2 text-xs" x-bind:disabled="!canSave">{{t "保存资料" $.Lang}}</button>
+      </div>
+
+      <!-- 有改动时才浮出的操作条 -->
+      <div x-cloak x-show="dirty" x-transition.opacity
+           class="fixed inset-x-0 bottom-14 z-40 border-t border-border bg-surface/95 px-4 py-2.5 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] backdrop-blur md:bottom-0">
+        <div class="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2">
+          <p class="text-[11px]" x-bind:class="canSave ? 'text-fg-muted' : 'text-danger'">
+            <span x-show="canSave"><span class="font-medium text-fg" x-text="dirtyCount"></span> {{t "项有未保存的修改" $.Lang}}</span>
+            <span x-show="!canSave">{{t "有字段超出长度限制，请先调整。" $.Lang}}</span>
+          </p>
+          <div class="flex gap-2">
+            <button type="button" class="gf-btn gf-btn-ghost !py-1.5 text-xs" x-on:click="location.reload()">{{t "放弃" $.Lang}}</button>
+            <button type="submit" class="gf-btn gf-btn-primary !py-1.5 text-xs" x-bind:disabled="!canSave">{{t "保存资料" $.Lang}}</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  {{end}}
+  <div class="h-8 md:h-0"></div>
+</div>
+{{end}}

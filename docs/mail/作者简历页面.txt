@@ -1,0 +1,3174 @@
+明白了。既然是**单作者个人站**，而且所有文章默认都是你写的，那作者页就不应该再承担“作者内容聚合页”的职责。它应该更像一个**公开版个人简历 / Profile Resume**，作者卡只是这个页面的精简入口。
+
+这样设计会更合理。
+
+我建议把职责改成：
+
+```text
+Sidebar Author Card
+→ 简版身份介绍
+
+Author Page
+→ 完整个人简历 / 专业介绍
+
+About Page
+→ 介绍网站本身
+```
+
+作者页不需要再放“我的文章列表”，最多放少量“精选内容/项目”，因为整站本来就是你的内容。
+
+## 作者页建议做成 Resume Profile
+
+页面结构可以这样：
+
+```text
+首页 / 作者
+
+[ Avatar ]
+
+William Lee
+
+Independent Developer · Writer · Builder
+
+一句个人定位简介
+
+[ GitHub ] [ Website ] [ Email ]
+
+
+关于我
+
+较完整的个人介绍……
+
+
+经历 Experience
+
+2024 — Present
+Independent Developer
+开发 AI、博客、交易工具等……
+
+2022 — 2024
+XXX
+……
+
+
+项目 Projects
+
+AMCIHUB
+AI 模型部署成本分析平台
+[访问项目]
+
+TradeVision
+量化交易与市场分析工具
+[查看项目]
+
+
+技能 / 技术栈
+
+Frontend
+Vue · Nuxt · TypeScript
+
+Backend
+Node.js · Bun · Go · MySQL · PostgreSQL
+
+AI
+LLM Integration · RAG · AI Agents
+
+
+教育 / 认证
+
+XXXX
+XXXX
+
+
+现在在做
+
+正在开发……
+正在研究……
+正在写……
+
+
+联系我
+
+GitHub
+Email
+Website
+```
+
+这比“作者主页 + 文章流”更符合你的实际情况。
+
+---
+
+## 第一屏怎么设计最好
+
+不要做传统 Word 简历那种。
+
+建议是现代个人主页式：
+
+```text
+┌─────────────────────────────────────────────┐
+
+     [ 96px Avatar ]
+
+     William Lee
+
+     Independent Developer · Writer · Builder
+
+     Building AI, web and developer tools,
+     and writing about software and technology.
+
+     GitHub   Website   Email
+
+└─────────────────────────────────────────────┘
+```
+
+也可以桌面端做左右：
+
+```text
+[ Avatar ]   William Lee
+             Independent Developer · Writer
+
+             一句话简介……
+
+             GitHub · Website · Email
+```
+
+我更推荐左右布局，显得更成熟，不像普通博客作者卡。
+
+---
+
+## 不建议加大 Cover
+
+这种页面没必要做：
+
+```text
+超大 Banner
++
+头像悬浮
+```
+
+会太像社交媒体。
+
+保持：
+
+```text
+max-width 900~1000px
+大量留白
+清晰分区
+```
+
+更像现代个人 Resume Site。
+
+---
+
+# 1. About Me
+
+这里是真正介绍你本人的地方。
+
+内容可以包括：
+
+- 你现在主要做什么
+- 关注哪些方向
+- 为什么做这些项目
+- 对技术/产品的偏好
+- 当前工作方式
+
+建议控制在：
+
+```text
+3~6 个短段落
+```
+
+不要写成自传。
+
+支持简单富文本即可：
+
+```text
+paragraph
+bold
+italic
+link
+list
+```
+
+---
+
+# 2. Experience 经历
+
+这是 Resume 风格的核心。
+
+推荐 Timeline：
+
+```text
+Experience
+
+2025 — Present
+Independent Developer
+
+开发 AI 工具、博客系统和自动化交易工具。
+主要使用 Nuxt、TypeScript、Node.js 和 Go。
+
+
+2023 — 2025
+Project / Role
+
+……
+```
+
+视觉：
+
+```text
+2025 — Present     Independent Developer
+                   Description...
+```
+
+比竖线时间轴更优雅。
+
+不要复杂动画。
+
+---
+
+## 后台数据结构
+
+不要把经历直接写进一个巨大富文本。
+
+建议做 Repeatable：
+
+```text
+Experience
+
+[ Add Experience ]
+
+Role
+Company / Organization
+Start Date
+End Date / Present
+Location optional
+Description
+Link optional
+```
+
+可以拖动排序。
+
+---
+
+# 3. Projects
+
+这个页面很适合展示你的重点项目。
+
+例如：
+
+```text
+Projects
+
+AMCIHUB
+AI model deployment cost analysis platform.
+Nuxt · TypeScript · AI
+[ Visit ]
+
+TradeVision
+Crypto market analysis and trading tools.
+TypeScript · WebSocket · Exchange APIs
+[ GitHub ]
+```
+
+项目不需要像商城卡片。
+
+建议使用简单两列：
+
+```text
+Desktop: 2 columns
+Mobile: 1 column
+```
+
+卡片内容：
+
+```text
+Project Name
+Short Description
+Tech Stack
+Links
+```
+
+如果项目很多，只精选：
+
+```text
+4~6 个
+```
+
+---
+
+# 4. Skills / Stack
+
+需要，但不要做技能进度条。
+
+不要：
+
+```text
+Vue 95%
+Go 80%
+AI 90%
+```
+
+这种已经很旧。
+
+推荐按领域分组：
+
+```text
+Skills
+
+Frontend
+Nuxt
+Vue
+TypeScript
+Tailwind CSS
+
+Backend
+Node.js
+Bun
+Go
+MySQL
+PostgreSQL
+
+AI
+LLM APIs
+RAG
+AI Agents
+Prompt Engineering
+
+Infrastructure
+Docker
+Cloudflare
+Linux
+```
+
+前台可以用：
+
+```text
+small badge
+```
+
+或者纯文本。
+
+我更倾向纯文本 + 小标签。
+
+---
+
+# 5. Education
+
+如果你愿意公开，再显示。
+
+结构：
+
+```text
+Education
+
+2026 — 2029
+Southwest University of Political Science & Law
+Master of Laws
+```
+
+如果不想公开：
+
+直接关闭整个模块。
+
+作者页每个 section 都应该能开关。
+
+---
+
+# 6. Certifications
+
+同理：
+
+```text
+Certifications
+
+Legal Professional Qualification
+IELTS
+XXX
+```
+
+如果暂无：
+
+不显示。
+
+不要空 section。
+
+---
+
+# 7. Current Focus
+
+这个非常适合个人站，而且比文章列表更有价值。
+
+例如：
+
+```text
+Currently
+
+• Building a Nuxt-based publishing system
+• Researching AI-assisted content workflows
+• Working on quantitative trading infrastructure
+```
+
+它让页面保持“活的”。
+
+后台可以：
+
+```text
+Current Focus
+[ + Add Item ]
+```
+
+建议最多 3~5 项。
+
+---
+
+# 8. Interests
+
+可选。
+
+例如：
+
+```text
+Interests
+
+AI Systems
+Web Engineering
+Open Source
+Quantitative Trading
+Compliance / Tax
+```
+
+但不要跟 Skills 重复。
+
+如果 Focus + Skills 已经很多，Interests 可以不做。
+
+---
+
+# 9. Contact
+
+页面底部：
+
+```text
+Get in touch
+
+GitHub
+Website
+Email
+X
+```
+
+可以有一句：
+
+```text
+Open to technical discussions and interesting projects.
+```
+
+不要放复杂联系表单，除非你已有 Contact 模块。
+
+---
+
+# 10. Download Resume 要不要
+
+这个可以做成可选。
+
+例如：
+
+```text
+Download Resume
+```
+
+后台上传 PDF。
+
+但我建议第一版先不做。
+
+因为网页本身已经是简历，而且 PDF 需要频繁维护。
+
+以后再加：
+
+```text
+resume_media_id
+```
+
+即可。
+
+---
+
+# 11. 作者卡和作者页关系
+
+作者卡只保留：
+
+```text
+Avatar
+Name
+Headline
+Short Bio
+Social Icons
+View Profile →
+```
+
+例如：
+
+```text
+[Avatar]
+
+William Lee
+Independent Developer
+
+Building AI and web tools.
+
+GitHub  X  Mail
+
+View Profile →
+```
+
+然后进入：
+
+```text
+/author
+```
+
+甚至你只有一个作者，我反而建议 URL 简化成：
+
+```text
+/author
+```
+
+而不是：
+
+```text
+/authors/william
+```
+
+因为你根本不需要多作者语义。
+
+这个更符合你的场景。
+
+---
+
+## 我建议直接用 `/author`
+
+你现在是：
+
+```text
+single-author site
+```
+
+那完全可以冻结：
+
+```text
+/about
+→ 关于网站
+
+/author
+→ 关于你本人 / Resume
+```
+
+如果未来某一天真的变多作者，再迁移成：
+
+```text
+/authors/:slug
+```
+
+现在没必要提前承担复杂度。
+
+---
+
+# 12. 后台设计
+
+菜单：
+
+```text
+Content
+├── Posts
+├── Pages
+└── Author Profile
+```
+
+或者：
+
+```text
+Site
+└── Author Profile
+```
+
+我更推荐：
+
+```text
+Content → Author Profile
+```
+
+---
+
+## Author Profile 后台
+
+建议分 Tab：
+
+```text
+Author Profile
+
+Profile
+Experience
+Projects
+Skills
+Education
+Current Focus
+Social
+SEO
+```
+
+而不是一个超长页面。
+
+---
+
+## Profile
+
+字段：
+
+```text
+Avatar
+Display Name
+Headline
+Short Bio
+Full Bio
+Location optional
+Website
+Contact Email
+```
+
+---
+
+## Experience
+
+Repeatable：
+
+```text
+Role
+Organization
+Start Date
+End Date
+Description
+URL
+```
+
+支持：
+
+```text
+Add
+Edit
+Delete
+Drag Sort
+```
+
+---
+
+## Projects
+
+字段：
+
+```text
+Project Name
+Short Description
+URL
+Repository URL
+Image optional
+Tech Tags
+Featured
+Sort Order
+```
+
+---
+
+## Skills
+
+不要 JSON。
+
+后台：
+
+```text
+Skill Group
+
+Frontend
+[ Nuxt ]
+[ Vue ]
+[ TypeScript ]
+
+[ + Add Skill ]
+
+[ + Add Group ]
+```
+
+---
+
+## Education
+
+```text
+Institution
+Degree / Program
+Start
+End
+Description optional
+```
+
+---
+
+## Current Focus
+
+简单 repeatable：
+
+```text
+Text
+Link optional
+```
+
+---
+
+# 13. 页面顺序建议
+
+我建议默认：
+
+```text
+Hero
+
+About
+
+Experience
+
+Selected Projects
+
+Skills
+
+Current Focus
+
+Education
+
+Contact
+```
+
+但允许后台拖动 section 顺序。
+
+不过不要做成完全自由 Page Builder。
+
+只允许这些固定 section：
+
+```text
+About
+Experience
+Projects
+Skills
+Education
+Certifications
+Current Focus
+Contact
+```
+
+然后：
+
+```text
+Enable
+Disable
+Sort
+```
+
+这样足够灵活又不会变复杂。
+
+---
+
+# 14. 前台视觉设计
+
+容器：
+
+```text
+max-width: 960px
+```
+
+正文：
+
+```text
+720~820px
+```
+
+Hero 可以到 960px。
+
+Section 间距：
+
+```text
+64~80px desktop
+48~56px mobile
+```
+
+标题：
+
+```text
+H1 36~44px
+H2 22~26px
+```
+
+正文：
+
+```text
+16px
+line-height 1.7
+```
+
+---
+
+# 15. Section Heading
+
+不要：
+
+```text
+ABOUT ME
+EXPERIENCE
+MY SKILLS
+MY PROJECTS
+```
+
+全大写。
+
+用正常：
+
+```text
+About
+Experience
+Projects
+Skills
+```
+
+更现代。
+
+---
+
+# 16. Experience 视觉
+
+推荐：
+
+```text
+Experience
+
+2026 — Present    Independent Developer
+                  Self-employed
+
+                  Building AI products,
+                  publishing tools and...
+```
+
+不要传统：
+
+```text
+●
+│
+●
+│
+●
+```
+
+大时间轴。
+
+简单两列更高级。
+
+---
+
+# 17. Projects 视觉
+
+推荐：
+
+```text
+Projects
+
+┌──────────────────────────┐
+│ AMCIHUB                  │
+│ AI deployment cost...    │
+│                          │
+│ Nuxt · TS · AI           │
+│ Visit ↗                  │
+└──────────────────────────┘
+```
+
+轻 Card。
+
+不要大图片也没关系。
+
+如果有 Logo：
+
+```text
+small 40px logo
+```
+
+足够。
+
+---
+
+# 18. Skills 视觉
+
+例如：
+
+```text
+Frontend
+Nuxt   Vue   TypeScript   Tailwind
+
+Backend
+Node.js   Bun   Go   MySQL
+
+AI
+LLM APIs   RAG   Agents
+```
+
+这里甚至不必用 Card。
+
+用：
+
+```text
+border-top
+```
+
+分组即可。
+
+---
+
+# 19. SEO
+
+这个页面本质是公开个人身份页，所以可以输出：
+
+```text
+Person JSON-LD
+```
+
+字段来自：
+
+```text
+name
+url
+image
+sameAs
+jobTitle/headline
+description
+```
+
+比之前在 Sidebar Author Card 输出更合理。
+
+---
+
+# 20. 首页作者卡链接
+
+默认：
+
+```text
+了解更多 →
+```
+
+或者：
+
+```text
+About me →
+```
+
+不过中文我建议：
+
+```text
+关于作者 →
+```
+
+不会跟 `/about` 混淆。
+
+---
+
+# 21. About 页面继续做什么
+
+`/about` 可以很简单：
+
+```text
+About This Site
+
+为什么建立这个站
+主要写什么
+网站使用什么技术
+联系 / 版权
+```
+
+不再写完整个人履历。
+
+---
+
+# 22. 不需要的内容
+
+你这种单作者 Resume 页，我建议明确不做：
+
+```text
+文章列表
+作者文章数量
+粉丝
+关注
+Joined Date
+用户状态
+作者分类筛选
+作者列表
+作者 slug 管理
+多作者关系
+```
+
+这些确实都没有必要。
+
+---
+
+# 23. 最终页面效果
+
+我会建议你做成：
+
+```text
+[Avatar]
+
+William Lee
+
+Independent Developer · Writer · Builder
+
+Building AI, web and developer tools.
+Writing about software, systems and technology.
+
+GitHub   Website   Email
+
+
+About
+
+完整个人介绍……
+
+
+Experience
+
+2026 — Present
+Independent Developer
+开发……
+
+
+Projects
+
+AMCIHUB
+AI deployment cost platform
+Nuxt · TypeScript · AI
+Visit ↗
+
+TradeVision
+Trading infrastructure
+TypeScript · WebSocket
+GitHub ↗
+
+
+Skills
+
+Frontend
+Nuxt · Vue · TypeScript
+
+Backend
+Node.js · Bun · Go
+
+AI
+LLM · RAG · Agents
+
+
+Currently
+
+Building...
+Researching...
+Writing...
+
+
+Education
+
+...
+
+
+Get in touch
+
+GitHub · Email · Website
+```
+
+这才比较符合你说的“类似简历”，而且和你这个**单作者个人站**的逻辑完全一致。
+
+最关键的调整就是：**作者页不再围绕“作者发表了什么”，而围绕“这个人是谁、做过什么、会什么、现在在做什么”。** 这比前面的博客作者聚合页更适合你。
+
+
+我建议这次把命名和 AI 架构一起定下来，因为它们实际上会互相影响：未来 AI Chat 也应该能分析你的 Profile、文章、SEO、商店、评论等模块，而不是只认识“文章”。
+
+## 一、`/author` 我建议改掉
+
+你现在这个页面已经不是“博客作者归档页”，而是：
+
+> **你的公开个人身份页 + 在线简历 + 项目/技能/经历展示页**
+
+所以 `/author` 语义偏窄。
+
+我会在这几个里面选：
+
+| URL | 含义 | 推荐度 |
+|---|---|---:|
+| `/profile` | 个人主页、职业资料、简历、项目都能包含 | ⭐⭐⭐⭐⭐ |
+| `/resume` | 很明确是简历，但太求职化 | ⭐⭐⭐⭐ |
+| `/about-me` | 亲切，但和 `/about` 容易混 | ⭐⭐⭐ |
+| `/me` | 极简、有个性，但 SEO/语义偏弱 | ⭐⭐⭐ |
+| `/author` | 像博客作者归档页 | ⭐⭐ |
+| `/cv` | 偏学术/欧洲风格 | ⭐⭐ |
+
+### 我最推荐：`/profile`
+
+导航名称：
+
+```text
+Profile
+```
+
+中文：
+
+```text
+个人主页
+```
+
+页面本身可以呈现 Resume 风格。
+
+也就是说：
+
+```text
+/profile
+```
+
+≠ 社区用户 Profile
+
+而是：
+
+```text
+Professional Profile
+Personal Resume
+Projects
+Experience
+Skills
+Social
+Current Focus
+```
+
+它比 `/resume` 更耐用。
+
+以后你不仅找工作，还可能展示：
+
+- 开源项目
+- 产品
+- 技术栈
+- 专业方向
+- 当前在做什么
+- 社交渠道
+- 教育经历
+- 证书
+- 合作方式
+
+`/resume` 就逐渐显得太窄，而 `/profile` 仍然成立。
+
+### 最终建议
+
+冻结成：
+
+```text
+/about
+→ 关于这个网站
+
+/profile
+→ 关于你本人
+
+/contact
+→ 联系
+
+/posts
+→ 文章
+```
+
+侧边栏作者卡 CTA：
+
+```text
+View Profile →
+```
+
+中文：
+
+```text
+查看个人主页 →
+```
+
+而不是：
+
+```text
+查看作者 →
+```
+
+这样整体身份就从“博客作者”升级成“个人站主人”。
+
+---
+
+# 二、Profile 页面模块继续沿用你刚才的模块化设计
+
+建议正式命名：
+
+```text
+Profile Page
+```
+
+而不是：
+
+```text
+Author Page
+```
+
+组件也建议逐步从：
+
+```text
+AuthorExperience.vue
+AuthorSkills.vue
+```
+
+改成：
+
+```text
+ProfileHero.vue
+ProfileAbout.vue
+ProfileExperience.vue
+ProfileProjects.vue
+ProfileSkills.vue
+ProfileSocial.vue
+ProfileEducation.vue
+ProfileCertifications.vue
+ProfileCurrentFocus.vue
+ProfileContact.vue
+```
+
+后台：
+
+```text
+Profile
+├── Overview
+├── Sections
+├── Social Channels
+├── Experience
+├── Projects
+├── Skills
+├── Education
+├── Certifications
+├── Current Focus
+└── SEO
+```
+
+Sidebar 里的卡片仍然可以叫：
+
+```text
+Author Card
+```
+
+因为在那里它的作用确实是“作者简介”。
+
+所以：
+
+```text
+Author Card
+       ↓
+     /profile
+       ↓
+Professional Profile Page
+```
+
+这个语义最舒服。
+
+---
+
+# 三、现在重点：A3 Page AI
+
+你之前定的 A3 是：
+
+> Page AI：针对当前页面进行 Content / SEO / Accessibility / UI 分析。
+
+我建议现在升级一下定义：
+
+> **A3 Page AI = 当前页面的 AI Copilot，不只是 Audit。**
+
+但依旧不能变成“AI 随便修改网页”。
+
+整体：
+
+```text
+Current Page
+    ↓
+Page Context Builder
+    ↓
+Rule Engine
+    +
+AI Analysis
+    ↓
+Structured Findings
+    ↓
+Suggestions
+    ↓
+Preview / Diff
+    ↓
+Accept
+    ↓
+Supported Patch
+```
+
+核心原则继续不变：
+
+```text
+AI never directly edits Vue source code.
+```
+
+---
+
+# 四、Page AI 前端入口
+
+页面编辑器右侧加入：
+
+```text
+AI
+```
+
+例如：
+
+```text
+┌─────────────────────────────┐
+│ Page Editor                 │
+│                             │
+│ Content                     │
+│ SEO                         │
+│ Layout                      │
+│                             │
+├─────────────────────────────┤
+│ AI Assistant                │
+│                             │
+│ Overview                    │
+│ Content                     │
+│ SEO                         │
+│ UI                          │
+│ Accessibility               │
+│ Performance                 │
+└─────────────────────────────┘
+```
+
+不是弹一个巨大聊天框。
+
+Page AI 的第一形态应该是：
+
+> **结构化分析器**
+
+而不是 Chat。
+
+---
+
+# 五、Page AI 的六类能力
+
+建议：
+
+```text
+Page AI
+
+1. Overview
+2. Content
+3. SEO
+4. UI / Layout
+5. Accessibility
+6. Performance
+```
+
+---
+
+## 1. Overview
+
+点击：
+
+```text
+Analyze Page
+```
+
+得到：
+
+```text
+Page Health
+
+Content          88
+SEO              72
+Accessibility    91
+UI               84
+Performance      79
+
+6 recommendations
+2 important issues
+```
+
+这些分数只是辅助信息，不要搞成“SEO 插件式 100 分焦虑”。
+
+重点是下面具体 Finding。
+
+---
+
+# 六、Content AI
+
+分析：
+
+```text
+标题是否清楚
+摘要是否重复标题
+段落是否太长
+内容结构
+标题层级
+重复表达
+CTA 是否清楚
+信息缺失
+语言可读性
+内容是否过于冗长
+```
+
+例如：
+
+```text
+Medium
+
+The introduction repeats much of the page description.
+
+Current:
+"Nuxt 4 博客框架起步……"
+
+Suggestion:
+Remove the first paragraph or rewrite it as an introduction.
+```
+
+Actions：
+
+```text
+Review
+Apply
+Dismiss
+```
+
+但 `Apply` 只有当修改的是 CMS Content Schema 时才出现。
+
+---
+
+# 七、SEO AI
+
+分成两部分。
+
+### Rule Engine
+
+确定性检查：
+
+```text
+缺少 title
+缺少 description
+缺少 H1
+多个 H1
+canonical 缺失
+OG image 缺失
+alt 缺失
+heading 跳级
+title 太长
+description 太长
+slug 问题
+```
+
+这些根本没必要浪费 AI Token。
+
+### AI
+
+负责：
+
+```text
+SEO title 是否吸引人
+description 是否准确
+搜索意图
+标题与正文一致性
+内部链接机会
+内容覆盖不足
+关键词语义一致性
+```
+
+这样比让 LLM 做全部 SEO 检查更靠谱。
+
+---
+
+# 八、UI AI
+
+这个是你之前设计里最容易做歪的一部分。
+
+一定要分：
+
+### A3 第一阶段
+
+不看截图。
+
+分析：
+
+```text
+Page Schema
+DOM Summary
+Layout Metadata
+Design Tokens
+Section Metrics
+```
+
+例如：
+
+```json
+{
+  "page": "profile",
+  "sections": [
+    {
+      "type": "hero",
+      "height": 560,
+      "contentWidth": 860
+    },
+    {
+      "type": "experience",
+      "items": 4
+    },
+    {
+      "type": "projects",
+      "columns": 3
+    }
+  ]
+}
+```
+
+AI 可以说：
+
+```text
+Hero takes 61% of the first viewport.
+
+Recommended:
+Reduce hero vertical padding from 96px to 64px.
+```
+
+如果：
+
+```text
+hero.padding
+```
+
+属于 Page Schema 支持字段：
+
+```text
+[Apply]
+```
+
+如果是写死的 Vue/CSS：
+
+```text
+[View recommendation]
+```
+
+没有 Apply。
+
+---
+
+# 九、以后 A4 再加 Vision
+
+以后再：
+
+```text
+Playwright
+↓
+Desktop screenshot 1440×900
+Mobile screenshot 390×844
+↓
+Vision Model
+```
+
+分析：
+
+```text
+视觉平衡
+留白
+文字密度
+按钮显著程度
+布局拥挤
+Hero 是否过高
+图片比例
+移动端可读性
+```
+
+这个属于 A4，不要塞进 A3 第一版。
+
+---
+
+# 十、Accessibility
+
+Rule Engine 优先：
+
+```text
+alt
+label
+aria
+heading hierarchy
+contrast
+touch target
+button/link semantics
+form labels
+```
+
+AI 负责：
+
+```text
+alt 文本质量
+link 文案可理解性
+表单帮助文本
+复杂内容可读性
+```
+
+---
+
+# 十一、Performance
+
+也不要让 AI 猜性能。
+
+真正数据来自：
+
+```text
+DOM metrics
+asset metadata
+image dimensions
+lazy loading
+bundle/runtime metrics
+Lighthouse later
+```
+
+Rule Engine 判断：
+
+```text
+LCP 图片未 priority
+图片原图过大
+缺失 width/height
+非首屏图片 eager
+页面图片数量异常
+DOM 太大
+```
+
+AI 只负责把技术问题解释成人能理解的建议。
+
+---
+
+# 十二、Page AI Context
+
+需要正式做：
+
+```text
+PageAIContext
+```
+
+概念：
+
+```ts
+interface PageAIContext {
+  page: {
+    id: string
+    type: string
+    route: string
+    locale: string
+  }
+
+  content: {
+    title?: string
+    excerpt?: string
+    text?: string
+    headings: Heading[]
+  }
+
+  seo: {
+    title?: string
+    description?: string
+    canonical?: string
+    ogImage?: string
+  }
+
+  layout: {
+    sections: PageSectionSummary[]
+  }
+
+  accessibility: {
+    images: ImageSummary[]
+    links: LinkSummary[]
+    headings: Heading[]
+  }
+}
+```
+
+注意：
+
+**不是把完整 DOM HTML 直接塞给模型。**
+
+---
+
+# 十三、Page AI API
+
+我建议 A3 只需要几个统一入口。
+
+```text
+POST /api/admin/ai/page/analyze
+```
+
+请求：
+
+```text
+pageId
+pageType
+categories:
+  content
+  seo
+  ui
+  accessibility
+  performance
+depth:
+  quick
+  balanced
+```
+
+返回：
+
+```text
+report
+findings
+suggestions
+```
+
+第二个：
+
+```text
+POST /api/admin/ai/page/suggest
+```
+
+用于某个 finding 深入生成方案。
+
+第三个：
+
+```text
+POST /api/admin/ai/suggestions/:id/apply
+```
+
+继续走统一 suggestion apply。
+
+不要：
+
+```text
+/page/seo
+/page/content
+/page/ui
+/page/accessibility
+...
+```
+
+每个造一个 API。
+
+---
+
+# 十四、Page AI 和 Chat 必须区分
+
+这里非常重要。
+
+你现在还提出：
+
+> AI聊天，集成程序API，对整站或者某个部分数据进行分析。
+
+这个不应该塞进：
+
+```text
+Page AI
+```
+
+应该成为一个独立：
+
+# AI Assistant / Site Chat
+
+整个架构：
+
+```text
+                    AI Core
+                       │
+       ┌───────────────┴─────────────────┐
+       │                                 │
+    Page AI                         AI Assistant
+       │                                 │
+Current Page Context               Tool Calling
+       │                                 │
+Structured Audit                  Site Data Tools
+```
+
+Page AI：
+
+```text
+分析我当前正在编辑的页面
+```
+
+AI Chat：
+
+```text
+帮我分析整个网站
+```
+
+或者：
+
+```text
+分析最近 20 篇文章
+```
+
+或者：
+
+```text
+看看商店哪些产品描述太短
+```
+
+完全不同。
+
+---
+
+# 十五、AI Chat 应该真正采用 Tool Calling
+
+这是你这个系统后面最有价值的一部分。
+
+例如用户输入：
+
+```text
+帮我看看整个网站现在有哪些 SEO 问题？
+```
+
+AI 不应该一开始收到：
+
+```text
+整个数据库
+```
+
+而是：
+
+```text
+User
+ ↓
+AI Assistant
+ ↓
+getSiteOverview()
+ ↓
+getSeoSummary()
+ ↓
+getPages(...)
+ ↓
+getPosts(...)
+ ↓
+必要时 getPost(id)
+ ↓
+Answer
+```
+
+这叫 Progressive Context。
+
+---
+
+# 十六、AI Assistant 架构
+
+推荐：
+
+```text
+AI Assistant
+    │
+    ├── Conversation Manager
+    │
+    ├── Context Resolver
+    │
+    ├── Tool Router
+    │
+    ├── Permission Guard
+    │
+    ├── AI Data Policy
+    │
+    ├── AI Gateway
+    │
+    └── SSE Stream
+```
+
+底下：
+
+```text
+Tool Registry
+├── Site
+├── Posts
+├── Pages
+├── Profile
+├── Taxonomy
+├── SEO
+├── Media
+├── Comments
+├── Store
+├── Analytics
+└── Search
+```
+
+这才叫真正“集成整个程序”。
+
+---
+
+# 十七、不要做“一个万能 siteData API”
+
+不要：
+
+```text
+GET /api/ai/site-data
+```
+
+一次返回：
+
+```text
+文章
+页面
+产品
+评论
+配置
+统计
+用户
+...
+```
+
+这会非常差：
+
+- Token 浪费
+- 数据泄露风险高
+- 上下文爆炸
+- 模型不知道重点
+- 难做权限
+- 难缓存
+- 难扩展
+
+而是 Tool。
+
+---
+
+# 十八、第一批 AI Tools
+
+我建议 A5/A6 第一版直接有：
+
+```text
+Site
+├── getSiteOverview
+
+Content
+├── getPosts
+├── getPost
+├── getPages
+├── getPage
+├── searchContent
+
+SEO
+├── getSeoSummary
+├── getMissingSeo
+├── getInternalLinks
+├── getOrphanContent
+
+Profile
+├── getProfile
+├── getProfileSections
+
+Taxonomy
+├── getCategories
+├── getTags
+
+Comments
+├── getCommentsSummary
+
+Store
+├── getProducts
+├── getProduct
+├── getStoreSummary
+```
+
+以后：
+
+```text
+Analytics
+├── getTrafficSummary
+├── getPopularPages
+├── getContentDecay
+
+Search Console
+├── getQueries
+├── getLowCtrPages
+├── getRankingOpportunities
+```
+
+---
+
+# 十九、Profile 也应该接入 AI
+
+现在为什么 `/profile` 命名也和 AI 有关系？
+
+因为以后你可以直接问：
+
+```text
+分析一下我的 Profile 页面哪里表达得不好。
+```
+
+Assistant：
+
+```text
+getProfile()
+getProfileSections()
+getPageMetrics("/profile")
+```
+
+然后回答。
+
+甚至：
+
+```text
+根据我最近增加的三个项目，
+看看 Profile 的 Current Focus 是否需要更新。
+```
+
+它可以：
+
+```text
+getProfile
++
+getProjects
+```
+
+做跨模块推理。
+
+这就是 Site Chat 的真正价值。
+
+---
+
+# 二十、AI Chat 要支持“Scope”
+
+我很建议聊天框顶部加一个 Scope Selector。
+
+例如：
+
+```text
+AI Assistant
+
+Scope:
+[ Entire Site ▼]
+
+Ask anything...
+```
+
+可选：
+
+```text
+Entire Site
+Current Page
+Posts
+Pages
+Profile
+SEO
+Comments
+Store
+Media
+```
+
+这非常有用。
+
+---
+
+# 二十一、例如选择 Current Page
+
+你正在：
+
+```text
+/admin/pages/profile
+```
+
+AI Chat 自动显示：
+
+```text
+Scope
+Current Page · Profile
+```
+
+然后你问：
+
+```text
+这个页面是不是太长？
+```
+
+它直接获得当前 page context。
+
+不用你告诉它：
+
+```text
+/profile
+```
+
+---
+
+# 二十二、选择 Entire Site
+
+例如：
+
+```text
+Scope: Entire Site
+```
+
+问：
+
+```text
+整个站有什么值得优先优化的？
+```
+
+AI 可以调用：
+
+```text
+getSiteOverview
+getSeoSummary
+getContentSummary
+getStoreSummary
+```
+
+然后回答：
+
+```text
+Priority 1
+12 posts have no SEO description.
+
+Priority 2
+6 posts have no internal links.
+
+Priority 3
+Your Profile Projects section contains two outdated links.
+
+Priority 4
+...
+```
+
+这比静态“Site Analysis”有用很多。
+
+---
+
+# 二十三、Scope 不等于权限
+
+一定要注意：
+
+```text
+Scope
+```
+
+只是告诉 AI：
+
+> 优先在哪个范围工作。
+
+真正的数据访问仍然：
+
+```text
+Permission
++
+Tool Permission
++
+AI Data Policy
+```
+
+例如普通作者：
+
+```text
+无法获取 Store revenue
+```
+
+即使 Scope 选 Entire Site。
+
+---
+
+# 二十四、聊天上下文不要永久塞数据
+
+一个 conversation：
+
+```text
+User
+AI
+User
+AI
+```
+
+只保存：
+
+```text
+message
+tool call metadata
+references
+```
+
+不要每次把之前调用过的所有原始数据再次放进去。
+
+需要：
+
+```text
+Conversation Summary
+```
+
+例如超过一定长度：
+
+```text
+Older messages
+↓
+summarize
+↓
+Conversation Memory
+```
+
+这是“聊天会话记忆”，不是你的 ChatGPT Memory。
+
+---
+
+# 二十五、建议支持来源引用
+
+这点我很建议做。
+
+AI 回答：
+
+```text
+有 8 篇文章缺少 SEO description。
+
+Sources:
+• Nuxt 4 博客框架起步
+• ...
+```
+
+实际上返回：
+
+```ts
+references: [
+  {
+    type: "post",
+    id: "...",
+    title: "...",
+    adminUrl: "/admin/posts/..."
+  }
+]
+```
+
+前台可以显示：
+
+```text
+[打开文章]
+```
+
+这样 AI 给出的结论是可检查的。
+
+---
+
+# 二十六、AI Chat 不应该默认有写权限
+
+默认：
+
+```text
+READ ONLY
+```
+
+这是非常重要的设计。
+
+用户问：
+
+```text
+帮我优化这篇文章 SEO
+```
+
+AI 可以：
+
+```text
+生成建议
+```
+
+然后：
+
+```text
+[Preview Changes]
+```
+
+如果想修改：
+
+```text
+Create Suggestion
+↓
+Review
+↓
+Apply
+```
+
+Chat 本身不能直接：
+
+```text
+UPDATE posts SET ...
+```
+
+---
+
+# 二十七、AI Tool 也分 Read / Suggest / Action
+
+正式建议：
+
+```text
+Tool Type
+
+READ
+SUGGEST
+ACTION
+```
+
+A1/A6 第一版：
+
+```text
+READ
+SUGGEST
+```
+
+即可。
+
+比如：
+
+```text
+getPost
+→ READ
+
+suggestPostSeo
+→ SUGGEST
+```
+
+不要先做：
+
+```text
+deletePost
+publishPost
+changePrice
+moderateComment
+```
+
+这些 ACTION Tool 第一版全部不要。
+
+---
+
+# 二十八、未来可以逐步加 Action
+
+以后如果要：
+
+```text
+帮我把没有 alt 的图片生成 alt
+```
+
+正确流程：
+
+```text
+AI finds 18 images
+↓
+Generate Suggestions
+↓
+Review Queue
+↓
+Apply Selected
+```
+
+而不是：
+
+```text
+AI silently modifies 18 images
+```
+
+仍然保持你的原则：
+
+> Analyze → Preview → Diff → Accept → Apply
+
+---
+
+# 二十九、Chat API
+
+推荐：
+
+```text
+POST /api/admin/ai/chat
+```
+
+使用：
+
+```text
+SSE
+```
+
+请求：
+
+```ts
+{
+  conversationId?: string
+
+  message: string
+
+  scope: {
+    type:
+      | "site"
+      | "page"
+      | "posts"
+      | "profile"
+      | "seo"
+      | "comments"
+      | "store"
+
+    entityId?: string
+  }
+}
+```
+
+Server：
+
+```text
+Resolve Scope
+↓
+Resolve Permissions
+↓
+Select Initial Context
+↓
+AI Gateway
+↓
+Tool Call
+↓
+Tool Router
+↓
+Data Policy
+↓
+Business Service
+↓
+Tool Result
+↓
+AI
+↓
+SSE response
+```
+
+---
+
+# 三十、Conversation 数据
+
+建议：
+
+```text
+ai_conversations
+
+id
+user_id
+title
+scope_type
+scope_entity_id nullable
+provider_id
+model
+created_at
+updated_at
+archived_at
+```
+
+然后：
+
+```text
+ai_messages
+
+id
+conversation_id
+role
+content
+tool_calls_json nullable
+references_json nullable
+input_tokens
+output_tokens
+created_at
+```
+
+注意：
+
+不要保存：
+
+```text
+API Key
+完整敏感 Tool Result
+```
+
+---
+
+# 三十一、Tool Call Log 单独做
+
+建议：
+
+```text
+ai_tool_calls
+
+id
+conversation_id
+message_id
+tool
+arguments_summary_json
+status
+duration_ms
+result_summary_json
+created_at
+```
+
+不要默认存全部 raw result。
+
+这样审计非常舒服。
+
+---
+
+# 三十二、Tool Registry
+
+建议每个 Tool 都声明：
+
+```ts
+interface AIToolDefinition {
+  name: string
+  description: string
+
+  scope: string[]
+
+  permission: string
+
+  inputSchema: ZodSchema
+
+  dataPolicy: string[]
+
+  execute(ctx, input): Promise<unknown>
+}
+```
+
+概念上：
+
+```text
+name:
+content.posts.list
+
+permission:
+ai.site.read
+
+data policy:
+published_content
+```
+
+---
+
+# 三十三、Tool 不直接访问数据库
+
+继续冻结：
+
+```text
+AI Tool
+↓
+Service
+↓
+Repository / DB
+```
+
+不是：
+
+```text
+AI Tool
+↓
+Prisma query
+```
+
+例如：
+
+```text
+getPosts.tool.ts
+↓
+PostService.listForAI()
+```
+
+这样以后：
+
+- API
+- 页面
+- AI
+- Job
+
+都复用业务逻辑。
+
+---
+
+# 三十四、非常适合做 Tool Namespace
+
+例如：
+
+```text
+site.overview
+
+content.posts.list
+content.posts.get
+content.search
+
+pages.list
+pages.get
+
+profile.get
+profile.sections
+
+seo.summary
+seo.missing
+seo.internalLinks
+
+comments.summary
+
+store.summary
+store.products.list
+store.products.get
+```
+
+比：
+
+```text
+getPosts
+getPages
+getSomething
+```
+
+规模大后清楚很多。
+
+---
+
+# 三十五、AI Assistant UI
+
+后台主菜单增加：
+
+```text
+AI
+├── Assistant
+├── Reports
+├── Suggestions
+├── Providers
+└── Usage
+```
+
+其中：
+
+```text
+Assistant
+```
+
+就是聊天。
+
+页面：
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ AI Assistant                                                │
+├───────────────┬─────────────────────────────────────────────┤
+│ Conversations │ Scope: Entire Site                         │
+│               │                                             │
+│ Today         │ 你：帮我检查网站 SEO                       │
+│ SEO review    │                                             │
+│ Store review  │ AI：我检查了 42 篇文章和 8 个页面……        │
+│               │                                             │
+│               │ Sources                                     │
+│               │ [Post A] [Post B]                          │
+│               │                                             │
+│               │ ─────────────────────────────────────────   │
+│               │ Ask about your site...                     │
+└───────────────┴─────────────────────────────────────────────┘
+```
+
+继续使用原始 shadcn-vue。
+
+不要做成 ChatGPT 克隆得特别花。
+
+---
+
+# 三十六、还应该有 Context Chips
+
+例如正在 `/admin/posts/123/edit`：
+
+```text
+AI Assistant
+
+[ Current Post: Nuxt 4 博客框架起步 × ]
+
+Ask...
+```
+
+或者手动添加：
+
+```text
++ Add context
+```
+
+可以添加：
+
+```text
+Post
+Page
+Product
+Profile
+```
+
+这非常适合：
+
+```text
+比较这两篇文章有没有内容重复
+```
+
+选择：
+
+```text
+[Post A]
+[Post B]
+```
+
+然后问。
+
+---
+
+# 三十七、这和 Scope 有区别
+
+Scope：
+
+```text
+限定 AI 可以优先探索的业务范围
+```
+
+Context：
+
+```text
+明确告诉 AI 当前重点对象
+```
+
+例如：
+
+```text
+Scope: Posts
+
+Context:
+Post A
+Post B
+```
+
+非常清晰。
+
+---
+
+# 三十八、我建议支持快捷问题
+
+空聊天时：
+
+```text
+What would you like to analyze?
+
+[ Audit site SEO ]
+
+[ Find outdated content ]
+
+[ Review Profile ]
+
+[ Find internal linking opportunities ]
+
+[ Review product descriptions ]
+```
+
+点击后其实还是普通 Chat Prompt + Tools。
+
+不要另外实现五套逻辑。
+
+---
+
+# 三十九、Page AI 和 AI Chat 怎么互通
+
+这是这次架构最关键的地方。
+
+例如 Page AI 找到：
+
+```text
+This page has weak internal linking.
+```
+
+旁边：
+
+```text
+[Ask AI]
+```
+
+点一下：
+
+```text
+打开 AI Assistant
+
+Scope:
+Current Page
+
+Context:
+Finding #123
+
+Prompt:
+"How should I improve the internal linking of this page?"
+```
+
+反过来也一样。
+
+AI Chat 回答：
+
+```text
+Profile 页面项目部分信息密度太高。
+```
+
+可以：
+
+```text
+[Open Page AI]
+```
+
+进入 Page AI。
+
+这样两套 AI 是互通的，不是两个孤岛。
+
+---
+
+# 四十、Reports 也和 Chat 打通
+
+Site Analysis Job 生成：
+
+```text
+SEO Health Report
+```
+
+你可以：
+
+```text
+[Discuss with AI]
+```
+
+进入 Chat：
+
+```text
+Context:
+SEO Health Report #123
+```
+
+然后问：
+
+```text
+先告诉我最值得改的三个问题。
+```
+
+这非常实用。
+
+---
+
+# 四十一、AI Core 最终架构
+
+我建议现在正式冻结：
+
+```text
+                         AI Core
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+   Provider Layer      Context Layer       Governance
+        │                   │                   │
+ Provider Registry     Context Builder      Permissions
+ AI Gateway            Scope Resolver       Data Policy
+ Feature Router        References           Usage
+ Prompt Registry       Tool Registry        Audit
+        │                   │
+        ├─────────────┬─────┴────────────┐
+        │             │                  │
+   Editor AI       Page AI          AI Assistant
+        │             │                  │
+  Selected Text   Current Page        Tool Calling
+                                         │
+                                Business Services
+                                         │
+                                  Site Data
+```
+
+以后：
+
+```text
+Site Reports
+```
+
+也接在这里。
+
+---
+
+# 四十二、目录建议更新
+
+Nuxt Server：
+
+```text
+server/
+└── ai/
+    ├── gateway/
+    │   ├── ai-gateway.ts
+    │   ├── provider-registry.ts
+    │   └── feature-router.ts
+    │
+    ├── providers/
+    │
+    ├── prompts/
+    │   ├── editor/
+    │   ├── page/
+    │   ├── assistant/
+    │   └── reports/
+    │
+    ├── context/
+    │   ├── context-builder.ts
+    │   ├── scope-resolver.ts
+    │   ├── page-context.ts
+    │   ├── site-context.ts
+    │   └── data-policy.ts
+    │
+    ├── tools/
+    │   ├── site/
+    │   ├── content/
+    │   ├── pages/
+    │   ├── profile/
+    │   ├── seo/
+    │   ├── comments/
+    │   └── store/
+    │
+    ├── features/
+    │   ├── editor/
+    │   ├── page/
+    │   ├── assistant/
+    │   └── reports/
+    │
+    ├── rules/
+    │   ├── seo/
+    │   ├── accessibility/
+    │   ├── content/
+    │   └── performance/
+    │
+    └── jobs/
+```
+
+这个结构我认为已经足够长期用了。
+
+---
+
+# 四十三、前端目录
+
+```text
+components/admin/ai/
+├── assistant/
+│   ├── AIAssistant.vue
+│   ├── AIConversationList.vue
+│   ├── AIChatMessage.vue
+│   ├── AIChatInput.vue
+│   ├── AIScopeSelector.vue
+│   ├── AIContextChips.vue
+│   ├── AIToolActivity.vue
+│   └── AIReferences.vue
+│
+├── page/
+│   ├── PageAIPanel.vue
+│   ├── PageAIOverview.vue
+│   ├── PageAIContent.vue
+│   ├── PageAISEO.vue
+│   ├── PageAIUI.vue
+│   ├── PageAIAccessibility.vue
+│   └── PageAIPerformance.vue
+│
+├── suggestions/
+│
+└── reports/
+```
+
+---
+
+# 四十四、A3 现在应该怎么划范围
+
+我会把原来的 A3 明确冻结成：
+
+### A3.1 Page Context
+
+```text
+Page Context Builder
+Page Schema Resolver
+DOM/Layout Summary
+```
+
+### A3.2 Rule Engine
+
+```text
+SEO Rules
+Content Rules
+Accessibility Rules
+Performance Rules
+```
+
+### A3.3 AI Audit
+
+```text
+Content AI
+SEO AI
+UI AI
+Accessibility AI
+```
+
+### A3.4 Suggestions
+
+```text
+Structured Suggestions
+Preview
+Diff
+Apply supported patch
+Dismiss
+```
+
+### A3.5 UI
+
+```text
+Page AI Sidebar
+Health Overview
+Finding List
+Suggestion Detail
+```
+
+暂时**不包含 Vision**。
+
+---
+
+# 四十五、AI Chat 开发阶段
+
+我建议把之前：
+
+```text
+A5 Site Data Layer
+A6 Site Assistant
+```
+
+稍微重构：
+
+### A5 — AI Tool Platform
+
+```text
+Tool Registry
+Tool Router
+Permission Guard
+Data Policy
+Site Data Services
+Reference System
+```
+
+### A6 — AI Assistant
+
+```text
+Conversation
+SSE
+Scope
+Context
+Tool Calling
+References
+Conversation Summary
+```
+
+这样职责比原来清晰。
+
+---
+
+# 四十六、开发顺序最终建议
+
+现在我会排成：
+
+```text
+A1 AI Core
+↓
+A2 Editor AI
+↓
+A3 Page AI
+↓
+A5 AI Tool Platform
+↓
+A6 AI Assistant
+↓
+A7 Site Reports
+↓
+A4 Vision Page AI
+↓
+A8 Analytics / Search Console
+```
+
+注意我故意：
+
+```text
+A4
+```
+
+放后面。
+
+阶段编号可以之后重排，但开发顺序不要变。
+
+原因是 Vision 不影响核心架构，而 AI Tool Platform + Assistant 对你的整站价值更高。
+
+---
+
+# 四十七、第一版 AI Chat 可以做到什么
+
+完成 A6 后，就应该能真正问：
+
+```text
+整个网站现在有多少文章？
+```
+
+```text
+哪些文章缺 SEO description？
+```
+
+```text
+帮我找半年没更新的内容。
+```
+
+```text
+分析我的 Profile 页面。
+```
+
+```text
+我的 Profile 技能和项目描述有没有重复？
+```
+
+```text
+哪些文章适合互相添加内链？
+```
+
+```text
+看看评论里大家主要讨论什么。
+```
+
+```text
+我的商店哪些商品描述太短？
+```
+
+```text
+比较这两个页面。
+```
+
+```text
+最近的内容结构有什么问题？
+```
+
+而不是所谓：
+
+> “接了一个 LLM 聊天框”。
+
+这才是真正的 **AI-native CMS**。
+
+---
+
+## 最终我建议冻结三个决定
+
+**第一，作者简历页改为 `/profile`。** `author` 留给“作者”语义，Profile 才能自然承载你的经历、项目、技能、教育、证书、社交渠道和 Current Focus。
+
+**第二，A3 Page AI 做“当前页面 Copilot”，但以结构化 Audit/Suggestion 为核心，而不是聊天框。** Rule Engine 负责确定性问题，LLM 负责语义/UI 判断，只允许对 Page Schema 支持的字段产生可 Apply Patch。
+
+**第三，AI Chat 独立成为 AI Assistant。** 它通过 `Scope + Context + Tool Calling + Business Services` 分阶段读取整站数据，可以分析整站，也可以只分析 Posts、Profile、Store 或某个具体页面；默认 Read/Suggest，不给予直接数据库写权限。
+
+这三块组合起来后，你的产品逻辑就非常清楚：
+
+```text
+Editor AI
+→ 帮我改这一段
+
+Page AI
+→ 帮我检查这个页面
+
+AI Assistant
+→ 帮我理解、分析整个站或跨模块数据
+
+Site Reports
+→ 定期/主动生成系统性检查报告
+```
+
+我认为这比把所有 AI 都塞进一个聊天框里要成熟很多。

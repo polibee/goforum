@@ -1,0 +1,112 @@
+{{define "page"}}
+<div class="mx-auto max-w-3xl px-4 py-8">
+  <h1 class="text-2xl font-semibold">{{t "发布主题" $.Lang}}</h1>
+  <p class="mt-1 text-sm text-fg-muted">{{t "支持 Markdown。发布后可在时限内编辑。" $.Lang}}</p>
+
+  {{with .Data}}
+    {{if .Error}}<div class="gf-alert-danger mt-4">{{t .Error $.Lang}}</div>{{end}}
+    <form method="post" action="/topics" class="mt-6 space-y-4" x-data="{ submitting: false }" x-on:submit="submitting = true">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      <section class="gf-card p-5">
+        <h2 class="text-sm font-semibold">{{t "基本信息" $.Lang}}</h2>
+        <div class="mt-4 space-y-4">
+          <div>
+            <label class="gf-label" for="category_id">{{t "板块" $.Lang}}</label>
+            <select id="category_id" name="category_id" class="gf-input" required>
+              <option value="">{{t "选择板块" $.Lang}}</option>
+              {{range .Categories}}
+                <option value="{{.ID}}" {{if eq .ID $.Data.SelectedCategory}}selected{{end}}>{{.Name}}</option>
+              {{end}}
+            </select>
+          </div>
+          <div>
+            <label class="gf-label" for="title">{{t "标题" $.Lang}}</label>
+            <input id="title" name="title" value="{{.Title}}" class="gf-input" required autofocus>
+          </div>
+        </div>
+      </section>
+
+      <section class="gf-card p-5">
+        <h2 class="text-sm font-semibold">{{t "正文" $.Lang}}</h2>
+        <div class="mt-3">
+          <div x-data="editor" data-draft-key="gf-draft-topic" data-invalid-url="{{t "请输入有效的 http/https 链接" $.Lang}}">
+            <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <div class="flex gap-1">
+                <button type="button" x-on:click="showContent" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "内容" $.Lang}}</button>
+                <button type="button" x-on:click="showPreview" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "预览" $.Lang}}</button>
+                <button type="button" x-on:click="showSplit" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{t "对照" $.Lang}}</button>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-fg-muted">
+                <span x-show="draftSaved" x-cloak>{{t "草稿已保存" $.Lang}}</span>
+                <button type="button" x-on:click="clearDraft" class="hover:text-fg">{{t "清除草稿" $.Lang}}</button>
+              </div>
+            </div>
+            <div x-show="contentVisible" class="mb-2 flex flex-wrap gap-1">
+              <button type="button" x-on:click="bold" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs font-bold" title="Bold">B</button>
+              <button type="button" x-on:click="italic" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs italic" title="Italic">I</button>
+              <button type="button" x-on:click="strike" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs line-through" title="Strike">S</button>
+              <button type="button" x-on:click="heading" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs" title="Heading">H</button>
+              <button type="button" x-on:click="quote" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs" title="Quote">❝</button>
+              <button type="button" x-on:click="code" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs font-mono" title="Code">&lt;/&gt;</button>
+              <button type="button" x-on:click="openLink" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs" title="Link">🔗</button>
+              <button type="button" x-on:click="openImage" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs" title="Image URL">🖼</button>
+              <button type="button" x-on:click="bullet" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs" title="Bullet list">•</button>
+              <button type="button" x-on:click="ordered" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs" title="Numbered list">1.</button>
+              <span class="mx-1 w-px bg-border"></span>
+              <button type="button" x-on:click="undo" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs" title="Undo">↶</button>
+              <button type="button" x-on:click="redo" class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs" title="Redo">↷</button>
+            </div>
+            <div id="editor-panels" class="grid gap-3">
+              <div class="relative">
+                {{template "editor_mentions" $}}
+                <textarea id="raw" name="raw" x-show="contentVisible" rows="12" class="gf-input font-mono text-sm" placeholder="{{t "写点什么…" $.Lang}}">{{.Raw}}</textarea>
+              </div>
+              <div x-show="previewVisible" x-cloak class="min-h-[16rem] rounded-md border border-border bg-surface p-4">
+                <div x-show="loading" class="text-sm text-fg-muted">{{t "加载中…" $.Lang}}</div>
+                <div id="preview" class="gf-prose"></div>
+              </div>
+            </div>
+            {{template "editor_modal" $}}
+          </div>
+          <p class="gf-hint">{{t "支持 Markdown。图片请粘贴图床 Markdown 链接或图片 URL，保存后由本站解析。" $.Lang}}</p>
+        </div>
+      </section>
+
+      <section class="gf-card p-5">
+        <h2 class="text-sm font-semibold">{{t "标签与投票" $.Lang}}</h2>
+        <div class="mt-4">
+          <span class="gf-label">{{t "标签" $.Lang}}</span>
+          {{if .Tags}}
+          <div class="flex flex-wrap gap-3">
+            {{range .Tags}}
+              <label class="flex items-center gap-1.5 text-sm">
+                <input type="checkbox" name="tags" value="{{.ID}}" {{if contains $.Data.SelectedTagIDs .ID}}checked{{end}} class="h-4 w-4 rounded border-border">
+                #{{.Name}}
+              </label>
+            {{end}}
+          </div>
+          {{else}}
+          <p class="gf-hint">{{t "暂无标签" $.Lang}}</p>
+          {{end}}
+        </div>
+        <details class="mt-4 rounded-lg border border-border">
+          <summary class="cursor-pointer px-4 py-3 text-sm font-medium">{{t "添加投票" $.Lang}}</summary>
+          <div class="space-y-2 border-t border-border p-4">
+            <input name="poll_question" class="gf-input" placeholder="{{t "投票问题" $.Lang}}">
+            <textarea name="poll_options" rows="4" class="gf-input font-mono text-sm" placeholder="{{t "选项（每行一个）" $.Lang}}"></textarea>
+            <label class="flex items-center gap-2 text-xs"><input type="checkbox" name="poll_multiple" value="1" class="h-4 w-4"> {{t "允许多选" $.Lang}}</label>
+          </div>
+        </details>
+      </section>
+
+      <div class="flex justify-end gap-2">
+        <a href="/" class="gf-btn gf-btn-ghost">{{t "取消" $.Lang}}</a>
+        <button type="submit" x-bind:disabled="submitting" class="gf-btn gf-btn-primary">
+          <span x-show="!submitting">{{t "发布" $.Lang}}</span>
+          <span x-show="submitting" x-cloak>{{t "发布中…" $.Lang}}</span>
+        </button>
+      </div>
+    </form>
+  {{end}}
+</div>
+{{end}}

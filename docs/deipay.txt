@@ -1,0 +1,231 @@
+Developer Docs
+Accept crypto programmatically: create an invoice, then poll for payment events. All requests go to https://api.depipay.com.
+
+Authentication
+Every request is authenticated with a session key — an ephemeral secp256k1 key whose signature identifies the owner. For each call you send two headers:
+
+x-session-nonce — a millisecond timestamp (Date.now()).
+x-session-signature — an EIP-191 personal-sign over sess:{nonce}:{sha256(body)}. For empty bodies, hash the empty string.
+No accounts, no API tokens — the signature alone proves ownership. Set x-encryption: none for plaintext JSON bodies.
+
+Create an invoice
+POST
+/invoice
+Creates a new invoice and returns the deposit address the buyer should pay to, along with a hosted paymentUrl you can redirect them to.
+
+Request
+POST /invoice
+x-session-nonce:     <millisecond timestamp>
+x-session-signature: <EIP-191 sig over sess:{nonce}:{sha256(body)}>
+Copy
+{
+  "value": "100",
+  "chainId": 1,
+  "description": "Hosting plan XLarge",
+  "acceptedTokens": [
+    "1:0xdac17f958d2ee523a2206206994597c13d831ec7"
+  ],
+  "deadlineSecs": 86400
+}
+Copy
+Field	Type	Required	Notes
+value	string	yes	Amount in vsCurrency (USD by default). Use "0" for tip-jar mode — any deposit matching acceptedTokens marks the invoice paid.
+chainId	number	yes	EVM/TVM chain id of the deposit network.
+description	string	yes	Free-form merchant copy displayed on checkout.
+acceptedTokens	string[]	yes	Whitelist of "{chainId}:{tokenAddress}" entries (≥ 1). Native coin uses the zero address.
+deadlineSecs	number	no	Validity window from creation. Defaults to 90 hours.
+data	object	no	Free-form merchant metadata (line items, references). Defaults to {}.
+address	string	no	Pre-derived deposit address. When omitted, the server allocates a fresh smart-wallet index for the owner.
+token	string	no	Preferred display token. Defaults to acceptedTokens[0].
+Response
+201 Created
+
+{
+  "guid": "29f3b386-7c4a-4f6e-9d2b-1a8e3c5f7d09",
+  "createdAt": 1730393820,
+  "deadline": 1730480220,
+  "status": "init",
+  "value": "100",
+  "token": "1:0xdac17f958d2ee523a2206206994597c13d831ec7",
+  "chainId": 1,
+  "data": {},
+  "description": "Hosting plan XLarge",
+  "address": "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b",
+  "owner": "0xMerchantAddress…",
+  "paidAmount": "0",
+  "payments": [],
+  "acceptedTokens": ["1:0xdac17f958d2ee523a2206206994597c13d831ec7"],
+  "paymentUrl": "https://app.depipay.com/?invoice=29f3b386-7c4a-4f6e-9d2b-1a8e3c5f7d09"
+}
+Copy
+status lifecycle: init → partialPaid → paid on payment, or init → expired once deadline lapses without sufficient deposits.
+
+Examples
+JavaScript
+Python
+Bash
+import { Wallet, sha256, toUtf8Bytes } from 'ethers';
+
+const SESSION_PRIVATE_KEY = '0x...';
+const body = JSON.stringify({
+  value: '100',
+  chainId: 1,
+  description: 'Hosting plan XLarge',
+  acceptedTokens: ['1:0xdac17f958d2ee523a2206206994597c13d831ec7'],
+  deadlineSecs: 86400,
+});
+const nonce = Date.now();
+const hash  = sha256(toUtf8Bytes(body)).slice(2);
+const sig   = await new Wallet(SESSION_PRIVATE_KEY)
+  .signMessage(`sess:${nonce}:${hash}`);
+
+const r = await fetch('https://api.depipay.com/invoice', {
+  method: 'POST',
+  headers: {
+    'x-session-nonce':     String(nonce),
+    'x-session-signature': sig,
+    'x-encryption':        'none',
+  },
+  body,
+});
+const { guid, paymentUrl } = await r.json();
+Copy
+Poll for events
+POST
+/poll/events
+Drains pending invoice-state-change events for the authenticated owner. Each call returns events queued since the last successful drain — once consumed, events are removed from the queue. Suitable for serverless cron jobs and any client that can't hold a long-lived WebSocket open.
+
+POST /poll/events
+x-session-nonce:     <millisecond timestamp>
+x-session-signature: <EIP-191 sig over sess:{nonce}:{sha256("")}>
+Copy
+The body is empty. The session signature alone identifies the owner — no ownerAddress field is required.
+
+Response
+200 OK
+
+{
+  "ownerAddress": "0xMerchantAddress…",
+  "events": [
+    {
+      "guid": "29f3b386-7c4a-4f6e-9d2b-1a8e3c5f7d09",
+      "createdAt": 1730393820,
+      "deadline": 1730480220,
+      "status": "paid",
+      "value": "100",
+      "token": "1:0xdac17f958d2ee523a2206206994597c13d831ec7",
+      "chainId": 1,
+      "data": { "description": "Hosting plan XLarge", "sku": "XL-2024" },
+      "description": "Hosting plan XLarge",
+      "address": "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b",
+      "owner": "0xMerchantAddress…",
+      "paidAmount": "100",
+      "payments": [
+        {
+          "txHash": "0x4d5e6f…2d3e4f",
+          "logIndex": 0,
+          "chainId": "1",
+          "token": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "from": "0xfeedbeef…0000beef",
+          "amount": "100",
+          "vsValue": 100.0,
+          "timestamp": 1730393900
+        }
+      ],
+      "acceptedTokens": ["1:0xdac17f958d2ee523a2206206994597c13d831ec7"]
+    }
+  ]
+}
+Copy
+Each event is the full Invoice record at the time of the change. There's no separate "delta" payload: compare status against your locally stored copy to decide what changed.
+
+Examples
+JavaScript
+Python
+Bash
+import { Wallet, sha256 } from 'ethers';
+
+const SESSION_PRIVATE_KEY = '0x...';
+const nonce = Date.now();
+const hash  = sha256('0x').slice(2);             // sha256 of empty body
+const sig   = await new Wallet(SESSION_PRIVATE_KEY)
+  .signMessage(`sess:${nonce}:${hash}`);
+
+const r = await fetch('https://api.depipay.com/poll/events', {
+  method: 'POST',
+  headers: {
+    'x-session-nonce':     String(nonce),
+    'x-session-signature': sig,
+    'x-encryption':        'none',
+  },
+});
+const { events } = await r.json();
+for (const ev of events ?? []) console.log(ev.guid, ev.status);
+Copy
+Polling cadence
+The server holds events in-memory per session key — there's no long-poll window. Drive the loop yourself; once every 2–5 seconds is the recommended range for active payment flows. Idle merchants can poll less often without losing events: each event is stored until consumed, capped by the operator's configured retention.
+
+Each POST /invoice call creates a real invoice on your registered merchant address. While testing, prefix the description with something like [sandbox] so you can recognize and ignore them in your dashboard.
+Withdrawals
+DepiPay is non-custodial — your balance lives in a smart wallet that only you control. There's no separate payout request to approve on our end: you build, sign and broadcast the withdrawal transaction yourself. You can do this from the wallet UI at app.depipay.com (click Withdraw next to any token), or programmatically against the same api.depipay.com host your invoices already use.
+
+POST
+/initWithdraw
+Builds an unsigned withdrawal transaction. This call is unauthenticated — the on-chain onlyOwner check on your smart wallet is what actually guards the funds, not anything this endpoint checks — so it's safe to call from a backend that only knows your public address.
+
+Request
+{
+  "chainId": 1,
+  "ownerAddress": "0xMerchantAddress…",
+  "token": "usdt",
+  "amount": "100",
+  "to": "0xDestinationAddress…"
+}
+Copy
+Field	Type	Required	Notes
+chainId	number	yes	Chain to withdraw from.
+ownerAddress	string	yes	The smart wallet owner — the address that will sign and broadcast the resulting transaction.
+amount	string	yes	Human-readable amount, e.g. "100".
+to	string	yes	Destination address. Any valid address on the same chain.
+token	string	no	Token symbol, e.g. "usdt". Use tokenAddress instead, or omit both for the chain's native coin.
+Response
+200 OK — an unsigned, chain-native transaction:
+
+{
+  "from": "0xMerchantAddress…",
+  "to": "0xFactoryOrWalletAddress…",
+  "data": "0x1234abcd…",
+  "gas": "0x7a120",
+  "gasPrice": "0x12a05f200",
+  "nonce": 3,
+  "value": "0x0",
+  "chainId": 1
+}
+Copy
+Nothing moves yet — sign this with the owner's private key and broadcast it to the chain yourself (your own RPC endpoint, or any public one). DepiPay never sees the private key or the signed transaction.
+
+Examples
+JavaScript
+Bash
+import { Wallet, JsonRpcProvider } from 'ethers';
+
+const r = await fetch('https://api.depipay.com/initWithdraw', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({
+    chainId: 1,
+    ownerAddress: '0xMerchantAddress…',
+    token: 'usdt',
+    amount: '100',
+    to: '0xDestinationAddress…',
+  }),
+});
+const unsignedTx = await r.json();
+
+// Sign and broadcast yourself — DepiPay never sees the private key.
+const provider = new JsonRpcProvider('https://your-rpc-endpoint');
+const wallet = new Wallet(OWNER_PRIVATE_KEY, provider);
+const tx = await wallet.sendTransaction(unsignedTx);
+console.log('broadcast:', tx.hash);
+Copy
+Withdrawals don't show up in invoice poll events (those only track invoice payments) — they're a separate transaction-history stream. For swap-and-withdraw, inherited wallets, and the full parameter reference, see the complete initWithdraw reference.

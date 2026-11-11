@@ -1,0 +1,202 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-6">
+  {{if .Reindexed}}<div class="gf-alert-success">{{t "搜索索引已重建，共" $.Lang}} {{.Reindexed}} {{t "个文档。" $.Lang}}</div>{{end}}
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+
+  <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="gf-card relative overflow-hidden p-5">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="text-xs font-medium text-fg-muted">{{t "用户" $.Lang}}</div>
+          <div class="mt-2 text-[30px] font-semibold leading-none tracking-tight">{{.UserCount}}</div>
+          <div class="mt-2 text-[11px] text-fg-muted">{{t "社区注册账号" $.Lang}}</div>
+        </div>
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-900 dark:text-brand-200">
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="7" r="3"/><path d="M3 16c.6-2.8 2.4-4.2 5-4.2s4.4 1.4 5 4.2M14 6.5a2.4 2.4 0 0 1 0 4.6M15.5 16c-.2-1.4-.7-2.4-1.5-3.2" stroke-linecap="round"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="gf-card relative overflow-hidden p-5">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="text-xs font-medium text-fg-muted">{{t "主题" $.Lang}}</div>
+          <div class="mt-2 text-[30px] font-semibold leading-none tracking-tight">{{.TopicCount}}</div>
+          <div class="mt-2 text-[11px] text-fg-muted">{{t "已发布主题" $.Lang}}</div>
+        </div>
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300">
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 3.5h10v13H5v-13Z" stroke-linejoin="round"/><path d="M7.5 7h5M7.5 10h5M7.5 13h3" stroke-linecap="round"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="gf-card relative overflow-hidden p-5">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="text-xs font-medium text-fg-muted">{{t "回复数" $.Lang}}</div>
+          <div class="mt-2 text-[30px] font-semibold leading-none tracking-tight">{{.PostCount}}</div>
+          <div class="mt-2 text-[11px] text-fg-muted">{{t "累计回复" $.Lang}}</div>
+        </div>
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-300">
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4.5h12v9H8l-4 3v-12Z" stroke-linejoin="round"/><path d="M7 8h6M7 10.5h4" stroke-linecap="round"/></svg>
+        </span>
+      </div>
+    </div>
+    <a href="/admin/review" class="gf-card group relative overflow-hidden p-5 transition hover:border-warning/40 hover:shadow-md">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2 text-xs font-medium text-fg-muted">
+            {{t "待处理" $.Lang}}
+            {{if gt .PendingTotal 0}}<span class="gf-badge bg-warning/10 !px-1.5 !py-0 text-[10px] text-warning">{{t "需要处理" $.Lang}}</span>{{end}}
+          </div>
+          <div class="mt-2 text-[30px] font-semibold leading-none tracking-tight">{{.PendingTotal}}</div>
+          <div class="mt-2 text-[11px] text-fg-muted">{{t "举报" $.Lang}} {{.PendingFlags}} · {{t "审核" $.Lang}} {{.PendingReviews}} · {{t "申诉" $.Lang}} {{.PendingAppeals}}</div>
+        </div>
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 transition group-hover:scale-105 dark:bg-rose-950 dark:text-rose-300">
+          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3.5 16 6v4.5c0 3.2-2.4 5.3-6 6-3.6-.7-6-2.8-6-6V6l6-2.5Z" stroke-linejoin="round"/><path d="M10 7v4M10 13.5v.1" stroke-linecap="round"/></svg>
+        </span>
+      </div>
+    </a>
+  </div>
+
+  <div class="grid gap-4 xl:grid-cols-3">
+    <div class="gf-card p-5 xl:col-span-2">
+      <div class="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 class="text-[15px] font-semibold">{{t "近 14 天新增" $.Lang}}</h2>
+          <p class="mt-0.5 text-xs text-fg-muted">{{t "按 UTC 日期统计每日新增用户、主题与回复" $.Lang}}</p>
+        </div>
+        <div class="flex items-center gap-4 text-[11px] text-fg-muted">
+          <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-brand-500"></span>{{t "用户" $.Lang}}</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>{{t "主题" $.Lang}}</span>
+          <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-amber-500"></span>{{t "回复" $.Lang}}</span>
+        </div>
+      </div>
+      <div class="relative mt-5 overflow-x-auto pb-1">
+      <div class="pointer-events-none absolute inset-x-0 top-0 flex h-32 flex-col justify-between sm:h-40">
+        <span class="border-t border-border/50"></span><span class="border-t border-border/40"></span><span class="border-t border-border/40"></span><span class="border-t border-border/60"></span>
+      </div>
+      <div class="relative flex min-w-[340px] items-end gap-1 sm:min-w-0 sm:gap-2.5" role="img" aria-label="{{t "近 14 天新增趋势" $.Lang}}">
+        {{range .Activity}}
+        <div class="group flex min-w-0 flex-1 flex-col items-center gap-1.5">
+          <div class="flex h-32 w-full items-end justify-center gap-0.5 sm:h-40" title="{{.Label}} · {{t "用户" $.Lang}} {{.Users}} · {{t "主题" $.Lang}} {{.Topics}} · {{t "回复" $.Lang}} {{.Posts}}">
+            <span class="w-0.5 rounded-t-sm bg-brand-500 transition group-hover:opacity-80 sm:w-1.5" style="height: {{.UserPct}}%"></span>
+            <span class="w-0.5 rounded-t-sm bg-emerald-500 transition group-hover:opacity-80 sm:w-1.5" style="height: {{.TopicPct}}%"></span>
+            <span class="w-0.5 rounded-t-sm bg-amber-500 transition group-hover:opacity-80 sm:w-1.5" style="height: {{.PostPct}}%"></span>
+          </div>
+          <span class="whitespace-nowrap text-[8px] text-fg-muted sm:text-[9px]">{{.Label}}</span>
+        </div>
+        {{end}}
+      </div>
+      </div>
+    </div>
+
+    <div class="gf-card flex flex-col p-5">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h2 class="text-[15px] font-semibold">{{t "待处理队列" $.Lang}}</h2>
+          <p class="mt-0.5 text-xs text-fg-muted">{{t "版主与管理员需要关注的事项" $.Lang}}</p>
+        </div>
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10 text-warning">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 3.5 16 6v4.5c0 3.2-2.4 5.3-6 6-3.6-.7-6-2.8-6-6V6l6-2.5Z" stroke-linejoin="round"/><path d="M10 7v4M10 13.5v.1" stroke-linecap="round"/></svg>
+        </span>
+      </div>
+      <div class="mt-4 divide-y divide-border">
+        <a href="/admin/review" class="flex items-center justify-between gap-3 py-3 first:pt-0">
+          <span class="flex items-center gap-2.5 text-[13px] text-fg-muted"><span class="h-2 w-2 rounded-full bg-warning"></span>{{t "举报" $.Lang}}</span>
+          <span class="flex items-center gap-2 text-sm font-semibold">{{.PendingFlags}}<svg class="h-3.5 w-3.5 text-fg-muted" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7.5 4.5 13 10l-5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </a>
+        <a href="/admin/review" class="flex items-center justify-between gap-3 py-3">
+          <span class="flex items-center gap-2.5 text-[13px] text-fg-muted"><span class="h-2 w-2 rounded-full bg-brand-500"></span>{{t "审核队列" $.Lang}}</span>
+          <span class="flex items-center gap-2 text-sm font-semibold">{{.PendingReviews}}<svg class="h-3.5 w-3.5 text-fg-muted" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7.5 4.5 13 10l-5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </a>
+        <a href="/admin/appeals" class="flex items-center justify-between gap-3 py-3 last:pb-0">
+          <span class="flex items-center gap-2.5 text-[13px] text-fg-muted"><span class="h-2 w-2 rounded-full bg-rose-400"></span>{{t "申诉" $.Lang}}</span>
+          <span class="flex items-center gap-2 text-sm font-semibold">{{.PendingAppeals}}<svg class="h-3.5 w-3.5 text-fg-muted" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7.5 4.5 13 10l-5.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </a>
+      </div>
+      <a href="/admin/review" class="gf-btn gf-btn-ghost mt-4 w-full justify-center border border-border !py-2 text-xs">{{t "进入审核工作台" $.Lang}}</a>
+    </div>
+  </div>
+
+  <div class="grid gap-4 xl:grid-cols-3">
+    <div class="gf-card p-5 xl:col-span-2">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="text-[15px] font-semibold">{{t "模块状态" $.Lang}}</h2>
+          <p class="mt-0.5 text-xs text-fg-muted">{{t "已注册模块及其依赖、权限与设置数量" $.Lang}}</p>
+        </div>
+        <span class="gf-badge bg-success/10 text-success">{{len .Modules}} {{t "个模块运行中" $.Lang}}</span>
+      </div>
+      <div class="mt-4 overflow-x-auto">
+        <table class="gf-table gf-table-cards">
+          <thead><tr><th>{{t "模块" $.Lang}}</th><th>{{t "依赖" $.Lang}}</th><th class="text-right">{{t "权限" $.Lang}}</th><th class="text-right">{{t "设置" $.Lang}}</th></tr></thead>
+          <tbody>
+            {{range .Modules}}
+            <tr>
+              <td data-label="{{t "模块" $.Lang}}">
+                <div class="flex items-center gap-2.5">
+                  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-[11px] font-semibold uppercase text-fg-muted">{{printf "%.1s" .Name}}</span>
+                  <div>
+                    <div class="font-medium text-fg">{{.Name}}</div>
+                    <div class="mt-0.5 flex items-center gap-1 text-[10px] text-success"><span class="h-1.5 w-1.5 rounded-full bg-success"></span>{{t "已启用" $.Lang}}</div>
+                  </div>
+                </div>
+              </td>
+              <td data-label="{{t "依赖" $.Lang}}" class="text-fg-muted">
+                {{if .DependsOn}}
+                  <div class="flex flex-wrap gap-1">{{range .DependsOn}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{.}}</span>{{end}}</div>
+                {{else}}<span>—</span>{{end}}
+              </td>
+              <td data-label="{{t "权限" $.Lang}}" class="text-right tabular-nums">{{.PermissionCount}}</td>
+              <td data-label="{{t "设置" $.Lang}}" class="text-right tabular-nums">{{.SettingCount}}</td>
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="gf-card p-5">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-[15px] font-semibold">{{t "运行信息" $.Lang}}</h2>
+          <span class="inline-flex items-center gap-1.5 text-[11px] text-success"><span class="h-1.5 w-1.5 rounded-full bg-success"></span>{{t "运行正常" $.Lang}}</span>
+        </div>
+        <dl class="mt-4 space-y-2.5 text-[13px]">
+          <div class="flex items-center justify-between gap-3 border-b border-border/60 pb-2.5"><dt class="text-fg-muted">{{t "数据库" $.Lang}}</dt><dd class="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-xs">{{.DBDriver}}</dd></div>
+          <div class="flex items-center justify-between gap-3"><dt class="text-fg-muted">{{t "权限键" $.Lang}}</dt><dd class="tabular-nums">{{.PermissionCount}}</dd></div>
+          <div class="flex items-center justify-between gap-3"><dt class="text-fg-muted">{{t "设置项" $.Lang}}</dt><dd class="tabular-nums">{{.SettingCount}}</dd></div>
+          <div class="flex items-center justify-between gap-3"><dt class="text-fg-muted">{{t "模块" $.Lang}}</dt><dd class="tabular-nums">{{.ModuleCount}}</dd></div>
+          <div class="flex items-center justify-between gap-3"><dt class="text-fg-muted">{{t "版本" $.Lang}}</dt><dd class="font-mono text-xs">{{.Version}}</dd></div>
+        </dl>
+      </div>
+      <div class="gf-card p-5">
+        <h2 class="text-[15px] font-semibold">{{t "快捷操作" $.Lang}}</h2>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <a href="/admin/settings" class="rounded-lg border border-border bg-surface p-3 text-fg-muted transition hover:border-brand-300 hover:text-fg">
+            <svg class="h-4 w-4 text-brand-600" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="2.5"/><path d="M10 3v1.5M10 15.5V17M3 10h1.5M15.5 10H17M5 5l1 1M14 14l1 1M15 5l-1 1M6 14l-1 1" stroke-linecap="round"/></svg>
+            <div class="mt-2 text-[12px] font-medium">{{t "站点设置" $.Lang}}</div>
+          </a>
+          <a href="/admin/modules" class="rounded-lg border border-border bg-surface p-3 text-fg-muted transition hover:border-brand-300 hover:text-fg">
+            <svg class="h-4 w-4 text-brand-600" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="5" height="5" rx="1"/><rect x="11.5" y="3.5" width="5" height="5" rx="1"/><rect x="3.5" y="11.5" width="5" height="5" rx="1"/><rect x="11.5" y="11.5" width="5" height="5" rx="1"/></svg>
+            <div class="mt-2 text-[12px] font-medium">{{t "模块清单" $.Lang}}</div>
+          </a>
+          <a href="/admin/users" class="rounded-lg border border-border bg-surface p-3 text-fg-muted transition hover:border-brand-300 hover:text-fg">
+            <svg class="h-4 w-4 text-brand-600" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="7" r="3"/><path d="M3 16c.6-2.8 2.4-4.2 5-4.2s4.4 1.4 5 4.2M14 6.5a2.4 2.4 0 0 1 0 4.6" stroke-linecap="round"/></svg>
+            <div class="mt-2 text-[12px] font-medium">{{t "用户列表" $.Lang}}</div>
+          </a>
+          <form method="post" action="/admin/search/reindex">
+            <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+            <button class="w-full rounded-lg border border-border bg-surface p-3 text-left text-fg-muted transition hover:border-brand-300 hover:text-fg">
+              <svg class="h-4 w-4 text-brand-600" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 10a6 6 0 0 1 10.2-4.2M16 10a6 6 0 0 1-10.2 4.2M14.5 3v3h-3M5.5 17v-3h3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="mt-2 text-[12px] font-medium">{{t "重建索引" $.Lang}}</div>
+            </button>
+          </form>
+        </div>
+        <a href="/" class="gf-btn gf-btn-ghost mt-3 w-full justify-center border border-border !py-1.5 text-xs">{{t "查看前台" $.Lang}}</a>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+{{end}}

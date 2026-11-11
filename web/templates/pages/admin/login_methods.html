@@ -1,0 +1,107 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-4">
+  {{if .Saved}}<div class="gf-alert-success">{{t "登录方式配置已保存，立即生效。" $.Lang}}</div>{{end}}
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-lg font-semibold">{{t "登录方式" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "接入第三方账号登录。启用后登录与注册页自动出现对应按钮，用户也可在账号安全页绑定或解绑。" $.Lang}}</p>
+    </div>
+    <span class="gf-badge gf-badge-neutral text-[10px]">{{t "回调域名" $.Lang}} {{ .BaseURL }}</span>
+  </div>
+
+  <form method="post" action="/admin/auth/save" class="space-y-4">
+    <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+
+    <div class="grid gap-3 xl:grid-cols-2">
+      {{range .Providers}}
+      <section class="gf-card overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+          <div class="flex items-center gap-2.5">
+            <span class="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface">
+              {{if eq .Icon "google"}}
+              <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.9-.1-1.5-.2-2.2H12v4.2h6.5c-.1 1.1-.8 2.7-2.4 3.8l3.7 2.9c2.2-2 3.7-5 3.7-8.7Z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.8-2.9l-3.7-2.9c-1 .7-2.4 1.2-4.1 1.2-3.1 0-5.8-2-6.8-4.9l-3.9 3C3.2 21.3 7.3 24 12 24Z"/><path fill="#FBBC05" d="M5.2 14.5A7.4 7.4 0 0 1 4.8 12c0-.9.2-1.7.4-2.5l-3.9-3A12 12 0 0 0 0 12c0 1.9.5 3.8 1.3 5.5l3.9-3Z"/><path fill="#EA4335" d="M12 4.8c2.2 0 3.7.9 4.5 1.7l3.3-3.2C17.9 1.4 15.2 0 12 0 7.3 0 3.2 2.7 1.3 6.5l3.9 3C6.2 6.7 8.9 4.8 12 4.8Z"/></svg>
+              {{else if eq .Icon "github"}}
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.7 2.7 1.2 3.4.9.1-.7.4-1.2.7-1.5-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C17 4.9 18 5.2 18 5.2c.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
+              {{end}}
+            </span>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-[13px] font-semibold">{{.Name}}</h3>
+                {{if .Ready}}<span class="gf-badge bg-success/10 !px-1.5 !py-0 text-[10px] text-success">{{t "运行中" $.Lang}}</span>
+                {{else if .Enabled}}<span class="gf-badge bg-warning/10 !px-1.5 !py-0 text-[10px] text-warning">{{t "待补全" $.Lang}}</span>
+                {{else}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{t "未启用" $.Lang}}</span>{{end}}
+              </div>
+              <div class="mt-0.5 text-[10px] text-fg-muted">{{t "运行中表示已启用且密钥完整。" $.Lang}}</div>
+            </div>
+          </div>
+          <label class="flex cursor-pointer items-center gap-2 text-[11px] text-fg-muted">
+            <input type="hidden" name="setting.oauth.{{.Key}}.enabled" value="false">
+            <input type="checkbox" name="setting.oauth.{{.Key}}.enabled" value="true" {{if .Enabled}}checked{{end}} class="h-4 w-4 rounded border-border">
+            {{t "启用" $.Lang}}
+          </label>
+        </div>
+
+        <div class="space-y-3 p-4">
+          <div>
+            <label class="gf-label !mb-1 text-[10px]" for="{{.Key}}_client_id">Client ID</label>
+            <input id="{{.Key}}_client_id" name="setting.oauth.{{.Key}}.client_id" value="{{.ClientID}}" class="gf-input !py-1.5 font-mono text-[11px]" autocomplete="off" spellcheck="false" placeholder="{{t "控制台创建应用后获得" $.Lang}}">
+          </div>
+          <div>
+            <label class="gf-label !mb-1 text-[10px]" for="{{.Key}}_client_secret">Client Secret</label>
+            <input id="{{.Key}}_client_secret" name="setting.oauth.{{.Key}}.client_secret" type="password" value="{{if .SecretSet}}••••••••{{end}}" class="gf-input !py-1.5 font-mono text-[11px]" autocomplete="new-password" spellcheck="false" placeholder="{{if .SecretSet}}{{t "已保存，留空保持不变" $.Lang}}{{else}}{{t "仅保存在服务端" $.Lang}}{{end}}">
+          </div>
+          <div>
+            <label class="gf-label !mb-1 text-[10px]" for="{{.Key}}_redirect">回调地址</label>
+            <div class="flex gap-1.5">
+              <input id="{{.Key}}_redirect" name="setting.oauth.{{.Key}}.redirect_url" value="{{.RedirectURL}}" class="gf-input !py-1.5 font-mono text-[11px]" placeholder="{{.AutoRedirect}}" autocomplete="off" spellcheck="false">
+              <button type="button" class="gf-btn gf-btn-ghost shrink-0 border border-border !px-2.5 !py-1.5 text-[11px]" x-data="copyText" x-on:click="copy('{{.AutoRedirect}}', {{printf "%q" (t "已复制" $.Lang)}})" x-text="done ? {{printf "%q" (t "已复制" $.Lang)}} : {{printf "%q" (t "复制" $.Lang)}}">{{t "复制" $.Lang}}</button>
+            </div>
+            <p class="gf-hint">{{t "留空使用默认：" $.Lang}} <span class="font-mono">{{.AutoRedirect}}</span></p>
+          </div>
+          <div>
+            <label class="gf-label !mb-1 text-[10px]" for="{{.Key}}_scopes">Scopes</label>
+            <input id="{{.Key}}_scopes" name="setting.oauth.{{.Key}}.scopes" value="{{.Scopes}}" class="gf-input !py-1.5 font-mono text-[11px]" placeholder="{{.DefaultScope}}" autocomplete="off" spellcheck="false">
+            <p class="gf-hint">{{t "留空使用默认 scope：" $.Lang}} <span class="font-mono">{{.DefaultScope}}</span></p>
+          </div>
+          <div class="flex items-center justify-between gap-2 rounded-lg bg-surface-muted px-3 py-2">
+            <span class="text-[10px] text-fg-muted">{{t "授权应用需配置的回调地址（必须完全一致）" $.Lang}}</span>
+            <a href="{{.DocsURL}}" target="_blank" rel="noopener" class="shrink-0 text-[10px] font-medium text-brand-600 hover:underline">{{.DocsLabel}} ↗</a>
+          </div>
+        </div>
+      </section>
+      {{end}}
+    </div>
+
+    <section class="gf-card p-4">
+      <h3 class="text-[13px] font-semibold">{{t "全局选项" $.Lang}}</h3>
+      <div class="mt-3 grid gap-2.5 sm:grid-cols-2">
+        <label class="flex items-start gap-2.5 rounded-lg border border-border p-3">
+          <input type="hidden" name="setting.oauth.auto_link_email" value="false">
+          <input type="checkbox" name="setting.oauth.auto_link_email" value="true" {{if .AutoLink}}checked{{end}} class="mt-0.5 h-4 w-4 rounded border-border">
+          <span>
+            <span class="block text-[12px] font-medium">{{t "邮箱一致时自动绑定已有账号" $.Lang}}</span>
+            <span class="mt-0.5 block text-[10px] text-fg-muted">{{t "第三方邮箱已验证且与本站账号一致时直接登录，不再新建账号。" $.Lang}}</span>
+          </span>
+        </label>
+        <label class="flex items-start gap-2.5 rounded-lg border border-border p-3">
+          <input type="hidden" name="setting.oauth.hide_password_form" value="false">
+          <input type="checkbox" name="setting.oauth.hide_password_form" value="true" {{if .HidePassword}}checked{{end}} class="mt-0.5 h-4 w-4 rounded border-border">
+          <span>
+            <span class="block text-[12px] font-medium">{{t "隐藏账号密码登录表单" $.Lang}}</span>
+            <span class="mt-0.5 block text-[10px] text-fg-muted">{{t "仅保留第三方登录入口。请先确保至少一个平台运行正常，否则将无法登录。" $.Lang}}</span>
+          </span>
+        </label>
+      </div>
+    </section>
+
+    <div class="sticky bottom-0 z-10 -mx-1 flex items-center justify-between gap-3 rounded-lg border border-border bg-surface/95 px-3 py-2 backdrop-blur">
+      <p class="text-[11px] text-fg-muted">{{t "密钥仅服务端可见，保存后不再回显。" $.Lang}}</p>
+      <button type="submit" class="gf-btn gf-btn-primary !px-4 !py-1.5 text-xs">{{t "保存配置" $.Lang}}</button>
+    </div>
+  </form>
+</div>
+{{end}}
+{{end}}

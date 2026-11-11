@@ -1,0 +1,178 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-5">
+  {{template "ads_tabs" $}}
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <p class="text-sm text-fg-muted">{{t "创建文字、图片或 HTML/JS 广告（兼容 AdSense），并按位置投放。" $.Lang}}</p>
+    <a href="/admin/ads" class="gf-btn gf-btn-primary !py-2 text-xs">
+      <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg>
+      {{t "新建广告" $.Lang}}
+    </a>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-1.5 text-xs">
+    {{$statuses := list "" "pending_payment" "pending_review" "active" "paused" "banned" "rejected"}}
+    {{range $statuses}}
+    <a href="/admin/ads?status={{.}}{{if $.Data.Slot}}&slot={{$.Data.Slot}}{{end}}" class="rounded-full border px-3 py-1.5 {{if eq . $.Data.Status}}border-brand-600 bg-brand-600 text-white{{else}}border-border text-fg-muted hover:text-fg{{end}}">
+      {{if eq . ""}}{{t "全部" $.Lang}}{{else if eq . "pending_review"}}{{t "待审核" $.Lang}}{{else if eq . "active"}}{{t "投放中" $.Lang}}{{else if eq . "paused"}}{{t "已下架" $.Lang}}{{else if eq . "banned"}}{{t "已封禁" $.Lang}}{{else if eq . "rejected"}}{{t "已拒绝" $.Lang}}{{else}}{{t "支付中" $.Lang}}{{end}}
+    </a>
+    {{end}}
+    <form method="get" action="/admin/ads" class="ml-auto flex items-center gap-2">
+      <input type="hidden" name="status" value="{{.Status}}">
+      <select name="slot" class="gf-input !w-40 !py-1.5 text-xs">
+        <option value="">{{t "全部广告位" $.Lang}}</option>
+        {{range .Slots}}<option value="{{.Key}}" {{if eq .Key $.Data.Slot}}selected{{end}}>{{t .Name $.Lang}}</option>{{end}}
+      </select>
+      <button class="gf-btn gf-btn-ghost border border-border !px-2.5 !py-1.5 text-xs">{{t "筛选" $.Lang}}</button>
+    </form>
+  </div>
+
+  <div class="grid gap-5 lg:grid-cols-5">
+    <section class="space-y-3 lg:col-span-3">
+      {{range .Ads}}
+      <article class="gf-card p-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="truncate text-[14px] font-semibold">{{.Title}}</h2>
+              <span class="gf-badge {{if eq .Status "active"}}bg-success/10 text-success{{else if eq .Status "pending_review"}}bg-warning/10 text-warning{{else if eq .Status "banned"}}bg-danger/10 text-danger{{else}}gf-badge-neutral{{end}} !px-1.5 !py-0 text-[10px]">{{t .StatusLabel $.Lang}}</span>
+              {{if .UserID}}<span class="gf-badge bg-brand-50 !px-1.5 !py-0 text-[10px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "自助" $.Lang}}</span>{{end}}
+            </div>
+            <div class="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-fg-muted">
+              <span>{{t .SlotLabel $.Lang}}</span><span>·</span><span>{{t .FormatLabel $.Lang}}</span><span>·</span>
+              <span>{{if .StartAt}}{{.StartAt.Format "2006-01-02"}}{{else}}—{{end}} → {{if .EndAt}}{{.EndAt.Format "2006-01-02"}}{{else}}—{{end}}</span>
+            </div>
+            <div class="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-fg-muted">
+              <span>{{.ClickCount}} {{t "点击" $.Lang}}</span>
+              {{if .Price}}<span>{{usd .Price}}</span>{{end}}
+              <span>{{t "优先级" $.Lang}} #{{.Priority}}</span>
+            </div>
+            {{if .ReviewNote}}<div class="mt-1 text-[11px] text-warning">{{.ReviewNote}}</div>{{end}}
+          </div>
+          <div class="flex shrink-0 flex-wrap items-center gap-1">
+            {{if eq .Status "pending_review"}}
+            <form method="post" action="/admin/ads/action"><input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="action" value="approve"><button class="gf-btn gf-btn-primary !px-2.5 !py-1.5 text-xs">{{t "通过" $.Lang}}</button></form>
+            <form method="post" action="/admin/ads/action"><input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="action" value="reject"><button class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs text-danger">{{t "拒绝" $.Lang}}</button></form>
+            {{else if eq .Status "active"}}
+            <form method="post" action="/admin/ads/action"><input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="action" value="pause"><button class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs">{{t "下架" $.Lang}}</button></form>
+            {{else if eq .Status "paused"}}
+            <form method="post" action="/admin/ads/action"><input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="action" value="activate"><button class="gf-btn gf-btn-primary !px-2.5 !py-1.5 text-xs">{{t "恢复" $.Lang}}</button></form>
+            {{end}}
+            {{if ne .Status "banned"}}
+            <form method="post" action="/admin/ads/action" data-confirm="{{t "确认封禁该广告？" $.Lang}}"><input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="action" value="ban"><button class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs text-danger">{{t "封禁" $.Lang}}</button></form>
+            {{end}}
+            <a href="/admin/ads?edit={{.ID}}" class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs">{{t "编辑" $.Lang}}</a>
+            <form method="post" action="/admin/ads/action" data-confirm="{{t "确认删除该广告？" $.Lang}}"><input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="action" value="delete"><button class="gf-btn gf-btn-ghost !px-2.5 !py-1.5 text-xs text-danger">{{t "删除" $.Lang}}</button></form>
+          </div>
+        </div>
+      </article>
+      {{else}}
+      <div class="gf-card px-6 py-14 text-center">
+        <p class="text-sm font-medium">{{t "还没有广告。" $.Lang}}</p>
+        <p class="mt-1 text-xs text-fg-muted">{{t "点击右上角新建广告，或等待用户自助购买。" $.Lang}}</p>
+      </div>
+      {{end}}
+      {{if gt .TotalPages 1}}
+      <nav class="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+        {{if gt .Page 1}}<a href="{{pageURL .BasePath (sub .Page 1)}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "上一页" $.Lang}}</a>{{end}}
+        {{range pageWindow .Page .TotalPages}}
+          {{if eq . 0}}<span class="px-1.5 text-xs text-fg-muted">…</span>{{else}}<a href="{{pageURL $.Data.BasePath .}}" class="flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-xs {{if eq . $.Data.Page}}border-brand-600 bg-brand-600 text-white{{else}}border-border text-fg-muted hover:border-brand-300 hover:text-fg{{end}}">{{.}}</a>{{end}}
+        {{end}}
+        {{if lt .Page .TotalPages}}<a href="{{pageURL .BasePath (add .Page 1)}}" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "下一页" $.Lang}}</a>{{end}}
+      </nav>
+      {{end}}
+    </section>
+
+    <section class="gf-card h-fit p-5 lg:sticky lg:top-24 lg:col-span-2" x-data="adEditor" data-format="{{if .Editing}}{{.Editing.Format}}{{else}}text{{end}}">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h2 class="text-[15px] font-semibold">{{if .Editing}}{{t "编辑广告" $.Lang}}{{else}}{{t "新建广告" $.Lang}}{{end}}</h2>
+          <p class="mt-0.5 text-xs text-fg-muted">{{t "HTML/JS 广告仅管理员可创建，通过独立 iframe 隔离运行。" $.Lang}}</p>
+        </div>
+        {{if .Editing}}<a href="/admin/ads" class="text-xs text-fg-muted hover:text-fg">{{t "取消" $.Lang}}</a>{{end}}
+      </div>
+      <form method="post" action="/admin/ads/save" class="mt-4 space-y-3">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        {{if .Editing}}<input type="hidden" name="id" value="{{.Editing.ID}}">{{end}}
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="gf-label" for="ad-slot">{{t "广告位" $.Lang}}</label>
+            <select id="ad-slot" name="slot" class="gf-input">
+              {{range .Slots}}<option value="{{.Key}}" {{if and $.Data.Editing (eq .Key $.Data.Editing.Slot)}}selected{{end}}>{{t .Name $.Lang}}</option>{{end}}
+            </select>
+          </div>
+          <div>
+            <label class="gf-label" for="ad-format">{{t "格式" $.Lang}}</label>
+            <select id="ad-format" name="format" x-model="format" class="gf-input">
+              <option value="text">{{t "文字" $.Lang}}</option>
+              <option value="image">{{t "图片" $.Lang}}</option>
+              <option value="html">{{t "HTML / JS" $.Lang}}</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="gf-label" for="ad-title">{{t "标题" $.Lang}}</label>
+          <input id="ad-title" name="title" class="gf-input" value="{{if .Editing}}{{.Editing.Title}}{{end}}" placeholder="{{t "广告标题" $.Lang}}" required>
+        </div>
+        <div x-show="format === 'text'">
+          <label class="gf-label" for="ad-text">{{t "文案" $.Lang}}</label>
+          <textarea id="ad-text" name="text" rows="2" class="gf-input">{{if .Editing}}{{.Editing.Text}}{{end}}</textarea>
+        </div>
+        <div x-show="format === 'image'" x-cloak>
+          <label class="gf-label" for="ad-image">{{t "图片地址" $.Lang}}</label>
+          <input id="ad-image" name="image_url" class="gf-input font-mono text-xs" value="{{if .Editing}}{{.Editing.ImageURL}}{{end}}" placeholder="https://...">
+        </div>
+        <div x-show="format === 'html'" x-cloak>
+          <label class="gf-label" for="ad-html">{{t "HTML / JS 代码" $.Lang}}</label>
+          <textarea id="ad-html" name="html" rows="6" class="gf-input font-mono text-xs" placeholder="&lt;script async src=&quot;...&quot;&gt;&lt;/script&gt;">{{if .Editing}}{{.Editing.HTML}}{{end}}</textarea>
+        </div>
+        <div x-show="format !== 'html'">
+          <label class="gf-label" for="ad-url">{{t "跳转链接" $.Lang}}</label>
+          <input id="ad-url" name="url" class="gf-input font-mono text-xs" value="{{if .Editing}}{{.Editing.URL}}{{end}}" placeholder="https://...">
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="gf-label" for="ad-height">{{t "高度" $.Lang}}</label>
+            <input id="ad-height" name="height" type="number" class="gf-input" value="{{if .Editing}}{{.Editing.Height}}{{end}}" placeholder="90">
+          </div>
+          <div>
+            <label class="gf-label" for="ad-priority">{{t "优先级" $.Lang}}</label>
+            <input id="ad-priority" name="priority" type="number" class="gf-input" value="{{if .Editing}}{{.Editing.Priority}}{{end}}" placeholder="0">
+          </div>
+          <div>
+            <label class="gf-label" for="ad-months">{{t "月数" $.Lang}}</label>
+            <input id="ad-months" name="months" type="number" class="gf-input" value="{{if .Editing}}{{.Editing.Months}}{{else}}1{{end}}">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="gf-label" for="ad-start">{{t "开始日期" $.Lang}}</label>
+            <input id="ad-start" name="start_at" type="date" class="gf-input" value="{{if and .Editing .Editing.StartAt}}{{.Editing.StartAt.Format "2006-01-02"}}{{end}}">
+          </div>
+          <div>
+            <label class="gf-label" for="ad-end">{{t "结束日期" $.Lang}}</label>
+            <input id="ad-end" name="end_at" type="date" class="gf-input" value="{{if and .Editing .Editing.EndAt}}{{.Editing.EndAt.Format "2006-01-02"}}{{end}}">
+          </div>
+        </div>
+        <div>
+          <label class="gf-label" for="ad-status">{{t "状态" $.Lang}}</label>
+          <select id="ad-status" name="status" class="gf-input">
+            <option value="active" {{if and .Editing (eq .Editing.Status "active")}}selected{{end}}>{{t "投放中" $.Lang}}</option>
+            <option value="pending_review" {{if and .Editing (eq .Editing.Status "pending_review")}}selected{{end}}>{{t "待审核" $.Lang}}</option>
+            <option value="paused" {{if and .Editing (eq .Editing.Status "paused")}}selected{{end}}>{{t "已下架" $.Lang}}</option>
+            <option value="banned" {{if and .Editing (eq .Editing.Status "banned")}}selected{{end}}>{{t "已封禁" $.Lang}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="gf-label" for="ad-note">{{t "审核备注" $.Lang}}</label>
+          <input id="ad-note" name="note" class="gf-input" value="{{if .Editing}}{{.Editing.ReviewNote}}{{end}}" placeholder="{{t "可选，用户可见" $.Lang}}">
+        </div>
+        <button class="gf-btn gf-btn-primary w-full">{{if .Editing}}{{t "保存修改" $.Lang}}{{else}}{{t "创建广告" $.Lang}}{{end}}</button>
+      </form>
+    </section>
+  </div>
+</div>
+{{end}}
+{{end}}

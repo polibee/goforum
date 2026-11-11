@@ -1,0 +1,35 @@
+{{define "page"}}
+<div class="mx-auto max-w-xl px-4 py-8">
+  {{with .Data}}
+  <div class="gf-card p-6">
+    <h1 class="text-xl font-semibold">{{t "举报" $.Lang}}</h1>
+    <p class="mt-1 text-sm text-fg-muted">{{t "对象：" $.Lang}}{{.Title}}</p>
+
+    {{if .Error}}<div class="gf-alert-danger mt-4">{{t .Error $.Lang}}</div>{{end}}
+
+    <form method="post" action="/report" class="mt-5 space-y-4">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      <input type="hidden" name="target_type" value="{{.TargetType}}">
+      <input type="hidden" name="target_id" value="{{.TargetID}}">
+      <div>
+        <label class="gf-label" for="reason_code">{{t "原因" $.Lang}}</label>
+        <select id="reason_code" name="reason_code" class="gf-input">
+          <option value="spam">{{t "垃圾广告" $.Lang}}</option>
+          <option value="abuse">{{t "辱骂/攻击" $.Lang}}</option>
+          <option value="illegal">{{t "违法违规" $.Lang}}</option>
+          <option value="other">{{t "其他" $.Lang}}</option>
+        </select>
+      </div>
+      <div>
+        <label class="gf-label" for="reason_text">{{t "补充说明（可选）" $.Lang}}</label>
+        <textarea id="reason_text" name="reason_text" rows="4" class="gf-input"></textarea>
+      </div>
+      <div class="flex justify-end gap-2">
+        <a href="/" class="gf-btn gf-btn-ghost">{{t "取消" $.Lang}}</a>
+        <button type="submit" class="gf-btn gf-btn-danger">{{t "提交举报" $.Lang}}</button>
+      </div>
+    </form>
+  </div>
+  {{end}}
+</div>
+{{end}}

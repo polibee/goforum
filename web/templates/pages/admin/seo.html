@@ -1,0 +1,113 @@
+{{define "page"}}
+{{with .Data}}
+<div class="space-y-4">
+  {{if .Saved}}<div class="gf-alert-success">{{t "robots.txt 已保存并立即生效。" $.Lang}}</div>{{end}}
+  {{if .Error}}<div class="gf-alert-danger">{{t .Error $.Lang}}</div>{{end}}
+  <div class="flex flex-wrap items-end justify-between gap-2">
+    <div>
+      <h2 class="text-lg font-semibold">{{t "SEO 诊断" $.Lang}}</h2>
+      <p class="mt-1 text-sm text-fg-muted">{{t "索引范围、Sitemap、robots.txt 与 Feed。详细设置请前往「站点设置 → SEO」。" $.Lang}}</p>
+    </div>
+    <a href="/admin/settings" class="gf-btn gf-btn-ghost !py-1.5 text-xs">{{t "SEO 设置" $.Lang}}</a>
+  </div>
+
+  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="gf-card flex items-center gap-3 p-3.5">
+      <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900 dark:text-brand-200"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 3.5h10v13H5v-13Z" stroke-linejoin="round"/><path d="M7.5 8h5M7.5 11h3" stroke-linecap="round"/></svg></span>
+      <div><div class="text-[11px] text-fg-muted">{{t "可索引主题" $.Lang}}</div><div class="text-xl font-semibold tabular-nums">{{.TopicCount}}</div></div>
+    </div>
+    <div class="gf-card flex items-center gap-3 p-3.5">
+      <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="3.5" width="5" height="5" rx="1"/><rect x="11.5" y="3.5" width="5" height="5" rx="1"/><rect x="3.5" y="11.5" width="5" height="5" rx="1"/><rect x="11.5" y="11.5" width="5" height="5" rx="1"/></svg></span>
+      <div><div class="text-[11px] text-fg-muted">{{t "公开板块" $.Lang}}</div><div class="text-xl font-semibold tabular-nums">{{.CategoryCount}}</div></div>
+    </div>
+    <div class="gf-card flex items-center gap-3 p-3.5">
+      <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-300"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 10.5 8 4l2 4 6-1-3 8H5l-1-4.5Z" stroke-linejoin="round"/></svg></span>
+      <div><div class="text-[11px] text-fg-muted">{{t "有效标签" $.Lang}}</div><div class="text-xl font-semibold tabular-nums">{{.TagCount}}</div></div>
+    </div>
+    <div class="gf-card flex items-center gap-3 p-3.5">
+      <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950 dark:text-rose-300"><svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="7" r="3"/><path d="M3 16c.6-2.8 2.4-4.2 5-4.2s4.4 1.4 5 4.2" stroke-linecap="round"/></svg></span>
+      <div><div class="text-[11px] text-fg-muted">{{t "活跃用户" $.Lang}}</div><div class="text-xl font-semibold tabular-nums">{{.UserCount}}</div></div>
+    </div>
+  </div>
+
+  <div class="grid gap-3 lg:grid-cols-3">
+    <section class="gf-card p-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900 dark:text-brand-200"><svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10" cy="10" r="6.5"/><path d="M2.5 10h15M10 3.5c2 2 3 4.2 3 6.5s-1 4.5-3 6.5c-2-2-3-4.2-3-6.5s1-4.5 3-6.5Z"/></svg></span>
+          <h3 class="text-[13px] font-semibold">Sitemap</h3>
+        </div>
+        <span class="gf-badge {{if .SitemapOn}}bg-success/10 text-success{{else}}bg-surface-muted text-fg-muted{{end}} !px-1.5 !py-0 text-[10px]">{{if .SitemapOn}}{{t "已启用" $.Lang}}{{else}}{{t "已关闭" $.Lang}}{{end}}</span>
+      </div>
+      <div class="mt-3 space-y-1">
+        <a class="flex items-center justify-between rounded-md px-2 py-1.5 text-[11px] text-fg-muted hover:bg-surface-muted hover:text-fg" href="/sitemap.xml" target="_blank">
+          <span>{{t "站点地图索引" $.Lang}}</span><span class="font-mono text-[10px] text-accent">/sitemap.xml</span>
+        </a>
+        {{$sitemaps := list "topics" "categories" "tags" "users" "pages"}}
+        {{range $sitemaps}}
+        <a class="flex items-center justify-between rounded-md px-2 py-1.5 text-[11px] text-fg-muted hover:bg-surface-muted hover:text-fg" href="/sitemap-{{.}}.xml" target="_blank">
+          <span>{{if eq . "topics"}}{{t "主题分片" $.Lang}}{{else if eq . "categories"}}{{t "板块分片" $.Lang}}{{else if eq . "tags"}}{{t "标签分片" $.Lang}}{{else if eq . "users"}}{{t "用户分片" $.Lang}}{{else}}{{t "静态页分片" $.Lang}}{{end}}</span>
+          <span class="font-mono text-[10px] text-accent">/sitemap-{{.}}.xml</span>
+        </a>
+        {{end}}
+      </div>
+      <p class="mt-2 text-[10px] leading-relaxed text-fg-muted">{{t "仅收录公开、未删除且状态正常的主题；私有板块内容不会进入 sitemap。" $.Lang}}</p>
+    </section>
+
+    <section class="gf-card p-4">
+      <div class="flex items-center gap-2">
+        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-300"><svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5.5h12v9H4v-9Z" stroke-linejoin="round"/><path d="M7 8h6M7 10.5h4" stroke-linecap="round"/></svg></span>
+        <h3 class="text-[13px] font-semibold">Feed</h3>
+      </div>
+      <div class="mt-3 space-y-1">
+        <a class="flex items-center justify-between rounded-md px-2 py-1.5 text-[11px] text-fg-muted hover:bg-surface-muted hover:text-fg" href="/feed.xml" target="_blank">
+          <span>{{t "全站 RSS" $.Lang}}</span><span class="font-mono text-[10px] text-accent">/feed.xml</span>
+        </a>
+      </div>
+      <p class="mt-2 text-[10px] leading-relaxed text-fg-muted">{{t "板块、标签、用户 Feed 分别为 /c/:slug/feed.xml、/tags/:slug/feed.xml、/u/:username/feed.xml。" $.Lang}}</p>
+    </section>
+
+    <section class="gf-card p-4">
+      <div class="flex items-center gap-2">
+        <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300"><svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 15V8M8 15V5M12 15v-4M16 15V7" stroke-linecap="round"/></svg></span>
+        <h3 class="text-[13px] font-semibold">{{t "结构化数据" $.Lang}}</h3>
+      </div>
+      <p class="mt-3 text-[11px] leading-relaxed text-fg-muted">{{t "首页输出 WebSite + SearchAction；主题页输出 DiscussionForumPosting + BreadcrumbList；用户页输出 Person；板块与标签页输出 BreadcrumbList。" $.Lang}}</p>
+    </section>
+  </div>
+
+  <div class="grid gap-3 lg:grid-cols-2">
+    <section class="gf-card overflow-hidden">
+      <div class="flex items-center justify-between border-b border-border px-4 py-2.5">
+        <h3 class="text-[13px] font-semibold">{{t "robots.txt 编辑" $.Lang}}</h3>
+        <a href="/robots.txt" target="_blank" class="text-[10px] text-accent hover:underline">/robots.txt</a>
+      </div>
+      <form method="post" action="/admin/seo/robots" class="space-y-3 p-4">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <div>
+          <label class="gf-label" for="robots-custom">{{t "自定义 robots.txt（完全覆盖）" $.Lang}}</label>
+          <textarea id="robots-custom" name="robots_custom" rows="10" class="gf-input font-mono text-[11px]" placeholder="User-agent: *&#10;Allow: /">{{.RobotsCustom}}</textarea>
+          <p class="gf-hint">{{t "留空则使用系统默认规则；填写后完全替换默认内容，仅在未包含 Sitemap 时自动追加。" $.Lang}}</p>
+        </div>
+        <div>
+          <label class="gf-label" for="robots-extra">{{t "追加规则" $.Lang}}</label>
+          <textarea id="robots-extra" name="robots_extra" rows="4" class="gf-input font-mono text-[11px]" placeholder="User-agent: GPTBot&#10;Disallow: /">{{.RobotsExtra}}</textarea>
+          <p class="gf-hint">{{t "在默认规则之后追加；自定义内容非空时不再生效。" $.Lang}}</p>
+        </div>
+        <div class="flex justify-end">
+          <button class="gf-btn gf-btn-primary !py-1.5 text-xs">{{t "保存 robots.txt" $.Lang}}</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="gf-card overflow-hidden">
+      <div class="flex items-center justify-between border-b border-border px-4 py-2.5">
+        <h3 class="text-[13px] font-semibold">{{t "当前生效内容" $.Lang}}</h3>
+        <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{t "只读预览" $.Lang}}</span>
+      </div>
+      <pre class="max-h-[22rem] overflow-auto p-4 font-mono text-[11px] leading-5 text-fg-muted">{{.Robots}}</pre>
+    </section>
+  </div>
+</div>
+{{end}}
+{{end}}

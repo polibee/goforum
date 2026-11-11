@@ -1,0 +1,51 @@
+{{define "page"}}
+<div class="mx-auto max-w-3xl px-4 py-8">
+  {{with .Data}}
+  {{if .Error}}<div class="gf-alert-danger mb-4">{{t .Error $.Lang}}</div>{{end}}
+  {{if .Paid}}<div class="gf-alert-success mb-4">{{t "支付成功，权益已到账。" $.Lang}}</div>{{end}}
+  <div class="gf-card overflow-hidden">
+    <div class="border-b border-border px-5 py-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 class="text-lg font-semibold">{{t "收银台" $.Lang}}</h1>
+          <div class="mt-1 font-mono text-xs text-fg-muted">{{.Order.OutTradeNo}}</div>
+        </div>
+        <span class="gf-badge {{if eq .Order.Status "paid"}}bg-success/10 text-success{{else if eq .Order.Status "refunded"}}bg-warning/10 text-warning{{else}}bg-surface-muted text-fg-muted{{end}}">
+          {{if eq .Order.Status "paid"}}{{t "已支付" $.Lang}}{{else if eq .Order.Status "pending"}}{{t "待支付" $.Lang}}{{else if eq .Order.Status "refunded"}}{{t "已退款" $.Lang}}{{else if eq .Order.Status "created"}}{{t "待支付" $.Lang}}{{else}}{{.Order.Status}}{{end}}
+        </span>
+      </div>
+    </div>
+    <div class="space-y-3 px-5 py-4 text-sm">
+      <div class="flex justify-between gap-3"><span class="text-fg-muted">{{t "商品" $.Lang}}</span><span>{{.Order.ProductName}}</span></div>
+      <div class="flex justify-between gap-3"><span class="text-fg-muted">{{t "原价" $.Lang}}</span><span>¥{{money (add64 .Order.AmountMinor .Order.DiscountMinor)}}</span></div>
+      {{if gt .Order.DiscountMinor 0}}<div class="flex justify-between gap-3"><span class="text-fg-muted">{{t "优惠" $.Lang}}</span><span class="text-success">-¥{{money .Order.DiscountMinor}}</span></div>{{end}}
+      <div class="flex justify-between gap-3 border-t border-border pt-3 text-base font-semibold"><span>{{t "应付" $.Lang}}</span><span>¥{{money .Order.AmountMinor}}</span></div>
+      {{if .Order.PaidAt}}<div class="flex justify-between gap-3"><span class="text-fg-muted">{{t "支付时间" $.Lang}}</span><span>{{.Order.PaidAt.Format "2006-01-02 15:04"}}</span></div>{{end}}
+      <div class="flex justify-between gap-3"><span class="text-fg-muted">{{t "支付渠道" $.Lang}}</span><span>{{.Order.ChannelCode}}</span></div>
+    </div>
+    <div class="border-t border-border px-5 py-4">
+      {{if eq .Order.Status "pending"}}
+        {{if .PayURL}}
+          <a href="{{.PayURL}}" class="gf-btn gf-btn-primary w-full" {{if or (eq .Order.ChannelCode "nowpayments") (or (eq .Order.ChannelCode "deipay") (or (eq .Order.ChannelCode "creem") (eq .Order.ChannelCode "lemonsqueezy")))}}target="_blank" rel="noopener"{{end}}>{{t "前往支付" $.Lang}}</a>
+          <p class="mt-2 text-center text-xs text-fg-muted">
+            {{if or (eq .Order.ChannelCode "alipay") (eq .Order.ChannelCode "wechat")}}{{t "沙箱渠道仅用于开发联调，生产环境将跳转真实收银台。" $.Lang}}{{else}}{{t "将跳转至第三方支付页面，完成后返回本页查看状态。" $.Lang}}{{end}}
+          </p>
+        {{else if eq .Order.ChannelCode "manual"}}
+          <div class="rounded-lg bg-surface-muted p-3 text-sm">{{t "请按站点公告完成转账，管理员确认后自动到账。" $.Lang}}</div>
+        {{else}}
+          <div class="rounded-lg bg-surface-muted p-3 text-sm">{{t "该渠道暂未提供在线支付入口，请联系管理员。" $.Lang}}</div>
+        {{end}}
+      {{else if eq .Order.Status "paid"}}
+        <div class="flex flex-wrap gap-2">
+          <a href="/billing/orders" class="gf-btn gf-btn-primary">{{t "查看订单" $.Lang}}</a>
+          <a href="/billing/subscription" class="gf-btn gf-btn-ghost">{{t "我的订阅" $.Lang}}</a>
+          <a href="/pricing" class="gf-btn gf-btn-ghost">{{t "继续购买" $.Lang}}</a>
+        </div>
+      {{else}}
+        <a href="/pricing" class="gf-btn gf-btn-ghost">{{t "返回商品列表" $.Lang}}</a>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+</div>
+{{end}}

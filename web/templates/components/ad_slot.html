@@ -1,0 +1,28 @@
+{{define "ad_item"}}
+{{with .Ad}}
+{{if eq .Format "image"}}
+<a href="/ads/{{.ID}}/click" target="_blank" rel="noopener sponsored" class="block">
+  <img src="{{.ImageURL}}" alt="{{.Title}}" loading="lazy" class="mx-auto max-w-full rounded-lg object-contain" style="max-height: {{.Height}}px">
+</a>
+{{else if eq .Format "html"}}
+<iframe src="/ads/{{.ID}}/frame" title="{{.Title}}" loading="lazy" class="w-full rounded-lg border-0" height="{{.Height}}" scrolling="no"></iframe>
+{{else}}
+<a href="/ads/{{.ID}}/click" target="_blank" rel="noopener sponsored" class="block rounded-lg bg-surface-muted/50 px-2.5 py-2 transition hover:bg-surface-muted">
+  <span class="block truncate text-[13px] font-medium text-fg">{{.Title}}</span>
+  {{if .Text}}<span class="mt-0.5 block truncate text-[11px] text-fg-muted">{{.Text}}</span>{{end}}
+</a>
+{{end}}
+{{end}}
+{{end}}
+
+{{define "ad_slot"}}
+{{with .Ad}}
+<div class="relative overflow-hidden rounded-xl border border-border bg-surface px-3 py-2">
+  <div class="mb-1 flex items-center justify-between gap-2 text-[10px] text-fg-muted">
+    <span class="inline-flex items-center gap-1"><span class="rounded bg-surface-muted px-1.5 py-0.5 font-medium">{{t "广告" $.Lang}}</span><span class="truncate">{{.Title}}</span></span>
+    <a href="/promote" class="shrink-0 hover:text-brand-600">{{t "推广" $.Lang}}</a>
+  </div>
+  {{template "ad_item" (dict "Ad" . "Lang" $.Lang)}}
+</div>
+{{end}}
+{{end}}

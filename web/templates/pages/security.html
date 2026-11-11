@@ -1,0 +1,250 @@
+{{define "page"}}
+<div class="mx-auto max-w-3xl px-4 py-8">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-semibold">{{t "账号安全" $.Lang}}</h1>
+      <p class="mt-1 text-sm text-fg-muted">{{t "管理密码、邮箱、第三方绑定与登录设备。" $.Lang}}</p>
+    </div>
+    <a href="/settings/profile" class="gf-btn gf-btn-ghost">{{t "个人资料" $.Lang}}</a>
+  </div>
+
+  {{with .Data}}
+  {{if .Saved}}<div class="gf-alert-success mt-4">{{t "账号安全设置已更新。" $.Lang}}</div>{{end}}
+  {{if .Error}}<div class="gf-alert-danger mt-4">{{t .Error $.Lang}}</div>{{end}}
+  {{if .EmailSent}}<div class="gf-alert-success mt-4">{{t "验证邮件已发送，请查收新邮箱。" $.Lang}}</div>{{end}}
+  {{if .CodeSent}}<div class="gf-alert-success mt-4">{{t "验证码已发送，请查收邮箱。" $.Lang}}</div>{{end}}
+  {{if .Notice}}<div class="{{if eq .NoticeKind "danger"}}gf-alert-danger{{else}}gf-alert-success{{end}} mt-4">{{.Notice}}</div>{{end}}
+
+  <section class="gf-card mt-5 overflow-hidden">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3">
+      <div>
+        <h2 class="text-sm font-semibold">{{t "第三方账号" $.Lang}}</h2>
+        <p class="mt-0.5 text-xs text-fg-muted">{{t "绑定后可用对应平台一键登录；同一平台账号只能绑定一个本站账号。" $.Lang}}</p>
+      </div>
+    </div>
+    <div class="divide-y divide-border">
+      {{range .LinkedProviders}}
+      <div class="flex flex-wrap items-center gap-3 px-5 py-3">
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-surface">
+          {{if eq .Icon "google"}}
+          <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.9-.1-1.5-.2-2.2H12v4.2h6.5c-.1 1.1-.8 2.7-2.4 3.8l3.7 2.9c2.2-2 3.7-5 3.7-8.7Z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.8-2.9l-3.7-2.9c-1 .7-2.4 1.2-4.1 1.2-3.1 0-5.8-2-6.8-4.9l-3.9 3C3.2 21.3 7.3 24 12 24Z"/><path fill="#FBBC05" d="M5.2 14.5A7.4 7.4 0 0 1 4.8 12c0-.9.2-1.7.4-2.5l-3.9-3A12 12 0 0 0 0 12c0 1.9.5 3.8 1.3 5.5l3.9-3Z"/><path fill="#EA4335" d="M12 4.8c2.2 0 3.7.9 4.5 1.7l3.3-3.2C17.9 1.4 15.2 0 12 0 7.3 0 3.2 2.7 1.3 6.5l3.9 3C6.2 6.7 8.9 4.8 12 4.8Z"/></svg>
+          {{else if eq .Icon "github"}}
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.7 2.7 1.2 3.4.9.1-.7.4-1.2.7-1.5-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C17 4.9 18 5.2 18 5.2c.6 1.6.2 2.8.1 3.1.8.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5Z"/></svg>
+          {{else}}
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6.5"/><path d="M3.5 10h13" stroke-linecap="round"/></svg>
+          {{end}}
+        </span>
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-sm font-medium">{{.Name}}</span>
+            {{if .Linked}}<span class="gf-badge bg-success/10 !px-1.5 !py-0 text-[10px] text-success">{{t "已绑定" $.Lang}}</span>
+            {{else if .Ready}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{t "未绑定" $.Lang}}</span>
+            {{else}}<span class="gf-badge bg-warning/10 !px-1.5 !py-0 text-[10px] text-warning">{{t "站点未启用" $.Lang}}</span>{{end}}
+          </div>
+          <div class="mt-0.5 truncate text-[11px] text-fg-muted">
+            {{if .Linked}}{{if .Username}}{{.Username}}{{end}}{{if and .Username .Email}} · {{end}}{{.Email}}{{else}}{{t "绑定后可使用该平台账号登录本站。" $.Lang}}{{end}}
+          </div>
+        </div>
+        {{if .Linked}}
+        <form method="post" action="/settings/security/oauth/{{.Key}}/unlink" data-confirm="{{t "确认解除该平台绑定？" $.Lang}}">
+          <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+          <button class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs text-danger">{{t "解除绑定" $.Lang}}</button>
+        </form>
+        {{else if .Ready}}
+        <a href="/oauth/{{.Key}}?link=1" class="gf-btn gf-btn-ghost border border-border !px-3 !py-1.5 text-xs">{{t "绑定" $.Lang}}</a>
+        {{end}}
+      </div>
+      {{else}}
+      <div class="px-5 py-8 text-center text-sm text-fg-muted">{{t "站点暂未启用第三方登录。" $.Lang}}</div>
+      {{end}}
+    </div>
+  </section>
+
+  <section class="gf-card mt-5 p-6">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="text-sm font-semibold">{{t "邮箱地址" $.Lang}}</h2>
+      {{if .EmailVerified}}
+      <span class="gf-badge bg-success/10 !px-2 !py-0.5 text-[10px] text-success">{{t "已验证" $.Lang}}</span>
+      {{else}}
+      <span class="gf-badge bg-warning/10 !px-2 !py-0.5 text-[10px] text-warning">{{t "未验证" $.Lang}}</span>
+      {{end}}
+    </div>
+    <p class="mt-1 text-xs text-fg-muted">{{t "当前邮箱：" $.Lang}} <span class="font-medium text-fg">{{.Email}}</span></p>
+    {{if and .EmailVerificationEnabled (not .EmailVerified)}}
+    <div class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2">
+      <p class="text-[11px] text-fg-muted">{{t "邮箱尚未验证，部分功能可能受限。" $.Lang}}</p>
+      <form method="post" action="/verify-email/resend">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <input type="hidden" name="email" value="{{.Email}}">
+        <button class="gf-btn gf-btn-ghost !px-2.5 !py-1 text-[11px]">{{t "重新发送验证邮件" $.Lang}}</button>
+      </form>
+    </div>
+    {{end}}
+    {{if .EmailChangeEnabled}}
+    <form method="post" action="/settings/security/email" class="mt-4 space-y-3">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="gf-label" for="new_email">{{t "新邮箱" $.Lang}}</label>
+          <input id="new_email" name="new_email" type="email" autocomplete="email" class="gf-input" required>
+        </div>
+        <div>
+          <label class="gf-label" for="email_password">{{t "当前密码" $.Lang}}</label>
+          <input id="email_password" name="current_password" type="password" autocomplete="current-password" class="gf-input" required>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <p class="gf-hint">{{if .EmailChangeVerify}}{{t "修改邮箱需要验证当前密码，确认链接 1 小时内有效。" $.Lang}}{{else}}{{t "修改邮箱需要验证当前密码，保存后立即生效。" $.Lang}}{{end}}</p>
+        <button type="submit" class="gf-btn gf-btn-primary !py-1.5 text-xs">{{if .EmailChangeVerify}}{{t "发送验证邮件" $.Lang}}{{else}}{{t "保存新邮箱" $.Lang}}{{end}}</button>
+      </div>
+    </form>
+    {{else}}
+    <p class="mt-4 rounded-lg border border-border bg-surface-muted/60 px-3 py-2 text-[11px] text-fg-muted">{{t "站点已关闭自助修改邮箱，如需调整请联系管理员。" $.Lang}}</p>
+    {{end}}
+  </section>
+
+  {{if .PasswordChangeEnabled}}
+  <section class="gf-card mt-5 p-6">
+    <h2 class="text-sm font-semibold">{{t "修改密码" $.Lang}}</h2>
+    <p class="mt-1 text-xs text-fg-muted">{{t "修改后其他设备会自动退出登录。" $.Lang}}</p>
+    {{if .PasswordChangeVerify}}
+    <div class="mt-4 rounded-lg border border-border bg-surface-muted/60 p-3.5">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <p class="text-[11px] text-fg-muted">{{t "为确认本人操作，请先发送 6 位验证码到注册邮箱：" $.Lang}} <span class="font-medium text-fg">{{.Email}}</span></p>
+        <form method="post" action="/settings/security/password/code">
+          <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+          <button type="submit" class="gf-btn gf-btn-ghost border border-border !px-2.5 !py-1 text-[11px]">{{t "发送验证码" $.Lang}}</button>
+        </form>
+      </div>
+      <p class="mt-1.5 text-[10px] text-fg-muted">{{t "验证码 10 分钟内有效，重复发送后仅最新验证码可用。" $.Lang}}</p>
+    </div>
+    {{end}}
+    <form method="post" action="/settings/security" class="mt-4">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      <div class="space-y-4">
+        <div>
+          <label class="gf-label" for="current_password">{{t "当前密码" $.Lang}}</label>
+          <input id="current_password" name="current_password" type="password" autocomplete="current-password" class="gf-input" required>
+        </div>
+        {{if .PasswordChangeVerify}}
+        <div>
+          <label class="gf-label" for="code">{{t "邮箱验证码" $.Lang}}</label>
+          <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="{{t "6 位数字验证码" $.Lang}}" class="gf-input" required>
+        </div>
+        {{end}}
+        <div>
+          <label class="gf-label" for="new_password">{{t "新密码" $.Lang}}</label>
+          <input id="new_password" name="new_password" type="password" autocomplete="new-password" minlength="{{.PasswordMin}}" class="gf-input" required>
+          <p class="gf-hint">{{t "至少" $.Lang}} {{.PasswordMin}} {{t "个字符，建议使用密码管理器生成。" $.Lang}}</p>
+        </div>
+        <div>
+          <label class="gf-label" for="confirm_password">{{t "确认新密码" $.Lang}}</label>
+          <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" minlength="{{.PasswordMin}}" class="gf-input" required>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-2">
+        <a href="/settings/profile" class="gf-btn gf-btn-ghost">{{t "取消" $.Lang}}</a>
+        <button type="submit" class="gf-btn gf-btn-primary">{{t "更新密码" $.Lang}}</button>
+      </div>
+    </form>
+  </section>
+  {{else}}
+  <section class="gf-card mt-5 p-6">
+    <h2 class="text-sm font-semibold">{{t "修改密码" $.Lang}}</h2>
+    <p class="mt-1 rounded-lg border border-border bg-surface-muted/60 px-3 py-2 text-[11px] text-fg-muted">{{t "站点已关闭自助修改密码，如需重置请联系管理员。" $.Lang}}</p>
+  </section>
+  {{end}}
+
+  {{if .ShowTOTP}}
+  <section class="gf-card mt-5 p-6">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h2 class="text-sm font-semibold">{{t "两步验证（2FA）" $.Lang}}</h2>
+        <p class="mt-1 text-xs text-fg-muted">{{t "登录时除密码外，再输入身份验证器生成的 6 位验证码。" $.Lang}}</p>
+      </div>
+      {{if .TOTPEnabled}}
+      <span class="gf-badge bg-success/10 !px-2 !py-0.5 text-[10px] text-success">{{t "已启用" $.Lang}}</span>
+      {{else}}
+      <span class="gf-badge bg-warning/10 !px-2 !py-0.5 text-[10px] text-warning">{{t "未启用" $.Lang}}</span>
+      {{end}}
+    </div>
+
+    {{if .TOTPEnabled}}
+    <p class="mt-3 text-[11px] text-fg-muted">{{t "剩余恢复码：" $.Lang}} <span class="font-medium text-fg">{{.TOTPRecoveryRemaining}}</span></p>
+    {{if .TOTPPolicyRequired}}
+    <p class="mt-3 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-[11px] text-fg-muted">{{t "当前站点要求管理员启用两步验证，因此不能关闭。" $.Lang}}</p>
+    {{else}}
+    <form method="post" action="/settings/security/2fa/disable" class="mt-4 space-y-3" data-confirm="{{t "确认关闭两步验证？关闭后登录只需要密码。" $.Lang}}">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="gf-label" for="totp_password">{{t "当前密码" $.Lang}}</label>
+          <input id="totp_password" name="current_password" type="password" autocomplete="current-password" class="gf-input" required>
+        </div>
+        <div>
+          <label class="gf-label" for="totp_code">{{t "验证码或恢复码" $.Lang}}</label>
+          <input id="totp_code" name="code" inputmode="numeric" autocomplete="one-time-code" class="gf-input" required placeholder="{{t "6 位验证码或恢复码" $.Lang}}">
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <p class="gf-hint">{{t "关闭前需要验证当前密码和一次有效验证码。" $.Lang}}</p>
+        <button type="submit" class="gf-btn gf-btn-ghost border border-danger/30 !py-1.5 text-xs text-danger">{{t "关闭两步验证" $.Lang}}</button>
+      </div>
+    </form>
+    {{end}}
+    {{else}}
+    {{if .TOTPPolicyRequired}}
+    <p class="mt-3 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-[11px] text-fg-muted">{{t "当前站点要求管理员启用两步验证，请在进入后台前完成绑定。" $.Lang}}</p>
+    {{end}}
+    <div class="mt-4 flex justify-end">
+      <a href="/settings/security/2fa/setup" class="gf-btn gf-btn-primary !py-1.5 text-xs">{{t "启用两步验证" $.Lang}}</a>
+    </div>
+    {{end}}
+  </section>
+  {{end}}
+
+  <section class="gf-card mt-5 overflow-hidden">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3">
+      <div>
+        <h2 class="text-sm font-semibold">{{t "登录设备" $.Lang}}</h2>
+        <p class="mt-0.5 text-xs text-fg-muted">{{t "当前有" $.Lang}} {{len .Sessions}} {{t "个有效会话。" $.Lang}}</p>
+      </div>
+      {{if gt (len .Sessions) 1}}
+      <form method="post" action="/settings/security/sessions/revoke-others">
+        <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+        <button class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "退出其他设备" $.Lang}}</button>
+      </form>
+      {{end}}
+    </div>
+    <div class="divide-y divide-border">
+      {{range .Sessions}}
+      <div class="flex flex-wrap items-center gap-3 px-5 py-3">
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-fg-muted">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="14" height="9" rx="1.5"/><path d="M7 16h6" stroke-linecap="round"/></svg>
+        </span>
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="truncate text-sm font-medium">{{if .UserAgent}}{{.UserAgent}}{{else}}{{t "未知设备" $.Lang}}{{end}}</span>
+            {{if eq .ID $.Data.CurrentSessionID}}<span class="gf-badge bg-success/10 text-[10px] text-success">{{t "当前设备" $.Lang}}</span>{{end}}
+          </div>
+          <div class="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-fg-muted">
+            <span>{{if .IP}}{{.IP}}{{else}}—{{end}}</span><span>·</span>
+            <span>{{t "登录于" $.Lang}} {{.CreatedAt.Format "2006-01-02 15:04"}}</span><span>·</span>
+            <span>{{t "有效至" $.Lang}} {{.ExpiresAt.Format "2006-01-02"}}</span>
+          </div>
+        </div>
+        {{if ne .ID $.Data.CurrentSessionID}}
+        <form method="post" action="/settings/security/sessions/{{.ID}}/revoke">
+          <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+          <button class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs text-danger">{{t "撤销" $.Lang}}</button>
+        </form>
+        {{end}}
+      </div>
+      {{else}}
+      <div class="px-5 py-8 text-center text-sm text-fg-muted">{{t "暂无其他登录设备。" $.Lang}}</div>
+      {{end}}
+    </div>
+  </section>
+  {{end}}
+</div>
+{{end}}

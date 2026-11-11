@@ -1,0 +1,72 @@
+{{define "page"}}
+<div class="mx-auto max-w-4xl px-4 py-8">
+  {{with .Data}}
+  {{if .Error}}<div class="gf-alert-danger mb-4">{{t .Error $.Lang}}</div>{{end}}
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div class="gf-card p-5">
+      <div class="text-xs text-fg-muted">{{t "积分余额" $.Lang}}</div>
+      <div class="mt-1 text-3xl font-semibold">{{.Balance.Balance}}</div>
+      <div class="mt-1 text-xs text-fg-muted">{{t "累计获得" $.Lang}} {{.Balance.TotalEarned}} {{t "· 累计消费" $.Lang}} {{.Balance.TotalSpent}}</div>
+    </div>
+    <div class="gf-card p-5">
+      <div class="text-xs text-fg-muted">{{t "当前等级" $.Lang}}</div>
+      <div class="mt-1 text-2xl font-semibold">
+        {{range .Levels}}{{if eq .Level $.Data.Balance.Level}}{{.Name}}{{end}}{{end}}
+      </div>
+      {{if .NextLevel}}<div class="mt-1 text-xs text-fg-muted">{{t "下一级：" $.Lang}}{{.NextLevel.Name}}（{{.NextLevel.MinPoints}} {{t "分）" $.Lang}}</div>{{else}}<div class="mt-1 text-xs text-fg-muted">{{t "已达最高等级" $.Lang}}</div>{{end}}
+    </div>
+    <div class="gf-card p-5">
+      <div class="text-xs text-fg-muted">{{t "每日签到" $.Lang}}</div>
+      <div class="mt-1 text-2xl font-semibold">{{t "连续" $.Lang}} {{.Status.Streak}} {{t "天" $.Lang}}</div>
+      {{if .Status.Today}}
+        <div class="mt-2 text-xs text-success">{{t "今天已签到" $.Lang}}</div>
+      {{else}}
+        <form method="post" action="/checkin" class="mt-2">
+          <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+          <button class="gf-btn gf-btn-primary !px-3 !py-1.5 text-xs">{{t "签到" $.Lang}}</button>
+        </form>
+      {{end}}
+    </div>
+  </div>
+
+  <section class="mt-6">
+    <h2 class="text-sm font-semibold">{{t "我的徽章" $.Lang}}</h2>
+    <div class="mt-2 flex flex-wrap gap-2">
+      {{range .Badges}}<span class="gf-badge gf-badge-neutral" title="{{.Description}}">{{.Name}}</span>{{else}}<span class="text-xs text-fg-muted">{{t "还没有徽章" $.Lang}}</span>{{end}}
+    </div>
+  </section>
+
+  <section class="mt-6">
+    <h2 class="text-sm font-semibold">{{t "积分流水" $.Lang}}</h2>
+    <div class="gf-card mt-3 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="gf-table">
+          <thead><tr><th>{{t "时间" $.Lang}}</th><th>{{t "说明" $.Lang}}</th><th>{{t "变动" $.Lang}}</th><th>{{t "余额" $.Lang}}</th></tr></thead>
+          <tbody>
+            {{range .Transactions}}
+            <tr>
+              <td class="whitespace-nowrap text-xs text-fg-muted">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+              <td class="text-sm">{{.Description}}</td>
+              <td class="text-sm {{if gt .Amount 0}}text-success{{else}}text-danger{{end}}">{{if gt .Amount 0}}+{{end}}{{.Amount}}</td>
+              <td class="text-sm">{{.BalanceAfter}}</td>
+            </tr>
+            {{else}}
+            <tr><td colspan="4" class="py-8 text-center text-fg-muted">{{t "暂无流水" $.Lang}}</td></tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+      {{if gt .TotalPages 1}}
+      <div class="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-2.5">
+        <span class="text-[11px] text-fg-muted">{{t "共" $.Lang}} {{.Total}} {{t "条 · 第" $.Lang}} {{.Page}} / {{.TotalPages}} {{t "页" $.Lang}}</span>
+        <div class="flex gap-1.5">
+          {{if gt .Page 1}}<a href="/points?page={{sub .Page 1}}" class="gf-btn gf-btn-ghost border border-border !px-2.5 !py-1 text-[11px]">{{t "上一页" $.Lang}}</a>{{end}}
+          {{if lt .Page .TotalPages}}<a href="/points?page={{add .Page 1}}" class="gf-btn gf-btn-ghost border border-border !px-2.5 !py-1 text-[11px]">{{t "下一页" $.Lang}}</a>{{end}}
+        </div>
+      </div>
+      {{end}}
+    </div>
+  </section>
+  {{end}}
+</div>
+{{end}}

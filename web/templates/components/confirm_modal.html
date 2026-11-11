@@ -1,0 +1,16 @@
+{{define "confirm_modal"}}
+<div x-data x-show="$store.gfConfirm.open" x-cloak x-on:keydown.escape.window="$store.gfConfirm.cancel()" class="fixed inset-0 z-[120] flex items-center justify-center px-4">
+  <div x-show="$store.gfConfirm.open" x-transition.opacity class="absolute inset-0 bg-black/50" x-on:click="$store.gfConfirm.cancel()"></div>
+  <div x-show="$store.gfConfirm.open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="scale-95 opacity-0" x-transition:enter-end="scale-100 opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="scale-100 opacity-100" x-transition:leave-end="scale-95 opacity-0" class="relative w-full max-w-sm rounded-2xl border border-border bg-surface p-5 shadow-2xl" role="alertdialog" aria-modal="true" aria-labelledby="gf-confirm-title">
+    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-danger/10 text-danger">
+      <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 3.5 17 16H3L10 3.5Z" stroke-linejoin="round"/><path d="M10 8v3.5M10 14v.1" stroke-linecap="round"/></svg>
+    </div>
+    <h2 id="gf-confirm-title" class="mt-4 text-base font-semibold">{{t "确认操作" $.Lang}}</h2>
+    <p class="mt-1.5 text-sm leading-relaxed text-fg-muted" x-text="$store.gfConfirm.message"></p>
+    <div class="mt-5 flex justify-end gap-2">
+      <button type="button" id="gf-confirm-cancel" class="gf-btn gf-btn-ghost" x-on:click="$store.gfConfirm.cancel()">{{t "取消" $.Lang}}</button>
+      <button type="button" class="gf-btn bg-danger text-white hover:opacity-90" x-on:click="$store.gfConfirm.accept()">{{t "确认" $.Lang}}</button>
+    </div>
+  </div>
+</div>
+{{end}}

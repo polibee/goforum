@@ -1,0 +1,764 @@
+通知与告警
+使用通知模板，向预设的接收人或分组发送消息。
+
+快速上手
+3 步接入
+1
+准备凭证
+创建并保存通知模板后，Spug 会自动生成模板编码；请在通知模板列表复制完整调用 URL。
+
+2
+调用接口
+POST
+/send/<TEMPLATE_CODE>
+<TEMPLATE_CODE> 已包含在上一步复制的调用 URL 中，无需手动查找或替换。
+
+{
+  "server": "api-01",
+  "status": "CPU 使用率过高"
+}
+3
+查看结果
+响应返回 request_id，用它查询发送状态，或在发送记录中查看最终投递结果。
+
+查询发送状态
+发送记录
+接收对象和消息格式只需配置一次。以后发送时，只传服务器名称、状态等本次变化的数据。
+
+接口文档
+请求地址
+POST https://push.spug.cc/send/<TEMPLATE_CODE>
+
+使用控制台中已创建的通知模板，向模板预设的接收人或分组发送消息。
+
+请求参数
+参数	类型	必填	说明
+TEMPLATE_CODE	string	是	路径参数，通知模板的编码
+JSON 请求体	object	否	属性名与模板变量一致；模板没有变量时可不传
+请求示例
+curl 'https://push.spug.cc/send/<TEMPLATE_CODE>' \
+  -H 'Content-Type: application/json' \
+  -d '{"server":"api-01","status":"CPU 使用率过高"}'
+推荐使用 POST + JSON；接口也兼容查询参数和表单数据。
+
+响应示例
+{
+  "code": 200, // 200 表示请求成功
+  "msg": "请求成功", // 成功时显示“请求成功”，失败时说明具体原因
+  "request_id": "N6KQ8m2W4xY7p9aB" // 用于查询发送状态
+}
+查看结果
+成功后会返回 request_id。使用它查询发送状态，或前往发送记录查看最终结果。
+
+更多用法
+变量与嵌套数据
+内置函数
+模板编码是调用凭证。请只在业务服务端使用，不要放入网页、移动端安装包或公开仓库。给自己发消息
+向当前账户配置的个人接收渠道发送消息。
+
+快速上手
+3 步接入
+1
+准备凭证
+在「给自己发消息」配置至少一个个人接收渠道，并复制开发者 Token 或 App Key。
+
+2
+调用接口
+POST
+/xsend/<TOKEN_OR_APP_KEY>
+{
+  "title": "服务器告警",
+  "content": "CPU 使用率达到 95%"
+}
+3
+查看结果
+响应返回 request_id，用它查询发送状态，或在发送记录中查看最终投递结果。
+
+查询发送状态
+发送记录
+无需创建模板，消息只发往当前账户的个人渠道；暂不支持短信。
+
+接口文档
+请求地址
+POST https://push.spug.cc/xsend/<TOKEN_OR_APP_KEY>
+
+向当前账户已配置的个人接收渠道发送一条消息。
+
+请求参数
+参数	类型	必填	说明
+TOKEN_OR_APP_KEY	string	是	路径参数，开发者 Token 或 App Key
+title	string	是	消息标题最多 32 个字符，超出部分将被截断
+content	string	否	消息正文
+type	string	否	消息格式，默认 text
+channel	string	否	指定通道；多个通道用英文竖线分隔，不传时使用默认通道
+字段取值
+字段	枚举值	说明
+type	text	纯文本
+type	markdown	Markdown
+channel	voice	语音电话
+channel	mail	邮件
+channel	wx_mp	微信公众号
+channel	wx	企业微信机器人
+channel	dd	钉钉群机器人
+channel	fs	飞书群机器人
+请求示例
+curl 'https://push.spug.cc/xsend/<TOKEN_OR_APP_KEY>' \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"服务器告警","content":"CPU 使用率达到 95%"}'
+不传 channel 时使用默认渠道；使用 App Key 时，可用通道还受其权限范围限制。
+
+响应示例
+{
+  "code": 200, // 200 表示请求成功
+  "msg": "请求成功", // 成功时显示“请求成功”，失败时说明具体原因
+  "request_id": "N6KQ8m2W4xY7p9aB" // 用于查询发送状态
+}
+查看结果
+成功响应中的 request_id 可以用于查询发送状态。也可以前往发送记录，检查各接收渠道的最终状态。
+
+开发者 Token 和 App Key 都是调用凭证。请只在业务服务端使用，不要写入公开代码或客户端日志。短信验证码
+向请求传入的手机号发送验证码。
+
+快速上手
+3 步接入
+1
+准备凭证
+选择平台官方短信模板后，Spug 会自动生成模板编码；请在模板详情复制完整调用 URL。
+
+无需申请签名或等待模板审核。
+
+2
+调用接口
+POST
+/sms/<TEMPLATE_CODE>
+<TEMPLATE_CODE> 已包含在上一步复制的调用 URL 中，无需手动查找或替换。
+
+{
+  "to": "13800000000",
+  "code": "153146"
+}
+3
+查看结果
+响应返回 request_id，用它查询发送状态，或在发送记录中查看最终投递结果。
+
+查询发送状态
+发送记录
+使用平台官方模板，无需申请短信签名或等待模板审核；模板内容不可修改。
+
+接口文档
+请求地址
+POST https://push.spug.cc/sms/<TEMPLATE_CODE>
+
+使用控制台中选定的官方模板，向请求传入的手机号发送验证码。
+
+请求参数
+参数	类型	必填	说明
+TEMPLATE_CODE	string	是	路径参数，短信模板编码
+to	string	是	接收手机号；多个号码用英文逗号分隔，单次最多 5 个
+code	string	是	4 至 6 位数字或字母验证码
+number	string	否	选择带有效时长的模板时必填，表示有效分钟数
+请求示例
+curl 'https://push.spug.cc/sms/<TEMPLATE_CODE>' \
+  -H 'Content-Type: application/json' \
+  -d '{"to":"13800000000","code":"153146"}'
+响应示例
+{
+  "code": 200, // 200 表示请求成功
+  "msg": "请求成功", // 成功时显示“请求成功”，失败时说明具体原因
+  "request_id": "N6KQ8m2W4xY7p9aB" // 用于查询发送状态
+}
+查看结果
+成功响应中的 request_id 可以用于查询发送状态。也可以前往发送记录查看短信是否最终送达。
+
+如果请求被拒绝，请依次检查模板编码、模板变量、手机号格式、实名状态、短信额度和 IP 白名单。
+
+模板编码是调用凭证。验证码发送必须由业务服务端发起，不要把编码放入网页或移动端安装包。邮件验证码
+向请求传入的邮箱发送验证码。
+
+快速上手
+3 步接入
+1
+准备凭证
+选择中文或英文的官方邮件模板后，Spug 会自动生成模板编码；请在模板详情复制完整调用 URL。
+
+2
+调用接口
+POST
+/mail/<TEMPLATE_CODE>
+<TEMPLATE_CODE> 已包含在上一步复制的调用 URL 中，无需手动查找或替换。
+
+{
+  "to": "user@example.com",
+  "scene": "登录验证",
+  "code": "153146",
+  "minute": "5"
+}
+3
+查看结果
+响应返回 request_id，用它查询发送状态，或在发送记录中查看最终投递结果。
+
+查询发送状态
+发送记录
+平台提供中文和英文两种官方邮件模板；模板内容不可修改。
+
+接口文档
+请求地址
+POST https://push.spug.cc/mail/<TEMPLATE_CODE>
+
+使用控制台中选定的官方邮件模板（中文或英文），向请求传入的邮箱发送验证码。
+
+请求参数
+参数	类型	必填	说明
+TEMPLATE_CODE	string	是	路径参数，邮件模板编码
+to	string	是	收件邮箱；多个邮箱用英文逗号分隔，单次最多 10 个
+scene	string	是	验证场景，最多 12 个字符，不得包含链接或域名
+code	string	是	4 至 6 位数字或字母验证码
+minute	string	是	验证码有效分钟数，支持数字或中文数字
+请求示例
+curl 'https://push.spug.cc/mail/<TEMPLATE_CODE>' \
+  -H 'Content-Type: application/json' \
+  -d '{"to":"user@example.com","scene":"登录验证","code":"153146","minute":"5"}'
+响应示例
+{
+  "code": 200, // 200 表示请求成功
+  "msg": "请求成功", // 成功时显示“请求成功”，失败时说明具体原因
+  "request_id": "N6KQ8m2W4xY7p9aB" // 用于查询发送状态
+}
+查看结果
+接口返回成功只表示发送请求已受理，不代表邮件已经送达。可以使用 request_id 查询发送状态，或者前往发送记录查看最终投递结果。
+
+如果记录显示成功但收件箱中没有邮件，请继续检查垃圾邮件箱和企业邮箱的拦截策略。
+
+模板编码是调用凭证。验证码发送必须由业务服务端发起，不要把编码放入网页或移动端安装包。故障排查
+先查看调试日志，再按发送场景确认常见失败原因。
+
+遇到发送失败时，先查看调试日志。日志已经包含请求参数、接口返回、推送状态和说明信息，大部分问题不需要再逐项排查配置。
+
+先看调试日志
+在调试日志中找到对应的接口调用，依次查看：
+
+请求参数：确认平台实际收到的内容。
+接口返回：请求未受理时，直接查看 code 和 msg。
+推送结果：请求已受理时，查看每个接收渠道的发送状态和说明信息。
+接口返回成功只表示请求已受理，最终结果以“推送结果”为准。调试日志只展示近期调用，更早的消息可以到发送记录中查询。
+
+常见失败原因
+说明信息已经给出具体原因时，以日志原文为准。下面只汇总不同场景中常见的原因。
+
+接口请求
+常见原因：凭证或模板无效、请求参数缺失或格式错误、模板变量缺失、IP 不在白名单、请求频率超限、账户权限受限、内容命中黑名单。
+
+/send 通知与告警
+常见原因：未匹配到推送对象、接收组没有有效渠道、模板处于沉默期、触发条件未满足、官方模板变量映射失败、通道余额不足。
+
+/xsend 给自己发消息
+常见原因：没有符合条件的个人渠道或默认渠道、App Key 未授权当前渠道、指定渠道未开启或配置无效、消息格式不支持、使用了不支持的短信渠道。
+
+/sms 短信验证码
+常见原因：手机号格式错误、验证码或模板变量缺失、未完成实名认证、发送频率超限、短信余额不足、内容审核失败。
+
+/mail 邮件验证码
+常见原因：邮箱格式错误或收件人数量超限、scene、code 或 minute 缺失、收件地址已退订或无效、发送频率超限、邮件余额不足。
+
+接收渠道
+常见原因：群机器人 Webhook 无效、钉钉签名密钥不匹配、第三方平台安全策略拒绝、机器人已被移出群聊、微信公众号接收对象无效、手机号未授权、无人接听或被叫忙。
+
+语音状态成功但没有接到电话，或需要处理手机号授权、手机系统拦截和运营商拦截时，请查看语音消息收不到？。
+
+调试日志没有给出原因
+找不到对应调用记录：请求可能没有到达平台，检查请求地址、网络或代理。
+推送状态仍在处理中：等待状态更新，不要立即重复发送。
+推送成功但接收方未收到：问题通常发生在接收方过滤或拦截环节。
+仍无法定位时，请提供 request_id、请求时间、接口类型、脱敏请求参数和日志中的说明信息联系客服。请勿提供完整 Token、App Key 或 Secret。语音消息收不到？
+处理手机号未授权、手机系统拦截和运营商拦截等语音问题。
+
+语音消息没有送达时，先打开调试日志，找到对应的接口调用，在“推送结果”中查看发送状态和说明信息。大部分问题都可以根据这里的失败原因直接定位；需要查看更早的消息时，可以再到发送记录中查询。
+
+如果失败原因无法解决，请准备请求时间、脱敏后的手机号和说明信息联系客服。请勿提供完整凭证或授权码。
+
+防骚扰授权机制
+为了保护用户免受骚扰电话的打扰，平台增加了手机号授权机制。只有在机主完成授权后，你才能向该手机号发送语音消息。
+
+如何完成授权
+点击下方按钮获取授权二维码，将二维码发给机主。机主扫码后，按页面提示发送短信即可完成授权。
+
+建议在添加新的推送号码前，提前将授权二维码发给机主完成授权，避免推送失败。
+
+电话收不到
+目前平台使用的主叫号码有：
+
+021 31443892
+021 32199761
+0371 55969643（小概率）
+由于国内对骚扰电话管控严格，语音消息的送达率可能受到影响。如果电话没有收到，可以按下面的方法定位问题。
+
+检查手机系统拦截
+手机系统可能会将平台的电话号码识别为骚扰电话，导致来电被拦截。这种情况下通常可以在手机的通话记录中看到拦截记录。下面以小米手机为例，说明如何添加白名单防止被拦截。
+
+手机系统骚扰拦截示例
+
+检查运营商拦截
+如果手机系统中没有拦截记录，可能是运营商的防骚扰服务拦截了来电，移动号码尤其需要留意。
+
+运营商防骚扰拦截示例变量与嵌套数据
+在通知模板中读取请求参数和嵌套字段。
+
+通知模板使用 ${变量名} 标记动态内容。调用 /send 时，推送助手会从请求参数中读取同名字段，并把模板中的占位符替换成实际值。
+
+变量只属于通知与告警使用的通知模板；短信和邮件验证码接口请按各自官方模板的参数说明调用。
+
+基础变量
+假设模板内容为：
+
+服务器 ${server} 的状态为：${status}
+请求数据为：
+
+{
+  "server": "api-01",
+  "status": "CPU 使用率过高"
+}
+最终消息为：
+
+服务器 api-01 的状态为：CPU 使用率过高
+变量名区分大小写。${server}、${Server} 和 ${SERVER} 会被视为三个不同的变量。
+
+对象属性和数组元素
+变量支持读取嵌套对象和数组。以下面的请求数据为例：
+
+{
+  "id": 20,
+  "user": {
+    "nickname": "张三丰",
+    "age": 26
+  },
+  "messages": [
+    {
+      "id": 12,
+      "content": "你好"
+    },
+    {
+      "id": 13,
+      "content": "在吗？"
+    }
+  ]
+}
+模板中可使用的变量包括：
+
+模板变量	读取位置	替换结果
+${id}	顶层字段 id	20
+${user.nickname}	对象 user 的 nickname	张三丰
+${messages[0].id}	数组第 1 项的 id	12
+${messages[1].content}	数组第 2 项的 content	在吗？
+数组下标从 0 开始。变量路径不存在或名称不一致时，占位符无法得到预期替换；应先检查实际请求数据，再检查模板中的路径。
+
+变量映射
+短信、语音和微信公众号等固定内容通道使用官方模板，模板要求的变量名通常是 key1、key2 等固定名称。变量映射可以把这些固定名称映射到业务请求中的字段，调用方不必为了通道模板修改原有数据结构。
+
+例如短信官方模板包含：
+
+您的 ${key1} 发生告警，${key2}，请及时处理！
+在通知模板中配置以下映射：
+
+固定变量	映射内容
+key1	${ip}
+key2	${name} 当前值：${value}%
+调用方即可发送：
+
+{
+  "ip": "121.199.2.22",
+  "name": "CPU 使用率",
+  "value": 92
+}
+最终短信内容为：
+
+您的 121.199.2.22 发生告警，CPU 使用率 当前值：92%，请及时处理！
+映射内容同样支持对象路径、数组下标和内置函数。
+
+调试建议
+在通知模板中使用“在线测试”，提交与真实调用一致的数据结构。
+如果简单变量正常、嵌套变量异常，重点检查对象层级、数组下标和字段大小写。
+如果只有短信、语音或公众号内容异常，检查对应通道的变量映射。
+在调试日志中对照实际请求参数，但不要把完整模板编码复制到工单、截图或公开日志。内置函数
+对通知模板中的动态值做轻量格式化。
+
+内置函数用于在通知模板中对请求数据做轻量格式化。函数和普通变量一样写在 ${...} 中，只在通知与告警的通知模板里使用。
+
+以下面的请求数据为例：
+
+{
+  "id": 20,
+  "rule_name": "CPU usage",
+  "trigger_time": 1660791492,
+  "starts_at": "2023-09-24T10:19:09.341Z",
+  "alerts": [
+    {
+      "instance": "172.16.26.1",
+      "value": [2.72, 5.22, 9.25]
+    },
+    {
+      "instance": "172.16.26.2",
+      "value": [2.81, 6.3, 11.7]
+    }
+  ]
+}
+函数速查
+函数	用途	示例
+utc_to_cst(value)	ISO 8601 UTC 时间转中国标准时间	${utc_to_cst(starts_at)}
+datetime(value)	时间戳转日期和时间；不传参数时取当前时间	${datetime(trigger_time)}
+date(value)	时间戳转日期；不传参数时取当前日期	${date(trigger_time)}
+time(value)	时间戳转时间；不传参数时取当前时间	${time(trigger_time)}
+upper(value)	字符串转大写	${upper(rule_name)}
+lower(value)	字符串转小写	${lower(rule_name)}
+truncate(value, length)	截取前 N 个字符	${truncate(starts_at, 10)}
+unpack_and_join(array, field, separator)	提取数组内容并连接	${unpack_and_join(alerts, instance, ; )}
+UTC 时间转换
+utc_to_cst() 接收 ISO 8601 UTC 时间，并输出中国标准时间：
+
+${utc_to_cst(starts_at)}
+输出：
+
+2023-09-24 18:19:09
+时间戳格式化
+datetime()、date() 和 time() 支持 10 位秒级时间戳与 13 位毫秒级时间戳。
+
+${datetime(trigger_time)}
+${date(trigger_time)}
+${time(trigger_time)}
+输出：
+
+2022-08-18 10:58:12
+2022-08-18
+10:58:12
+不传参数时使用平台当前时间：
+
+${datetime()}
+${date()}
+${time()}
+大小写转换
+${upper(rule_name)}
+${lower(rule_name)}
+输出：
+
+CPU USAGE
+cpu usage
+截取字符串
+truncate(value, length) 从内容开头截取指定数量的字符：
+
+${truncate(starts_at, 10)}
+输出：
+
+2023-09-24
+提取并连接数组
+unpack_and_join() 有三种常用写法。
+
+提取对象数组中每一项的同名字段，并使用默认空格连接：
+
+${unpack_and_join(alerts, instance)}
+输出：
+
+172.16.26.1 172.16.26.2
+指定连接符：
+
+${unpack_and_join(alerts, instance, ; )}
+输出：
+
+172.16.26.1; 172.16.26.2
+直接连接普通数组：
+
+${unpack_and_join(alerts[0].value)}
+输出：
+
+2.72 5.22 9.25
+连接普通数组并自定义分隔符时，第二个参数留空，但逗号占位不能省略：
+
+${unpack_and_join(alerts[0].value, ,  x )}
+输出：
+
+2.72 x 5.22 x 9.25
+使用边界
+函数参数中的字段名仍然遵循变量与嵌套数据的路径规则。
+内置函数适合时间、大小写、截断和数组拼接等展示格式化。
+条件判断、金额计算、状态转换等业务逻辑应在调用方完成，再把结果传给模板。
+修改函数表达式后，先用通知模板的“在线测试”检查输出，再更新生产调用。查询发送状态
+使用 request_id 查询一次发送请求的通道明细。
+
+/send、/xsend、/sms 和 /mail 成功受理请求后会返回 request_id。使用状态查询接口，可以获取该次请求产生的每一条通道明细。
+
+一个请求可能同时发送到多个手机号、邮箱或机器人，因此查询结果是数组，不是单条状态。
+
+接口地址
+POST https://push.spug.cc/request/query
+Content-Type: application/json
+请求参数
+参数	类型	必填	说明
+token	string	是	账户开发者 Token，在凭证管理中复制
+request_id	string	是	发送接口成功响应中的请求 ID
+该接口只接受开发者 Token，不接受 App Key 或模板编码。
+
+请求示例
+cURL
+curl 'https://push.spug.cc/request/query' \
+  -H 'Content-Type: application/json' \
+  -d '{"token":"<DEVELOPER_TOKEN>","request_id":"<REQUEST_ID>"}'
+Python
+import requests
+
+response = requests.post(
+    "https://push.spug.cc/request/query",
+    json={
+        "token": "<DEVELOPER_TOKEN>",
+        "request_id": "<REQUEST_ID>",
+    },
+    timeout=10,
+)
+print(response.json())
+JavaScript
+const response = await fetch("https://push.spug.cc/request/query", {
+  method: "POST",
+  headers: {"Content-Type": "application/json"},
+  body: JSON.stringify({
+    token: "<DEVELOPER_TOKEN>",
+    request_id: "<REQUEST_ID>",
+  }),
+});
+
+console.log(await response.json());
+成功响应
+{
+  "code": 200,
+  "msg": "查询成功",
+  "data": [
+    {
+      "target": "138****0000",
+      "type": "短信",
+      "fee": 1,
+      "status": "2",
+      "reason": ""
+    },
+    {
+      "target": "user@example.com",
+      "type": "邮件",
+      "fee": 1,
+      "status": "3",
+      "reason": "收件人地址无效"
+    }
+  ]
+}
+响应字段
+字段	类型	说明
+target	string	手机号、邮箱、公众号用户或机器人目标
+type	string	短信、语音、邮件、微信公众号或群机器人等通道名称
+fee	number	本条消息的计费数量，不是人民币金额
+status	string	通道处理状态
+reason	string	失败、审核或其他补充说明；无说明时为空字符串
+状态值
+status	含义	处理建议
+0	待发送	请求已入队，稍后再次查询
+1	发送中	已提交到通道服务商，等待最终结果
+2	成功	通道已返回成功；邮件仍可能进入垃圾邮件箱
+3	失败	查看 reason 并修正后再发送
+4	审核中	等待平台审核结果，不要立即重复提交
+发送接口返回 code=200 只表示请求已受理，不代表数组中的每条消息都已经成功。最终结果以本接口或发送记录为准。
+
+常见错误
+code	常见 msg	处理方式
+400	缺少 token 或 request_id	检查 JSON 字段名和请求体
+403	Token 无效或账户已暂停	复制当前开发者 Token，确认账户状态
+404	请求记录不存在或已过期	检查 request_id 是否属于当前账户、是否完整
+429	IP 限流	停止继续尝试错误 Token，稍后再请求
+连续提交无效 Token 会触发调用来源限流。不要通过枚举 Token 或 request_id 探测记录。
+
+查询建议
+保存发送响应中的 request_id，不要根据目标和时间反推请求。
+对待发送、发送中或审核中状态使用间隔查询，避免紧密轮询。
+同一 request_id 可能同时出现成功和失败明细，业务系统应逐条处理。
+不确定发送是否已经受理时，先查询原 request_id，不要立即重发，以免产生重复通知。
+记录排错信息时保留 request_id、时间和脱敏目标，不要记录完整开发者 Token。查询发送历史
+分页查询最近 30 天的短信和邮件记录。
+
+发送历史接口用于分页查询当前账户最近 30 个自然日内的短信和邮件明细，适合业务服务端同步记录或制作内部报表。
+
+该接口不返回语音、微信公众号和群机器人记录；如需查看全部通道，请使用控制台的发送记录。
+
+接口地址
+POST https://push.spug.cc/request/history
+Content-Type: application/json
+请求参数
+参数	类型	必填	说明
+token	string	是	账户开发者 Token，在凭证管理中复制
+type	string	否	sms 或 mail；不传时查询两类记录
+start_date	string	否	开始日期，格式 YYYY-MM-DD
+end_date	string	否	结束日期，格式 YYYY-MM-DD
+page	number	否	页码，默认 1，必须大于 0
+page_size	number	否	每页数量，默认 20，范围 1 至 100
+该接口只接受开发者 Token，不接受 App Key 或模板编码。
+
+日期规则
+不传日期时，默认查询包含今天在内的最近 30 个自然日。
+开始和结束日期都不能早于可查询范围。
+结束日期不能晚于今天。
+开始日期不能晚于结束日期。
+接口响应会返回本次实际使用的 start_date 和 end_date。
+请求示例
+查询最近 30 天邮件
+curl 'https://push.spug.cc/request/history' \
+  -H 'Content-Type: application/json' \
+  -d '{"token":"<DEVELOPER_TOKEN>","type":"mail","page":1,"page_size":20}'
+Python
+import requests
+
+response = requests.post(
+    "https://push.spug.cc/request/history",
+    json={
+        "token": "<DEVELOPER_TOKEN>",
+        "type": "mail",
+        "page": 1,
+        "page_size": 20,
+    },
+    timeout=10,
+)
+print(response.json())
+JavaScript
+const response = await fetch("https://push.spug.cc/request/history", {
+  method: "POST",
+  headers: {"Content-Type": "application/json"},
+  body: JSON.stringify({
+    token: "<DEVELOPER_TOKEN>",
+    type: "mail",
+    page: 1,
+    page_size: 20,
+  }),
+});
+
+console.log(await response.json());
+如需指定日期，在请求体中增加：
+
+{
+  "start_date": "2026-07-01",
+  "end_date": "2026-07-23"
+}
+实际调用时请替换为当前可查询范围内的日期。
+
+成功响应
+{
+  "code": 200,
+  "msg": "查询成功",
+  "data": {
+    "records": [
+      {
+        "request_id": "dwezjVRDoe5jgLkR",
+        "target": "user@example.com",
+        "type": "mail",
+        "type_alias": "邮件",
+        "fee": 1,
+        "status": "2",
+        "status_alias": "成功",
+        "reason": "",
+        "created_at": "2026-07-23 10:00:00"
+      },
+      {
+        "request_id": "oV2Yxk3nWm8QpLz9",
+        "target": "138****0000",
+        "type": "sms",
+        "type_alias": "短信",
+        "fee": 1,
+        "status": "3",
+        "status_alias": "失败",
+        "reason": "余额不足",
+        "created_at": "2026-07-23 09:30:00"
+      }
+    ],
+    "total": 2,
+    "page": 1,
+    "page_size": 20,
+    "start_date": "2026-07-01",
+    "end_date": "2026-07-23"
+  }
+}
+响应字段
+字段	说明
+records	当前页记录，按创建时间从新到旧返回
+total	当前筛选条件下的总记录数
+page	当前页码
+page_size	每页数量
+start_date、end_date	本次实际查询日期范围
+request_id	发送请求 ID，可用于查询发送状态
+target	手机号或邮箱
+type、type_alias	通道代码和中文名称
+fee	计费数量，不是人民币金额
+status、status_alias	状态代码和中文名称
+reason	失败或补充说明
+created_at	记录创建时间
+状态代码与查询发送状态一致。
+
+常见错误
+code	常见 msg	处理方式
+400	缺少 token 参数	传入开发者 Token
+400	type 只支持 sms 或 mail	删除 type 或使用支持的值
+400	日期格式错误	使用 YYYY-MM-DD
+400	仅支持查询最近 30 天的数据	缩小并调整日期范围
+400	page 必须大于 0	从第 1 页开始查询
+400	page_size 必须在 1 到 100 之间	调整分页大小
+403	Token 无效或账户已暂停	核对开发者 Token 和账户状态
+429	IP 限流	停止继续尝试错误 Token，稍后再请求
+分页同步建议
+固定查询条件和 page_size，从第 1 页开始。
+根据 total 判断是否还有下一页。
+使用 request_id 和目标识别同一请求下的不同消息明细。
+定时同步时保留少量日期重叠，避免遗漏异步更新的状态，并在本地按业务键去重。
+不要使用高频轮询代替消息状态查询；只需查看单次请求时优先调用 /request/query。查询账户余额
+查询资金余额和各通道资源包的剩余额度。
+
+余额查询接口用于读取当前账户的资金余额，以及短信、语音、邮件和微信公众号资源包的剩余额度。
+
+资金余额与资源包余额相互独立。资源包余额不包含会员每日赠送额度。
+
+接口地址
+POST https://push.spug.cc/request/balance
+Content-Type: application/json
+请求参数
+参数	类型	必填	说明
+token	string	是	账户开发者 Token，在凭证管理中复制
+该接口只接受开发者 Token，不接受 App Key 或模板编码。
+
+请求示例
+cURL
+curl 'https://push.spug.cc/request/balance' \
+  -H 'Content-Type: application/json' \
+  -d '{"token":"<DEVELOPER_TOKEN>"}'
+Python
+import requests
+
+response = requests.post(
+    "https://push.spug.cc/request/balance",
+    json={"token": "<DEVELOPER_TOKEN>"},
+    timeout=10,
+)
+print(response.json())
+JavaScript
+const response = await fetch("https://push.spug.cc/request/balance", {
+  method: "POST",
+  headers: {"Content-Type": "application/json"},
+  body: JSON.stringify({token: "<DEVELOPER_TOKEN>"}),
+});
+
+console.log(await response.json());
+成功响应
+{
+  "code": 200,
+  "msg": "查询成功",
+  "data": {
+    "money_balance": 943.0, // 资金余额，单位为元
+    "sms_resource_balance": 12, // 短信资源包余额，单位为条
+    "voice_resource_balance": 34, // 语音资源包余额，单位为分钟
+    "mail_resource_balance": 56, // 邮件资源包余额，单位为封
+    "wx_mp_resource_balance": 78 // 微信公众号资源包余额，单位为条
+  }
+}
+四个 resource_balance 字段只表示资源包剩余额度，不包含会员每日赠送额度。
+
+常见错误
+code	常见 msg	处理方式
+400	缺少 token 参数	传入开发者 Token
+403	Token 无效或账户已暂停	核对开发者 Token 和账户状态
+429	IP 限流	停止继续尝试错误 Token，稍后再请求
