@@ -129,9 +129,15 @@ func (s *Service) VerifyLoginChallenge(ctx context.Context, raw, code string) (s
 	if u.Status != "active" || !u.TOTPEnabled {
 		return "", "", httpx.NewError("auth.invalid_token", 400, "登录状态已失效，请重新登录")
 	}
+	failureKey := authFailureKey("totp", u.ID)
+	if s.authLocked(ctx, failureKey) {
+		return "", "", authLockedError()
+	}
 	if err := s.verifyTOTPOrRecovery(ctx, &u, code); err != nil {
+		s.recordAuthFailure(ctx, failureKey, u.ID, "auth.totp_failed")
 		return "", "", err
 	}
+	s.clearAuthFailures(ctx, failureKey)
 	now := time.Now().UTC()
 	if err := s.db.WithContext(ctx).Model(&EmailToken{}).Where("id = ?", tok.ID).
 		Update("used_at", now).Error; err != nil {

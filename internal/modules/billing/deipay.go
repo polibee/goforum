@@ -221,11 +221,14 @@ func (g *deipayGateway) Poll(ctx context.Context) ([]NotifyEvent, error) {
 		if len(ev.Payments) > 0 && ev.Payments[0].TxHash != "" {
 			tradeNo = ev.Payments[0].TxHash
 		}
+		amount, amountOK := parseMinorAmount(ev.Value)
 		events = append(events, NotifyEvent{
 			EventID:        ev.GUID,
 			OutTradeNo:     orderNo,
 			ChannelTradeNo: tradeNo,
+			AmountMinor:    amount,
 			Currency:       "USD",
+			AmountVerified: amountOK,
 			Status:         ev.Status,
 		})
 	}

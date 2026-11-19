@@ -312,6 +312,7 @@ sudo ./scripts/deploy.sh --url https://forum.example.com
 | [管理员 TOTP](../../32-管理员TOTP两步验证.md) | 2FA 策略、绑定、恢复码 |
 | [密钥加密与版本化迁移](../../33-密钥加密与版本化迁移.md) | 设置加密、迁移台账 |
 | [一键部署脚本与 Docker](../../34-一键部署脚本与Docker.md) | systemd 一键脚本、Dockerfile/Compose、升级与排错 |
+| [安全审计修复记录](../../35-安全审计修复记录.md) | OAuth、广告隔离、退款、上传与回调安全修复 |
 
 ## 12. 常见问题
 

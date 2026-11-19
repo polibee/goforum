@@ -128,9 +128,10 @@ func (g *creemGateway) VerifyNotify(ctx context.Context, r *http.Request) (*Noti
 				OrderNo string `json:"order_no"`
 			} `json:"metadata"`
 			Order struct {
-				ID     string      `json:"id"`
-				Status string      `json:"status"`
-				Amount json.Number `json:"amount"`
+				ID       string      `json:"id"`
+				Status   string      `json:"status"`
+				Amount   json.Number `json:"amount"`
+				Currency string      `json:"currency"`
 			} `json:"order"`
 		} `json:"object"`
 	}
@@ -145,13 +146,18 @@ func (g *creemGateway) VerifyNotify(ctx context.Context, r *http.Request) (*Noti
 	if status == "" {
 		status = payload.Object.Status
 	}
-	amount, _ := payload.Object.Order.Amount.Int64()
+	amount, amountErr := payload.Object.Order.Amount.Int64()
+	currency := strings.ToUpper(strings.TrimSpace(payload.Object.Order.Currency))
+	if currency == "" {
+		currency = "USD"
+	}
 	event := &NotifyEvent{
 		EventID:        payload.ID,
 		OutTradeNo:     orderNo,
 		ChannelTradeNo: payload.Object.Order.ID,
 		AmountMinor:    amount,
-		Currency:       "USD",
+		Currency:       currency,
+		AmountVerified: payload.Object.Order.Amount.String() != "" && amountErr == nil,
 		Status:         status,
 		Raw:            string(raw),
 	}

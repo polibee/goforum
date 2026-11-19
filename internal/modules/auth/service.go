@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 	"errors"
 	"math/big"
+	"net/http"
+	"strconv"
 	"strings"
 	"time"
 	_ "time/tzdata"
@@ -16,6 +18,8 @@ import (
 	"gorm.io/gorm"
 
 	"goforum/internal/modules/auth/contracts"
+	"goforum/internal/platform/audit"
+	"goforum/internal/platform/cache"
 	"goforum/internal/platform/httpx"
 	"goforum/internal/platform/id"
 	"goforum/internal/platform/mail"
@@ -24,14 +28,16 @@ import (
 )
 
 type Service struct {
-	db        *gorm.DB
-	settings  *settings.Store
-	mailer    mail.Mailer
-	baseURL   string
-	secretKey string
-	devMode   bool
-	activity  contracts.ActivityReader
-	invites   contracts.InviteService
+	db          *gorm.DB
+	settings    *settings.Store
+	mailer      mail.Mailer
+	baseURL     string
+	secretKey   string
+	devMode     bool
+	activity    contracts.ActivityReader
+	invites     contracts.InviteService
+	authCache   cache.Cache
+	auditWriter audit.Writer
 }
 
 func New(db *gorm.DB) *Service { return &Service{db: db} }
@@ -48,7 +54,7 @@ func (s *Service) Configure(st *settings.Store, mailer mail.Mailer, baseURL stri
 // TOTP is also bypassed in development.
 func (s *Service) SetEnv(env string) {
 	switch strings.ToLower(strings.TrimSpace(env)) {
-	case "development", "dev", "", "test":
+	case "development", "dev", "test":
 		s.devMode = true
 	default:
 		s.devMode = false
@@ -57,6 +63,61 @@ func (s *Service) SetEnv(env string) {
 
 func (s *Service) SetActivity(a contracts.ActivityReader) { s.activity = a }
 func (s *Service) SetInvites(i contracts.InviteService)   { s.invites = i }
+
+// SetCache installs the shared cache used for account-level login lockouts.
+func (s *Service) SetCache(c cache.Cache) { s.authCache = c }
+
+// SetAudit installs the audit writer for security events.
+func (s *Service) SetAudit(w audit.Writer) { s.auditWriter = w }
+
+const (
+	maxAuthFailures = 5
+	authLockTTL     = 15 * time.Minute
+)
+
+func authFailureKey(kind, identity string) string {
+	sum := sha256.Sum256([]byte(strings.ToLower(strings.TrimSpace(identity))))
+	return "auth:fail:" + kind + ":" + hex.EncodeToString(sum[:12])
+}
+
+func (s *Service) authLocked(ctx context.Context, key string) bool {
+	if s.authCache == nil {
+		return false
+	}
+	raw, ok := s.authCache.Get(ctx, key)
+	if !ok {
+		return false
+	}
+	n, err := strconv.ParseInt(strings.TrimSpace(string(raw)), 10, 64)
+	return err == nil && n >= maxAuthFailures
+}
+
+func (s *Service) recordAuthFailure(ctx context.Context, key, userID, action string) {
+	if s.authCache == nil {
+		return
+	}
+	n, err := s.authCache.Incr(ctx, key, 1, authLockTTL)
+	if err != nil {
+		return
+	}
+	if n == maxAuthFailures && s.auditWriter != nil {
+		_ = s.auditWriter.Write(ctx, audit.Entry{
+			ActorID: userID, Action: action, TargetType: "user", TargetID: userID,
+			Reason: "连续认证失败，账号临时锁定 15 分钟",
+		})
+	}
+}
+
+func (s *Service) clearAuthFailures(ctx context.Context, key string) {
+	if s.authCache != nil {
+		_ = s.authCache.Delete(ctx, key)
+	}
+}
+
+func authLockedError() error {
+	return httpx.NewError("auth.locked", http.StatusTooManyRequests,
+		"尝试次数过多，请 15 分钟后再试")
+}
 
 // RegistrationVerifyEnabled reports whether new accounts must confirm their
 // email before they can sign in.
@@ -601,20 +662,32 @@ func (s *Service) ChangePassword(ctx context.Context, userID, current, next, cod
 
 func (s *Service) Authenticate(ctx context.Context, login, plainPassword string) (*contracts.UserView, error) {
 	login = strings.TrimSpace(strings.ToLower(login))
+	failureKey := authFailureKey("password", login)
+	if s.authLocked(ctx, failureKey) {
+		return nil, authLockedError()
+	}
 	var u User
 	err := s.db.WithContext(ctx).
 		Where("username_lower = ? OR email_lower = ?", login, login).
 		First(&u).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		password.Verify(dummyHash, plainPassword) // equalize timing
+		s.recordAuthFailure(ctx, failureKey, "", "auth.login_failed")
 		return nil, httpx.NewError("auth.invalid_credentials", 401, "账号或密码错误")
 	}
 	if err != nil {
 		return nil, err
 	}
+	userKey := authFailureKey("user", u.ID)
+	if s.authLocked(ctx, userKey) {
+		return nil, authLockedError()
+	}
 	if !password.Verify(u.PasswordHash, plainPassword) {
+		s.recordAuthFailure(ctx, userKey, u.ID, "auth.login_failed")
 		return nil, httpx.NewError("auth.invalid_credentials", 401, "账号或密码错误")
 	}
+	s.clearAuthFailures(ctx, failureKey)
+	s.clearAuthFailures(ctx, userKey)
 	s.expireStatus(ctx, &u)
 
 	requireVerify := s.RegistrationVerifyEnabled()

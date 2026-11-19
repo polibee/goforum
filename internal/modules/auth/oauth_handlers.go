@@ -28,14 +28,21 @@ func (m *Module) oauthStart(c *gin.Context) {
 		return
 	}
 	next := safeNext(c.Query("next"))
-	state, cookie, err := NewOAuthState(provider, next, link)
+	state, cookie, err := m.svc.newOAuthState(provider, next, link)
 	if err != nil {
 		m.oauthFail(c, provider, "无法发起第三方登录")
 		return
 	}
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie(OAuthRedirectCookieName(provider), cookie, 600, "/", "", c.Request.TLS != nil, true)
-	c.Redirect(http.StatusFound, AuthCodeURL(cfg, state.Nonce))
+	c.SetCookie(OAuthRedirectCookieName(provider), cookie, 600, "/", "", m.oauthCookieSecure(c), true)
+	c.Redirect(http.StatusFound, AuthCodeURL(cfg, state))
+}
+
+func (m *Module) oauthCookieSecure(c *gin.Context) bool {
+	if c.Request.TLS != nil {
+		return true
+	}
+	return m.cfg != nil && strings.HasPrefix(strings.ToLower(m.cfg.HTTP.BaseURL), "https://")
 }
 
 // oauthCallback validates state, exchanges the code and signs the user in.
@@ -47,13 +54,17 @@ func (m *Module) oauthCallback(c *gin.Context) {
 	}
 	cookieName := OAuthRedirectCookieName(provider)
 	rawState, err := c.Cookie(cookieName)
-	c.SetCookie(cookieName, "", -1, "/", "", c.Request.TLS != nil, true)
+	c.SetCookie(cookieName, "", -1, "/", "", m.oauthCookieSecure(c), true)
 	if err != nil || rawState == "" {
 		m.oauthFail(c, provider, "登录状态已过期，请重新发起登录")
 		return
 	}
-	state, err := ParseOAuthState(rawState)
+	state, err := m.svc.verifyOAuthState(rawState)
 	if err != nil || state.Provider != provider {
+		m.oauthFail(c, provider, "登录状态校验失败，请重新发起登录")
+		return
+	}
+	if !oauthStateMatches(strings.TrimSpace(c.Query("state")), state.Nonce) {
 		m.oauthFail(c, provider, "登录状态校验失败，请重新发起登录")
 		return
 	}
@@ -71,7 +82,7 @@ func (m *Module) oauthCallback(c *gin.Context) {
 		return
 	}
 
-	profile, err := m.svc.FetchOAuthProfile(c.Request.Context(), provider, code)
+	profile, err := m.svc.FetchOAuthProfile(c.Request.Context(), provider, code, state.Verifier)
 	if err != nil {
 		m.oauthFail(c, provider, errMessage(err))
 		return

@@ -25,6 +25,7 @@ import (
 	"goforum/internal/platform/audit"
 	"goforum/internal/platform/config"
 	"goforum/internal/platform/db"
+	"goforum/internal/platform/searchx"
 	"goforum/internal/platform/session"
 	"goforum/internal/platform/settings"
 )
@@ -69,6 +70,7 @@ func SchemaModels() ([]any, error) {
 	}
 	models := append(settings.Models(), session.Models()...)
 	models = append(models, audit.Models()...)
+	models = append(models, searchx.Models()...)
 	models = append(models, registry.Models()...)
 	return models, nil
 }
@@ -139,6 +141,13 @@ func schemaMigrations(log *slog.Logger) []db.Migration {
 			Name:    "legacy_subscriptions",
 			Up: func(_ context.Context, tx *gorm.DB) error {
 				return migrateLegacySubscriptions(tx, log)
+			},
+		},
+		{
+			Version: 3,
+			Name:    "search_schema",
+			Up: func(ctx context.Context, tx *gorm.DB) error {
+				return searchx.Migrate(ctx, tx)
 			},
 		},
 	}

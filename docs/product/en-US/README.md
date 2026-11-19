@@ -312,6 +312,7 @@ Production upgrade:
 | [Admin TOTP](../../32-管理员TOTP两步验证.md) | 2FA policy, enrollment and recovery codes |
 | [Secret encryption and versioned migrations](../../33-密钥加密与版本化迁移.md) | Settings encryption and migration ledger |
 | [One-command deployment and Docker](../../34-一键部署脚本与Docker.md) | systemd script, Dockerfile/Compose, upgrades and troubleshooting |
+| [Security audit fixes](../../35-安全审计修复记录.md) | OAuth, ad isolation, refunds, uploads and callback hardening |
 
 ## 12. FAQ
 

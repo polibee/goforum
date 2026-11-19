@@ -77,3 +77,11 @@ func TestIndexSearchAndVisibility(t *testing.T) {
 		t.Fatalf("deleted doc still indexed: %+v", results)
 	}
 }
+
+func TestEscapeLike(t *testing.T) {
+	got := escapeLike(`100%_done!`)
+	want := `100!%!_done!!`
+	if got != want {
+		t.Fatalf("escapeLike = %q, want %q", got, want)
+	}
+}

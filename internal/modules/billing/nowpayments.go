@@ -66,9 +66,13 @@ func (g *nowPaymentsGateway) Create(ctx context.Context, order Order) (*PayParam
 	if base == "" {
 		return nil, fmt.Errorf("站点 URL 未配置，无法接收 NOWPayments 回调")
 	}
+	currency := strings.ToUpper(strings.TrimSpace(order.Currency))
+	if currency == "" {
+		currency = "USD"
+	}
 	payload := map[string]any{
-		"price_amount":      float64(order.AmountMinor) / 100,
-		"price_currency":    "usd",
+		"price_amount":      json.Number(formatMinorAmount(order.AmountMinor)),
+		"price_currency":    strings.ToLower(currency),
 		"order_id":          order.OutTradeNo,
 		"order_description": order.ProductName,
 		"ipn_callback_url":  base + "/payments/nowpayments/notify",
@@ -140,20 +144,28 @@ func (g *nowPaymentsGateway) VerifyNotify(ctx context.Context, r *http.Request) 
 		OrderID       string      `json:"order_id"`
 		PaymentStatus string      `json:"payment_status"`
 		PriceAmount   json.Number `json:"price_amount"`
+		PriceCurrency string      `json:"price_currency"`
 		PayCurrency   string      `json:"pay_currency"`
 		ActuallyPaid  json.Number `json:"actually_paid"`
 	}
 	if err := json.Unmarshal(raw, &payload); err != nil {
 		return nil, err
 	}
-	amount, _ := payload.PriceAmount.Float64()
+	amount, amountOK := parseMinorAmount(payload.PriceAmount.String())
+	currency := strings.ToUpper(strings.TrimSpace(payload.PriceCurrency))
+	if currency == "" {
+		// Older IPNs may only contain the crypto currency. Do not claim the
+		// amount was verified against a fiat order in that case.
+		amountOK = false
+	}
 	paymentID := payload.PaymentID.String()
 	return &NotifyEvent{
 		EventID:        paymentID,
 		OutTradeNo:     payload.OrderID,
 		ChannelTradeNo: paymentID,
-		AmountMinor:    int64(amount*100 + 0.5),
-		Currency:       strings.ToUpper(payload.PayCurrency),
+		AmountMinor:    amount,
+		Currency:       currency,
+		AmountVerified: amountOK,
 		Status:         payload.PaymentStatus,
 		Raw:            string(raw),
 	}, nil

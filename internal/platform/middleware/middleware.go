@@ -106,6 +106,7 @@ func SecurityHeaders(d Deps) gin.HandlerFunc {
 				"frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'")
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.Header("X-Frame-Options", "DENY")
+		c.Header("Cross-Origin-Opener-Policy", "same-origin")
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
 		c.Header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
 		if d.Config != nil && d.Config.Env == "production" {
@@ -155,6 +156,32 @@ func Session(d Deps) gin.HandlerFunc {
 
 const csrfCookie = "gf_csrf"
 
+// sameOrigin rejects browser writes whose Origin/Referer points at another
+// host. Requests without either header (CLI, some native clients) still need a
+// valid CSRF token and are allowed.
+func sameOrigin(c *gin.Context, cfg *config.Config) bool {
+	raw := strings.TrimSpace(c.GetHeader("Origin"))
+	if raw == "" {
+		raw = strings.TrimSpace(c.GetHeader("Referer"))
+	}
+	if raw == "" || raw == "null" {
+		return raw == ""
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" {
+		return false
+	}
+	if strings.EqualFold(u.Host, c.Request.Host) {
+		return true
+	}
+	if cfg != nil && strings.TrimSpace(cfg.HTTP.BaseURL) != "" {
+		if base, err := url.Parse(cfg.HTTP.BaseURL); err == nil && strings.EqualFold(u.Host, base.Host) {
+			return true
+		}
+	}
+	return false
+}
+
 // csrfExempt lists webhook endpoints authenticated by their own signatures.
 var csrfExempt = map[string]bool{
 	"/payments/nowpayments/notify":  true,
@@ -190,6 +217,16 @@ func CSRF(d Deps) gin.HandlerFunc {
 		switch c.Request.Method {
 		case http.MethodGet, http.MethodHead, http.MethodOptions:
 			c.Next()
+			return
+		}
+
+		if !sameOrigin(c, d.Config) {
+			if wantsJSON(c) {
+				httpx.Fail(c, httpx.NewError("csrf.origin", http.StatusForbidden, "跨站请求被拒绝"))
+				return
+			}
+			d.RenderError(c, http.StatusForbidden, "跨站请求被拒绝")
+			c.Abort()
 			return
 		}
 
@@ -277,7 +314,11 @@ func requireLogin(c *gin.Context, d Deps) bool {
 			return false
 		}
 		next := url.QueryEscape(c.Request.URL.RequestURI())
-		c.Redirect(http.StatusFound, "/admin/login?next="+next)
+		loginPath := "/login"
+		if strings.HasPrefix(c.Request.URL.Path, "/admin") {
+			loginPath = "/admin/login"
+		}
+		c.Redirect(http.StatusFound, loginPath+"?next="+next)
 		c.Abort()
 		return false
 	}
@@ -354,7 +395,7 @@ func isDevelopmentEnv(cfg *config.Config) bool {
 		return false
 	}
 	switch strings.ToLower(strings.TrimSpace(cfg.Env)) {
-	case "development", "dev", "", "test":
+	case "development", "dev", "test":
 		return true
 	default:
 		return false

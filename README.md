@@ -141,6 +141,7 @@ sudo ./scripts/deploy.sh --url https://forum.example.com
 | [32 管理员 TOTP 两步验证](./docs/32-管理员TOTP两步验证.md) | 管理员 2FA 策略、绑定、恢复码、登录挑战 |
 | [33 密钥加密与版本化迁移](./docs/33-密钥加密与版本化迁移.md) | 设置密钥 AES-GCM 加密、schema_migrations 台账 |
 | [34 一键部署脚本与 Docker](./docs/34-一键部署脚本与Docker.md) | systemd 一键脚本、Dockerfile/Compose、密钥、升级与排错 |
+| [35 安全审计修复记录](./docs/35-安全审计修复记录.md) | OAuth、广告隔离、退款、上传、回调校验与迁移说明 |
 
 ## 技术栈
 

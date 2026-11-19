@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"image"
-	_ "image/gif"
+	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"io"
@@ -25,6 +26,11 @@ import (
 	"goforum/internal/platform/settings"
 	"goforum/internal/platform/storage"
 )
+
+// maxImagePixels bounds decoded image memory. A 25 MP RGBA image is roughly
+// 100 MB, which is already large for a public upload endpoint.
+const maxImagePixels = 25_000_000
+const maxGIFrames = 300
 
 type Service struct {
 	db       *gorm.DB
@@ -74,12 +80,6 @@ func (s *Service) Upload(ctx context.Context, userID, filename, declaredType str
 			quotaMB = v
 		}
 	}
-	var used int64
-	_ = s.db.WithContext(ctx).Model(&Upload{}).Where("user_id = ?", userID).
-		Select("COALESCE(SUM(size_bytes), 0)").Scan(&used).Error
-	if used+int64(len(data)) > quotaMB*1024*1024 {
-		return nil, "", httpx.Invalid(map[string]string{"file": fmt.Sprintf("已超出个人存储配额（%d MB）", quotaMB)})
-	}
 
 	mime := http.DetectContentType(data)
 	ext, ok := allowed[mime]
@@ -91,13 +91,30 @@ func (s *Service) Upload(ctx context.Context, userID, filename, declaredType str
 	if err != nil {
 		return nil, "", httpx.Invalid(map[string]string{"file": "图片解析失败"})
 	}
-	if cfg.Width <= 0 || cfg.Height <= 0 || cfg.Width > 12000 || cfg.Height > 12000 {
-		return nil, "", httpx.Invalid(map[string]string{"file": "图片尺寸超出限制"})
+	if err := validateImageDimensions(cfg.Width, cfg.Height); err != nil {
+		return nil, "", err
 	}
 
-	sum := sha256.Sum256(data)
+	// Re-encode static images and strip metadata containers from WebP/GIF so
+	// uploaded files cannot leak GPS/device data or carry trailing payloads.
+	clean, err := sanitizeImage(data, mime)
+	if err != nil {
+		return nil, "", httpx.Invalid(map[string]string{"file": "图片处理失败：" + err.Error()})
+	}
+	if int64(len(clean)) > limit {
+		return nil, "", httpx.Invalid(map[string]string{"file": fmt.Sprintf("处理后文件超过 %d MB 限制", maxMB)})
+	}
+
+	var used int64
+	_ = s.db.WithContext(ctx).Model(&Upload{}).Where("user_id = ?", userID).
+		Select("COALESCE(SUM(size_bytes), 0)").Scan(&used).Error
+	if used+int64(len(clean)) > quotaMB*1024*1024 {
+		return nil, "", httpx.Invalid(map[string]string{"file": fmt.Sprintf("已超出个人存储配额（%d MB）", quotaMB)})
+	}
+
+	sum := sha256.Sum256(clean)
 	key := fmt.Sprintf("%s/%s%s", time.Now().UTC().Format("2006/01"), id.New(), ext)
-	if err := s.storage.Put(ctx, key, bytes.NewReader(data), int64(len(data)), mime); err != nil {
+	if err := s.storage.Put(ctx, key, bytes.NewReader(clean), int64(len(clean)), mime); err != nil {
 		return nil, "", err
 	}
 
@@ -106,7 +123,7 @@ func (s *Service) Upload(ctx context.Context, userID, filename, declaredType str
 		Filename:   sanitizeName(filename),
 		StorageKey: key,
 		MIME:       mime,
-		SizeBytes:  int64(len(data)),
+		SizeBytes:  int64(len(clean)),
 		Width:      cfg.Width,
 		Height:     cfg.Height,
 		SHA256:     hex.EncodeToString(sum[:]),
@@ -116,8 +133,105 @@ func (s *Service) Upload(ctx context.Context, userID, filename, declaredType str
 		_ = s.storage.Delete(ctx, key)
 		return nil, "", err
 	}
-	_ = s.makeThumbnail(ctx, u, data)
+	_ = s.makeThumbnail(ctx, u, clean)
 	return u, s.storage.URL(key), nil
+}
+
+func validateImageDimensions(width, height int) error {
+	if width <= 0 || height <= 0 {
+		return httpx.Invalid(map[string]string{"file": "图片尺寸无效"})
+	}
+	if width > 12000 || height > 12000 {
+		return httpx.Invalid(map[string]string{"file": "图片尺寸超出限制"})
+	}
+	if int64(width)*int64(height) > maxImagePixels {
+		return httpx.Invalid(map[string]string{"file": fmt.Sprintf("图片像素总量超出限制（最多 %d 万像素）", maxImagePixels/10000)})
+	}
+	return nil
+}
+
+func sanitizeImage(data []byte, mime string) ([]byte, error) {
+	switch mime {
+	case "image/jpeg":
+		img, err := jpeg.Decode(bytes.NewReader(data))
+		if err != nil {
+			return nil, err
+		}
+		var buf bytes.Buffer
+		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 88}); err != nil {
+			return nil, err
+		}
+		return buf.Bytes(), nil
+	case "image/png":
+		img, err := png.Decode(bytes.NewReader(data))
+		if err != nil {
+			return nil, err
+		}
+		var buf bytes.Buffer
+		if err := png.Encode(&buf, img); err != nil {
+			return nil, err
+		}
+		return buf.Bytes(), nil
+	case "image/gif":
+		anim, err := gif.DecodeAll(bytes.NewReader(data))
+		if err != nil {
+			return nil, err
+		}
+		if len(anim.Image) > maxGIFrames {
+			return nil, fmt.Errorf("GIF 帧数超过限制")
+		}
+		var buf bytes.Buffer
+		if err := gif.EncodeAll(&buf, anim); err != nil {
+			return nil, err
+		}
+		return buf.Bytes(), nil
+	case "image/webp":
+		return stripWebPMetadata(data)
+	default:
+		return nil, fmt.Errorf("不支持的图片格式")
+	}
+}
+
+// stripWebPMetadata rebuilds the RIFF container without EXIF/XMP chunks while
+// preserving image and animation chunks.
+func stripWebPMetadata(data []byte) ([]byte, error) {
+	if len(data) < 12 || string(data[0:4]) != "RIFF" || string(data[8:12]) != "WEBP" {
+		return nil, fmt.Errorf("WebP 容器格式无效")
+	}
+	var body bytes.Buffer
+	offset := 12
+	for offset < len(data) {
+		if offset+8 > len(data) {
+			return nil, fmt.Errorf("WebP 数据块截断")
+		}
+		fourcc := string(data[offset : offset+4])
+		size := int(binary.LittleEndian.Uint32(data[offset+4 : offset+8]))
+		end := offset + 8 + size
+		if size < 0 || end > len(data) {
+			return nil, fmt.Errorf("WebP 数据块长度无效")
+		}
+		if fourcc != "EXIF" && fourcc != "XMP " {
+			chunk := append([]byte(nil), data[offset:end]...)
+			if fourcc == "VP8X" && len(chunk) >= 9 {
+				// Clear the EXIF (0x08) and XMP (0x04) feature flags so the
+				// container no longer advertises the stripped chunks.
+				chunk[8] &^= 0x0C
+			}
+			body.Write(chunk)
+			if size%2 == 1 {
+				body.WriteByte(0)
+			}
+		}
+		offset = end
+		if size%2 == 1 {
+			offset++
+		}
+	}
+	out := make([]byte, 12, 12+body.Len())
+	copy(out, "RIFF")
+	binary.LittleEndian.PutUint32(out[4:8], uint32(body.Len()+4))
+	copy(out[8:12], "WEBP")
+	return append(out, body.Bytes()...), nil
 }
 
 func (s *Service) makeThumbnail(ctx context.Context, u *Upload, data []byte) error {

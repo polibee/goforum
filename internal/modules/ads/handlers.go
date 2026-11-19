@@ -66,10 +66,10 @@ func (m *Module) frame(c *gin.Context) {
 		c.Status(http.StatusNotFound)
 		return
 	}
-	c.Header("Content-Security-Policy", "default-src 'none'; img-src * data:; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline'; connect-src *; frame-src *; font-src * data:")
+	c.Header("Content-Security-Policy", "sandbox allow-scripts allow-popups; default-src 'none'; img-src * data:; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline'; connect-src *; frame-src *; font-src * data:; frame-ancestors 'self'")
 	c.Header("X-Frame-Options", "SAMEORIGIN")
 	c.Header("X-Content-Type-Options", "nosniff")
-	c.Header("Referrer-Policy", "no-referrer-when-downgrade")
+	c.Header("Referrer-Policy", "no-referrer")
 	doc := "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body style=\"margin:0\">" + ad.HTML + "</body></html>"
 	c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(doc))
 }
@@ -114,8 +114,16 @@ func (m *Module) adminSave(c *gin.Context) {
 	height, _ := strconv.Atoi(c.PostForm("height"))
 	priority, _ := strconv.Atoi(c.PostForm("priority"))
 	months, _ := strconv.Atoi(c.PostForm("months"))
+	format := c.PostForm("format")
+	if format == "html" {
+		principal := authn.FromContext(c.Request.Context())
+		if principal == nil || !principal.SuperAdmin {
+			c.Redirect(http.StatusFound, "/admin/ads?error="+url.QueryEscape("仅超级管理员可创建或编辑 HTML 广告"))
+			return
+		}
+	}
 	_, err := m.svc.SaveAdmin(c.Request.Context(), AdminInput{
-		ID: c.PostForm("id"), Slot: c.PostForm("slot"), Format: c.PostForm("format"),
+		ID: c.PostForm("id"), Slot: c.PostForm("slot"), Format: format,
 		Title: c.PostForm("title"), Text: c.PostForm("text"), URL: c.PostForm("url"),
 		ImageURL: c.PostForm("image_url"), HTML: c.PostForm("html"),
 		Height: height, Priority: priority, Status: c.PostForm("status"),

@@ -45,6 +45,7 @@ func New(db *gorm.DB, svc *Service) *Module { return &Module{db: db, svc: svc} }
 
 func (m *Module) Configure(st *settings.Store, points gcontracts.Points, auditWriter audit.Writer, bus events.Bus, renderer *view.Renderer, auth contracts.Authenticator, sessions *session.Store, cfg *config.Config, log *slog.Logger, version string) {
 	m.svc.Configure(st, points, auditWriter, bus, log)
+	m.svc.SetProduction(cfg.Env == "production")
 	m.settings = st
 	m.renderer = renderer
 	m.auth = auth
@@ -100,7 +101,7 @@ func (m *Module) Routes(web, api *gin.RouterGroup) {
 	web.GET("/pricing", m.pricingPage)
 	web.POST("/orders", login, middleware.RateLimit(md, "order_create", 20, 10*time.Minute), m.createOrder)
 	web.GET("/checkout/:out_trade_no", login, m.checkoutPage)
-	web.GET("/payments/mock/:out_trade_no", login, middleware.RateLimit(md, "mock_pay", 30, 10*time.Minute), m.mockPay)
+	web.POST("/payments/mock/:out_trade_no", login, middleware.RateLimit(md, "mock_pay", 30, 10*time.Minute), m.mockPay)
 	web.POST("/payments/nowpayments/notify", m.nowPaymentsNotify)
 	web.POST("/payments/xcash/notify", m.xcashNotify)
 	web.POST("/payments/creem/notify", m.creemNotify)

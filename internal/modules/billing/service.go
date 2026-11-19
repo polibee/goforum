@@ -1,11 +1,14 @@
 package billing
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -14,6 +17,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	bcontracts "goforum/internal/modules/billing/contracts"
 	gcontracts "goforum/internal/modules/gamification/contracts"
 	"goforum/internal/platform/audit"
 	"goforum/internal/platform/events"
@@ -29,11 +33,15 @@ type Service struct {
 	audit    audit.Writer
 	bus      events.Bus
 	log      *slog.Logger
+	// production disables enabled-by-default sandbox channels for new installs.
+	production bool
 	// jobLease serialises background polling across instances when set.
 	jobLease func(ctx context.Context, name string, ttl time.Duration) bool
 }
 
 func NewService(db *gorm.DB) *Service { return &Service{db: db} }
+
+func (s *Service) SetProduction(v bool) { s.production = v }
 
 func (s *Service) Configure(st *settings.Store, points gcontracts.Points, auditWriter audit.Writer, bus events.Bus, log *slog.Logger) {
 	s.settings = st
@@ -63,6 +71,9 @@ func (s *Service) EnsureDefaults(ctx context.Context) error {
 		}
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
+		}
+		if s.production && channels[i].Mode == "sandbox" {
+			channels[i].Enabled = false
 		}
 		if err := s.db.WithContext(ctx).Create(&channels[i]).Error; err != nil {
 			return err
@@ -185,6 +196,19 @@ func (s *Service) ListChannels(ctx context.Context, enabledOnly bool) ([]Payment
 	var rows []PaymentChannel
 	err := q.Order("sort ASC, created_at ASC").Find(&rows).Error
 	return rows, err
+}
+
+// ListEnabledChannels exposes the contract view used by other modules.
+func (s *Service) ListEnabledChannels(ctx context.Context) ([]bcontracts.Channel, error) {
+	rows, err := s.ListChannels(ctx, true)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]bcontracts.Channel, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, bcontracts.Channel{ID: row.ID, Name: row.Name, Driver: row.Driver})
+	}
+	return out, nil
 }
 
 func (s *Service) ToggleChannel(ctx context.Context, id string, enabled bool, actorID string) error {
@@ -370,6 +394,9 @@ func (s *Service) CreateOrder(ctx context.Context, userID, productID, channelID,
 			// so it is returned, but this must be visible in the log.
 			s.log.Warn("mark order failed after gateway error", "order_id", order.ID, "error", markErr)
 		}
+		if releaseErr := s.releaseCoupon(ctx, order.ID); releaseErr != nil {
+			s.log.Warn("release coupon after gateway error failed", "order_id", order.ID, "error", releaseErr)
+		}
 		return nil, nil, err
 	}
 	updates := map[string]any{"status": "pending"}
@@ -393,7 +420,8 @@ func (s *Service) PayOrder(ctx context.Context, outTradeNo, channelCode, channel
 			return httpx.NotFound("order.not_found", "订单不存在")
 		}
 		if order.Status == "paid" {
-			paidOrder = &order
+			// Payment callbacks are retried by every gateway. A paid order must
+			// be a no-op: do not re-credit points or re-publish order.paid.
 			return nil
 		}
 		if order.Status != "created" && order.Status != "pending" {
@@ -517,6 +545,19 @@ func (s *Service) RefundOrder(ctx context.Context, orderID, operatorID, reason s
 	if err := s.db.WithContext(ctx).First(&order, "id = ?", orderID).Error; err != nil {
 		return httpx.NotFound("order.not_found", "订单不存在")
 	}
+
+	// A previous attempt may have reached the gateway but failed while writing
+	// the local ledger. Finish that attempt instead of refunding twice.
+	if order.Status == "refunding" {
+		var pending Refund
+		err := s.db.WithContext(ctx).
+			Where("order_id = ? AND status = ?", order.ID, "pending").
+			Order("created_at DESC").First(&pending).Error
+		if err != nil {
+			return httpx.Invalid(map[string]string{"order": "退款处理中，请稍后刷新订单状态"})
+		}
+		return s.finalizeRefund(ctx, &order, pending.ID, pending.AmountMinor, pending.ChannelRefundNo, operatorID, reason)
+	}
 	if order.Status != "paid" {
 		return httpx.Invalid(map[string]string{"order": "订单状态不可退款"})
 	}
@@ -527,51 +568,131 @@ func (s *Service) RefundOrder(ctx context.Context, orderID, operatorID, reason s
 	if amount <= 0 {
 		return httpx.Invalid(map[string]string{"order": "已无可退金额"})
 	}
-	refund := &Refund{
-		ID: id.New(), OrderID: order.ID, UserID: order.UserID, AmountMinor: amount,
-		Reason: reason, Status: "pending", OperatorID: operatorID, CreatedAt: time.Now().UTC(),
-	}
-
-	// Ask the payment provider first. Crediting the in-app balance while the
-	// customer still has their money is a real loss, so a gateway failure must
-	// abort before any local ledger entry is written.
 	channelGW, ok := s.gateway(order.ChannelCode)
 	if !ok {
 		return httpx.Invalid(map[string]string{"refund": "该支付渠道不支持退款"})
 	}
-	gatewayRefundNo, gwErr := channelGW.Refund(ctx, order, *refund)
-	if gwErr != nil {
-		return httpx.NewError("refund.gateway_failed", 502,
-			"支付渠道退款失败："+httpx.ErrorOf(gwErr).Message)
+
+	refund := &Refund{
+		ID: id.New(), OrderID: order.ID, UserID: order.UserID, AmountMinor: amount,
+		Reason: reason, Status: "pending", OperatorID: operatorID, CreatedAt: time.Now().UTC(),
 	}
-	refund.ChannelRefundNo = gatewayRefundNo
-	if order.ProductType == "points_pack" && order.PointsAmount > 0 && s.points != nil {
-		if err := s.points.SpendExternal(ctx, order.UserID, order.PointsAmount, "refund", refund.ID, "退款扣回积分"); err != nil {
-			return httpx.Invalid(map[string]string{"refund": "积分已消费，无法退款"})
-		}
-	}
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	// Claim the order with a paid -> refunding compare-and-swap. This is the
+	// only place a refund starts, so concurrent admin clicks cannot both call
+	// the payment provider.
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(refund).Error; err != nil {
 			return err
 		}
-		now := time.Now().UTC()
 		res := tx.Model(&Order{}).Where("id = ? AND status = ?", order.ID, "paid").
+			Updates(map[string]any{"status": "refunding", "updated_at": time.Now().UTC()})
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return httpx.Invalid(map[string]string{"order": "订单状态已变化，请刷新后重试"})
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	// Deduct points before the external refund. If the user already spent them
+	// the refund is refused before any money leaves the gateway.
+	pointsSpent := false
+	if order.ProductType == "points_pack" && order.PointsAmount > 0 && s.points != nil {
+		if err := s.points.SpendExternal(ctx, order.UserID, order.PointsAmount, "refund", refund.ID, "退款扣回积分"); err != nil {
+			s.abortRefund(ctx, order.ID, refund.ID)
+			return httpx.Invalid(map[string]string{"refund": "积分已消费，无法退款"})
+		}
+		pointsSpent = true
+	}
+
+	gatewayRefundNo, gwErr := channelGW.Refund(ctx, order, *refund)
+	if gwErr != nil {
+		if pointsSpent {
+			if err := s.points.CreditExternal(ctx, order.UserID, order.PointsAmount, "refund", refund.ID+":rollback", "退款失败退回积分"); err != nil && s.log != nil {
+				s.log.Error("refund: restore points failed", "order_id", order.ID, "error", err)
+			}
+		}
+		s.abortRefund(ctx, order.ID, refund.ID)
+		return httpx.NewError("refund.gateway_failed", 502,
+			"支付渠道退款失败："+httpx.ErrorOf(gwErr).Message)
+	}
+
+	// Persist the provider reference before the local ledger write. If the
+	// finalize step fails, a retry can complete without contacting the gateway.
+	if err := s.db.WithContext(ctx).Model(&Refund{}).Where("id = ?", refund.ID).
+		Update("channel_refund_no", gatewayRefundNo).Error; err != nil && s.log != nil {
+		s.log.Warn("refund: persist channel refund no failed", "refund_id", refund.ID, "error", err)
+	}
+	if err := s.finalizeRefund(ctx, &order, refund.ID, amount, gatewayRefundNo, operatorID, reason); err != nil {
+		return err
+	}
+	return nil
+}
+
+// abortRefund returns a claimed order to paid and marks its pending refund as
+// failed, so the operator can retry with a new attempt.
+func (s *Service) abortRefund(ctx context.Context, orderID, refundID string) {
+	now := time.Now().UTC()
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&Refund{}).Where("id = ?", refundID).
+			Updates(map[string]any{"status": "failed", "completed_at": now}).Error; err != nil {
+			return err
+		}
+		return tx.Model(&Order{}).Where("id = ? AND status = ?", orderID, "refunding").
+			Updates(map[string]any{"status": "paid", "updated_at": now}).Error
+	})
+	if err != nil && s.log != nil {
+		s.log.Error("refund: abort failed; order may stay refunding", "order_id", orderID, "refund_id", refundID, "error", err)
+	}
+}
+
+// finalizeRefund writes the idempotent local side effects after the gateway
+// has accepted the refund. It is safe to retry while the order is refunding.
+func (s *Service) finalizeRefund(ctx context.Context, order *Order, refundID string, amount int64, channelRefundNo, operatorID, reason string) error {
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		now := time.Now().UTC()
+		res := tx.Model(&Order{}).Where("id = ? AND status = ?", order.ID, "refunding").
 			Updates(map[string]any{"status": "refunded", "updated_at": now})
 		if res.Error != nil {
 			return res.Error
 		}
 		if res.RowsAffected == 0 {
-			return httpx.Invalid(map[string]string{"order": "订单状态已变化"})
+			var current Order
+			if err := tx.First(&current, "id = ?", order.ID).Error; err != nil {
+				return err
+			}
+			if current.Status != "refunded" {
+				return httpx.Invalid(map[string]string{"order": "订单状态已变化，无法完成退款"})
+			}
+			// Already refunded: only repair the refund row if needed.
+			return tx.Model(&Refund{}).Where("id = ?", refundID).Updates(map[string]any{
+				"status": "succeeded", "channel_refund_no": channelRefundNo, "completed_at": now,
+			}).Error
 		}
-		lines := []ledgerLine{
-			{OwnerType: "system", OwnerID: "refund", Currency: order.Currency, Kind: "refund", Direction: "debit", Amount: amount, EntryType: "refund"},
-			{OwnerType: "user", OwnerID: order.UserID, Currency: order.Currency, Kind: "balance", Direction: "credit", Amount: amount, EntryType: "refund"},
+
+		// Only a balance payment is returned to the in-app wallet. External
+		// gateways send the money back on the original rail, so their ledger
+		// reversal must clear the clearing account, not credit the user again.
+		var lines []ledgerLine
+		if order.ChannelCode == "balance" {
+			lines = []ledgerLine{
+				{OwnerType: "system", OwnerID: "revenue", Currency: order.Currency, Kind: "revenue", Direction: "debit", Amount: amount, EntryType: "refund"},
+				{OwnerType: "user", OwnerID: order.UserID, Currency: order.Currency, Kind: "balance", Direction: "credit", Amount: amount, EntryType: "refund"},
+			}
+		} else {
+			lines = []ledgerLine{
+				{OwnerType: "system", OwnerID: "revenue", Currency: order.Currency, Kind: "revenue", Direction: "debit", Amount: amount, EntryType: "refund"},
+				{OwnerType: "system", OwnerID: "clearing", Currency: order.Currency, Kind: "clearing", Direction: "credit", Amount: amount, EntryType: "refund"},
+			}
 		}
-		if err := s.postLedger(tx, "refund", "refund:"+refund.ID, "refund", refund.ID, "订单退款", lines); err != nil {
+		if err := s.postLedger(tx, "refund", "refund:"+refundID, "refund", refundID, "订单退款", lines); err != nil {
 			return err
 		}
-		if err := tx.Model(&Refund{}).Where("id = ?", refund.ID).Updates(map[string]any{
-			"status": "succeeded", "completed_at": now,
+		if err := tx.Model(&Refund{}).Where("id = ?", refundID).Updates(map[string]any{
+			"status": "succeeded", "channel_refund_no": channelRefundNo, "completed_at": now,
 		}).Error; err != nil {
 			return err
 		}
@@ -583,9 +704,6 @@ func (s *Service) RefundOrder(ctx context.Context, orderID, operatorID, reason s
 			Updates(map[string]any{"status": "canceled", "canceled_at": now}).Error
 	})
 	if err != nil {
-		if order.ProductType == "points_pack" && s.points != nil {
-			_ = s.points.CreditExternal(ctx, order.UserID, order.PointsAmount, "refund", refund.ID+":rollback", "退款失败退回积分")
-		}
 		return err
 	}
 	if s.bus != nil {
@@ -992,20 +1110,71 @@ func (s *Service) HandleNotify(ctx context.Context, driver string, r *http.Reque
 	if !ok {
 		return http.StatusNotFound, "unknown gateway"
 	}
+	raw, readErr := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if readErr != nil {
+		return http.StatusBadRequest, "invalid notify"
+	}
+	r.Body = io.NopCloser(bytes.NewReader(raw))
+
 	ev, err := gw.VerifyNotify(ctx, r)
 	if err != nil {
+		s.recordNotify(ctx, driver, nil, raw, false, false, err.Error())
 		if s.log != nil {
 			s.log.Warn("payment notify rejected", "driver", driver, "error", err)
 		}
 		return http.StatusBadRequest, "invalid notify"
 	}
 	if err := s.applyEvent(ctx, driver, ev); err != nil {
+		s.recordNotify(ctx, driver, ev, raw, true, false, err.Error())
 		if s.log != nil {
 			s.log.Warn("payment notify apply failed", "driver", driver, "order", ev.OutTradeNo, "error", err)
 		}
 		return http.StatusBadRequest, "failed"
 	}
+	s.recordNotify(ctx, driver, ev, raw, true, true, "")
 	return gw.Ack(ev)
+}
+
+// recordNotify keeps an auditable copy of every callback and its outcome. The
+// table is also used by support to replay or diagnose signature/amount errors.
+func (s *Service) recordNotify(ctx context.Context, driver string, ev *NotifyEvent, raw []byte, verified, processed bool, errMsg string) {
+	eventID := ""
+	outTradeNo := ""
+	if ev != nil {
+		eventID = strings.TrimSpace(ev.EventID)
+		outTradeNo = ev.OutTradeNo
+	}
+	if eventID == "" {
+		sum := sha256.Sum256(raw)
+		eventID = "raw:" + hex.EncodeToString(sum[:16])
+	}
+	if len(eventID) > 80 {
+		eventID = eventID[:80]
+	}
+	// Do not persist attacker-controlled bodies for failed signature checks;
+	// the unique event id still records that a rejected callback arrived.
+	if verified && len(raw) > 64*1024 {
+		raw = raw[:64*1024]
+	}
+	if !verified {
+		raw = nil
+	}
+	if len(errMsg) > 500 {
+		errMsg = errMsg[:500]
+	}
+	row := NotifyLog{
+		ChannelCode: driver, EventID: eventID, OutTradeNo: outTradeNo,
+		Verified: verified, Processed: processed, RawBody: string(raw), Error: errMsg,
+	}
+	if err := s.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "channel_code"}, {Name: "event_id"}},
+		DoUpdates: clause.Assignments(map[string]any{
+			"out_trade_no": outTradeNo, "verified": verified,
+			"processed": processed, "raw_body": string(raw), "error": errMsg,
+		}),
+	}).Create(&row).Error; err != nil && s.log != nil {
+		s.log.Warn("payment notify log failed", "driver", driver, "event_id", eventID, "error", err)
+	}
 }
 
 func (s *Service) applyEvent(ctx context.Context, driver string, ev *NotifyEvent) error {
@@ -1021,8 +1190,13 @@ func (s *Service) applyEvent(ctx context.Context, driver string, ev *NotifyEvent
 	}
 	switch strings.ToLower(ev.Status) {
 	case "finished", "confirmed", "paid":
-		if ev.AmountMinor > 0 && ev.AmountMinor != order.AmountMinor {
-			return httpx.NewError("payment.amount_mismatch", 400, "支付金额与订单不一致")
+		if ev.AmountVerified {
+			if ev.AmountMinor != order.AmountMinor {
+				return httpx.NewError("payment.amount_mismatch", 400, "支付金额与订单不一致")
+			}
+			if ev.Currency != "" && !strings.EqualFold(ev.Currency, order.Currency) {
+				return httpx.NewError("payment.currency_mismatch", 400, "支付币种与订单不一致")
+			}
 		}
 		return s.PayOrder(ctx, order.OutTradeNo, driver, ev.ChannelTradeNo, order.AmountMinor)
 	case "expired", "failed":
@@ -1141,12 +1315,30 @@ func (s *Service) closeOrder(ctx context.Context, orderID string) error {
 		if res.RowsAffected == 0 {
 			return nil
 		}
-		var red CouponRedemption
-		if err := tx.Where("order_id = ?", orderID).First(&red).Error; err == nil {
-			_ = tx.Model(&Coupon{}).Where("id = ? AND used > 0", red.CouponID).
-				Update("used", gorm.Expr("used - 1")).Error
-			_ = tx.Delete(&CouponRedemption{}, "id = ?", red.ID).Error
-		}
-		return nil
+		return s.releaseCouponTx(tx, orderID)
 	})
+}
+
+// releaseCoupon returns a reserved coupon slot when checkout fails before the
+// order is paid. Deleting the redemption first makes the operation idempotent.
+func (s *Service) releaseCoupon(ctx context.Context, orderID string) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return s.releaseCouponTx(tx, orderID)
+	})
+}
+
+func (s *Service) releaseCouponTx(tx *gorm.DB, orderID string) error {
+	var red CouponRedemption
+	err := tx.Where("order_id = ?", orderID).First(&red).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if err := tx.Delete(&CouponRedemption{}, "id = ?", red.ID).Error; err != nil {
+		return err
+	}
+	return tx.Model(&Coupon{}).Where("id = ? AND used > 0", red.CouponID).
+		Update("used", gorm.Expr("used - 1")).Error
 }

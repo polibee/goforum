@@ -53,8 +53,11 @@ func TestMigrateCreatesAndVerifiesSchema(t *testing.T) {
 		t.Fatalf("ensure schema: %v", err)
 	}
 	versions, err := db.AppliedMigrationVersions(gdb)
-	if err != nil || len(versions) != 2 || versions[0] != 1 || versions[1] != 2 {
+	if err != nil || len(versions) != 3 || versions[0] != 1 || versions[1] != 2 || versions[2] != 3 {
 		t.Fatalf("migration ledger = %v err=%v", versions, err)
+	}
+	if !gdb.Migrator().HasTable("search_fts") {
+		t.Fatal("search FTS table missing after migrate")
 	}
 	// Running migrate twice must stay idempotent.
 	if err := Migrate(cfg, testSchemaLogger()); err != nil {

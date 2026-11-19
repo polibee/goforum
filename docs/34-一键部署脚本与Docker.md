@@ -251,18 +251,18 @@ docker compose exec goforum /app/goforum migrate
 
 ### 3.5 反向代理与端口
 
-Compose 默认把 `8080` 发布到所有网卡。生产环境建议：
+Compose 默认只把端口发布到 `127.0.0.1`，公网必须经过反向代理：
 
 - 云安全组/防火墙只放行 443；
 - Nginx/Caddy 反代到 `127.0.0.1:8080`；
-- 或把 Compose 端口改为 `127.0.0.1:8080:8080`，只允许本机反代访问。
+- 不要改成 `0.0.0.0:8080` 直接暴露应用。
 
-修改 `docker-compose.yml`：
+容器同时启用了：
 
-```yaml
-ports:
-  - "127.0.0.1:8080:8080"
-```
+- `read_only: true`，根文件系统只读，仅 `/data` 卷可写；
+- `cap_drop: [ALL]` 与 `no-new-privileges:true`；
+- 以 UID 10001 运行，不使用 root；
+- `/tmp` 使用 64MB tmpfs。
 
 反代配置与裸机相同，另需设置 `HTTP_TRUSTED_PROXIES` 为反代地址（Compose 网络中通常是反代容器网段）。
 

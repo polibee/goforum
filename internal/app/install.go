@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 
@@ -42,6 +43,7 @@ type Installer struct {
 	Renderer   *view.Renderer
 	I18n       *i18n.Bundle
 	OnReady    func(*App) error
+	installMu  sync.Mutex
 }
 
 func NewInstaller(current *App, baseCfg *config.Config, configPath, version string, log *slog.Logger, onReady func(*App) error) (*Installer, error) {
@@ -154,6 +156,9 @@ func (i *Installer) get(c *gin.Context) {
 }
 
 func (i *Installer) post(c *gin.Context) {
+	i.installMu.Lock()
+	defer i.installMu.Unlock()
+
 	driver := strings.TrimSpace(c.PostForm("driver"))
 	dsn := strings.TrimSpace(c.PostForm("dsn"))
 	siteName := strings.TrimSpace(c.PostForm("site_name"))
@@ -180,7 +185,8 @@ func (i *Installer) post(c *gin.Context) {
 	cfg.Database.DSN = dsn
 	cfg.HTTP.BaseURL = baseURL
 	if err := cfg.Validate(); err != nil {
-		data.Error = err.Error()
+		i.Log.Warn("install: invalid config", "error", err)
+		data.Error = "配置无效，请检查站点地址与数据库连接信息"
 		i.render(c, http.StatusUnprocessableEntity, data)
 		return
 	}
@@ -198,19 +204,6 @@ func (i *Installer) post(c *gin.Context) {
 		cfg.Security.SecretKey = base64.StdEncoding.EncodeToString(key)
 	}
 
-	// A .env file wins over YAML. Record the installer's database choice before
-	// creating any data, so a restart cannot fall back to the previous database.
-	if envPath := config.EnvPath(); envPath != "" {
-		if _, statErr := os.Stat(envPath); statErr == nil {
-			if err := config.AppendDatabaseEnv(envPath, cfg.Database.Driver, cfg.Database.DSN); err != nil {
-				i.Log.Error("install: update env database failed", "error", err)
-				data.Error = "写入 .env 数据库配置失败：" + err.Error()
-				i.render(c, http.StatusInternalServerError, data)
-				return
-			}
-		}
-	}
-
 	// Production mode deliberately skips AutoMigrate at startup, so a fresh
 	// install must create the schema explicitly before Open validates it. The
 	// fresh-only guard prevents an existing installation from being altered by
@@ -222,7 +215,7 @@ func (i *Installer) post(c *gin.Context) {
 			return
 		}
 		i.Log.Error("install: create schema failed", "error", err)
-		data.Error = "初始化数据库失败：" + err.Error()
+		data.Error = "初始化数据库失败，请检查数据库权限与连接信息"
 		i.render(c, http.StatusUnprocessableEntity, data)
 		return
 	}
@@ -230,7 +223,7 @@ func (i *Installer) post(c *gin.Context) {
 	newApp, err := Open(&cfg, i.ConfigPath, i.Version, i.Log)
 	if err != nil {
 		i.Log.Error("install: open database failed", "error", err)
-		data.Error = "数据库连接失败：" + err.Error()
+		data.Error = "数据库连接失败，请检查地址、账号与权限"
 		i.render(c, http.StatusUnprocessableEntity, data)
 		return
 	}
@@ -248,6 +241,20 @@ func (i *Installer) post(c *gin.Context) {
 		return
 	}
 
+	// The database is open and empty, so it is safe to persist the operator's
+	// database choice. A .env file wins over YAML; without this override a
+	// restart would silently fall back to the previous database.
+	if envPath := config.EnvPath(); envPath != "" {
+		if _, statErr := os.Stat(envPath); statErr == nil {
+			if err := config.AppendDatabaseEnv(envPath, cfg.Database.Driver, cfg.Database.DSN); err != nil {
+				i.Log.Error("install: update env database failed", "error", err)
+				data.Error = "写入数据库配置失败，请检查目录权限"
+				i.render(c, http.StatusInternalServerError, data)
+				return
+			}
+		}
+	}
+
 	if _, err := newApp.Auth.CreateAdmin(c.Request.Context(), username, email, plain); err != nil {
 		data.Error = httpx.ErrorOf(err).Message
 		i.render(c, http.StatusUnprocessableEntity, data)
@@ -260,21 +267,21 @@ func (i *Installer) post(c *gin.Context) {
 	}
 	if err := newApp.Settings.SetMany(c.Request.Context(), values, ""); err != nil {
 		i.Log.Error("install: save settings failed", "error", err)
-		data.Error = "保存站点设置失败：" + err.Error()
+		data.Error = "保存站点设置失败，请稍后重试"
 		i.render(c, http.StatusInternalServerError, data)
 		return
 	}
 
 	if err := cfg.Save(i.ConfigPath); err != nil {
 		i.Log.Error("install: save config failed", "error", err)
-		data.Error = "写入配置文件失败：" + err.Error()
+		data.Error = "写入配置文件失败，请检查目录权限"
 		i.render(c, http.StatusInternalServerError, data)
 		return
 	}
 
 	if err := i.OnReady(newApp); err != nil {
 		i.Log.Error("install: finish failed", "error", err)
-		data.Error = "启动失败：" + err.Error()
+		data.Error = "启动失败，请查看服务器日志"
 		i.render(c, http.StatusInternalServerError, data)
 		return
 	}

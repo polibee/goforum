@@ -192,7 +192,7 @@ func Open(cfg *config.Config, configPath, version string, log *slog.Logger) (app
 	// AutoMigrate rewrites tables and cannot be rolled back, so it only runs in
 	// development. Production deployments apply the schema during setup or with
 	// `goforum migrate`, and startup verifies the migration ledger.
-	if cfg.IsDevelopment() || cfg.Env == "" || cfg.Env == "test" {
+	if cfg.IsDevelopment() || cfg.Env == "test" {
 		if err := db.Migrate(gdb, models...); err != nil {
 			return nil, err
 		}
@@ -215,8 +215,14 @@ func Open(cfg *config.Config, configPath, version string, log *slog.Logger) (app
 	}
 
 	searchEngine := searchx.NewDBEngine(gdb)
-	if err := searchEngine.EnsureSchema(context.Background()); err != nil {
-		log.Warn("search schema init failed", "error", err)
+	if cfg.IsDevelopment() || cfg.Env == "test" {
+		if err := searchEngine.EnsureSchema(context.Background()); err != nil {
+			log.Warn("search schema init failed", "error", err)
+		}
+	} else {
+		// Production schema is owned by the versioned migration ledger. Only
+		// inspect the metadata here so a read-only DDL account is sufficient.
+		searchEngine.DetectSchema(context.Background())
 	}
 
 	settingsReg := settings.NewRegistry()
@@ -295,6 +301,8 @@ func Open(cfg *config.Config, configPath, version string, log *slog.Logger) (app
 	authSvc.Configure(settingsStore, mailer, cfg.HTTP.BaseURL)
 	authSvc.SetSecretKey(cfg.Security.SecretKey)
 	authSvc.SetEnv(cfg.Env)
+	authSvc.SetCache(cacheStore)
+	authSvc.SetAudit(auditSvc)
 
 	communitySvc.Configure(settingsStore, bus, md, authSvc)
 	communitySvc.SetCache(cacheStore)

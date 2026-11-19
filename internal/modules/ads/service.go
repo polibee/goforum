@@ -12,7 +12,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"goforum/internal/modules/billing"
+	bcontracts "goforum/internal/modules/billing/contracts"
 	"goforum/internal/platform/events"
 	"goforum/internal/platform/httpx"
 	"goforum/internal/platform/settings"
@@ -22,7 +22,7 @@ import (
 type Service struct {
 	db       *gorm.DB
 	settings *settings.Store
-	billing  *billing.Service
+	billing  bcontracts.Checkout
 	mu       sync.Mutex
 	cache    []Ad
 	cacheAt  time.Time
@@ -30,7 +30,7 @@ type Service struct {
 
 func NewService(db *gorm.DB) *Service { return &Service{db: db} }
 
-func (s *Service) Configure(st *settings.Store, billingSvc *billing.Service) {
+func (s *Service) Configure(st *settings.Store, billingSvc bcontracts.Checkout) {
 	s.settings = st
 	s.billing = billingSvc
 }
@@ -147,7 +147,7 @@ func (s *Service) Channels(ctx context.Context) []Channel {
 	if s.billing == nil {
 		return nil
 	}
-	rows, _ := s.billing.ListChannels(ctx, true)
+	rows, _ := s.billing.ListEnabledChannels(ctx)
 	out := make([]Channel, 0, len(rows))
 	for _, row := range rows {
 		if row.Driver == "balance" {

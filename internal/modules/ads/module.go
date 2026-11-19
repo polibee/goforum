@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"goforum/internal/modules/auth/contracts"
-	"goforum/internal/modules/billing"
+	bcontracts "goforum/internal/modules/billing/contracts"
 	"goforum/internal/platform/adminui"
 	"goforum/internal/platform/authn"
 	"goforum/internal/platform/config"
@@ -47,8 +47,8 @@ func (m *Module) Configure(st *settings.Store, renderer *view.Renderer, auth con
 	m.svc.Configure(st, nil)
 }
 
-func (m *Module) SetBilling(b *billing.Service)  { m.svc.Configure(m.settings, b) }
-func (m *Module) SetRegistry(r adminui.Registry) { m.registry = r }
+func (m *Module) SetBilling(b bcontracts.Checkout) { m.svc.Configure(m.settings, b) }
+func (m *Module) SetRegistry(r adminui.Registry)   { m.registry = r }
 
 func (m *Module) Name() string                   { return "ads" }
 func (m *Module) DependsOn() []string            { return []string{"auth", "billing"} }

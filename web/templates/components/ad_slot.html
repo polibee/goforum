@@ -5,7 +5,7 @@
   <img src="{{.ImageURL}}" alt="{{.Title}}" loading="lazy" class="mx-auto max-w-full rounded-lg object-contain" style="max-height: {{.Height}}px">
 </a>
 {{else if eq .Format "html"}}
-<iframe src="/ads/{{.ID}}/frame" title="{{.Title}}" loading="lazy" class="w-full rounded-lg border-0" height="{{.Height}}" scrolling="no"></iframe>
+<iframe src="/ads/{{.ID}}/frame" title="{{.Title}}" loading="lazy" sandbox="allow-scripts allow-popups" referrerpolicy="no-referrer" class="w-full rounded-lg border-0" height="{{.Height}}" scrolling="no"></iframe>
 {{else}}
 <a href="/ads/{{.ID}}/click" target="_blank" rel="noopener sponsored" class="block rounded-lg bg-surface-muted/50 px-2.5 py-2 transition hover:bg-surface-muted">
   <span class="block truncate text-[13px] font-medium text-fg">{{.Title}}</span>

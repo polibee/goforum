@@ -72,7 +72,7 @@ func (m *Module) Settings() []settings.Definition {
 		{Namespace: "oauth", Key: "github.redirect_url", Group: "integrations", Label: "GitHub 回调地址（留空自动生成）", Type: settings.TypeURL, Default: "", Permission: "settings.integration", Hidden: true},
 		{Namespace: "oauth", Key: "github.scopes", Group: "integrations", Label: "GitHub Scopes（空格分隔，留空用默认）", Type: settings.TypeString, Default: "", Permission: "settings.integration", Max: 300, Hidden: true},
 
-		{Namespace: "oauth", Key: "auto_link_email", Group: "integrations", Label: "邮箱一致时自动绑定已有账号", Type: settings.TypeBool, Default: true, Permission: "settings.integration", Hidden: true},
+		{Namespace: "oauth", Key: "auto_link_email", Group: "integrations", Label: "邮箱一致时自动绑定已有账号", Type: settings.TypeBool, Default: false, Permission: "settings.integration", Hidden: true},
 		{Namespace: "oauth", Key: "hide_password_form", Group: "integrations", Label: "仅启用第三方登录（隐藏密码表单）", Type: settings.TypeBool, Default: false, Permission: "settings.integration", Hidden: true},
 	}
 	return append(defs, m.trustSettings()...)

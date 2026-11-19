@@ -8,13 +8,21 @@ services:
     image: goforum:local
     container_name: goforum
     restart: unless-stopped
+    user: "10001:10001"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=64m
     env_file:
       - ./goforum.env
     environment:
       GF_ENV_FILE: /data/.env
       GF_CONFIG: /data/goforum.yaml
     ports:
-      - "${GOFORUM_PORT:-8080}:8080"
+      - "127.0.0.1:${GOFORUM_PORT:-8080}:8080"
     volumes:
       - goforum-data:/data
     healthcheck:

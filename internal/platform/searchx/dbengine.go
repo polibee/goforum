@@ -24,6 +24,20 @@ type docRow struct {
 
 func (docRow) TableName() string { return "search_documents" }
 
+// Models returns the search schema model so production startup can verify it
+// without running AutoMigrate.
+func Models() []any { return []any{&docRow{}} }
+
+// Migrate creates the search table and dialect-specific full-text objects. It
+// is called from the versioned migration ledger, not from production startup.
+func Migrate(ctx context.Context, db *gorm.DB) error {
+	if err := db.WithContext(ctx).AutoMigrate(Models()...); err != nil {
+		return err
+	}
+	e := NewDBEngine(db)
+	return e.ensureIndexes(ctx)
+}
+
 // DBEngine keeps a unified document table and layers the native full-text
 // implementation of each dialect on top. Any unsupported path falls back to LIKE.
 type DBEngine struct {
@@ -37,9 +51,41 @@ func NewDBEngine(db *gorm.DB) *DBEngine {
 }
 
 func (e *DBEngine) EnsureSchema(ctx context.Context) error {
-	if err := e.db.WithContext(ctx).AutoMigrate(&docRow{}); err != nil {
+	if err := e.db.WithContext(ctx).AutoMigrate(Models()...); err != nil {
 		return err
 	}
+	return e.ensureIndexes(ctx)
+}
+
+// DetectSchema only reads schema metadata. Production startup uses it after
+// the migration ledger has been applied, so it never issues DDL.
+func (e *DBEngine) DetectSchema(ctx context.Context) {
+	e.fts = false
+	switch e.dialect {
+	case "sqlite":
+		var n int64
+		if err := e.db.WithContext(ctx).Raw(
+			`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'search_fts'`).Scan(&n).Error; err == nil {
+			e.fts = n > 0
+		}
+	case "mysql":
+		var n int64
+		if err := e.db.WithContext(ctx).Raw(
+			`SELECT COUNT(*) FROM information_schema.statistics
+			 WHERE table_schema = DATABASE() AND table_name = 'search_documents' AND index_name = 'ft_search_documents'`).Scan(&n).Error; err == nil {
+			e.fts = n > 0
+		}
+	case "postgres":
+		var n int64
+		if err := e.db.WithContext(ctx).Raw(
+			`SELECT COUNT(*) FROM information_schema.columns
+			 WHERE table_name = 'search_documents' AND column_name = 'search_vector'`).Scan(&n).Error; err == nil {
+			e.fts = n > 0
+		}
+	}
+}
+
+func (e *DBEngine) ensureIndexes(ctx context.Context) error {
 	switch e.dialect {
 	case "sqlite":
 		if err := e.db.WithContext(ctx).Exec(`CREATE VIRTUAL TABLE IF NOT EXISTS search_fts
@@ -218,9 +264,9 @@ func (e *DBEngine) searchFTS(ctx context.Context, text string, q Query, offset i
 }
 
 func (e *DBEngine) searchLike(ctx context.Context, text string, q Query, offset int) ([]Result, error) {
-	like := "%" + text + "%"
+	like := "%" + escapeLike(text) + "%"
 	sql := `SELECT id, doc_type, topic_id, title, SUBSTR(body, 1, 200) AS excerpt
-		FROM search_documents WHERE (title LIKE ? OR body LIKE ?) AND visibility = 'public'`
+		FROM search_documents WHERE (title LIKE ? ESCAPE '!' OR body LIKE ? ESCAPE '!') AND visibility = 'public'`
 	args := []any{like, like}
 	sql, args = appendFilters(sql, args, q)
 	sql += ` ORDER BY updated_at DESC LIMIT ? OFFSET ?`
@@ -232,6 +278,15 @@ func (e *DBEngine) searchLike(ctx context.Context, text string, q Query, offset 
 		return nil, err
 	}
 	return toResults(rows), nil
+}
+
+// escapeLike neutralises LIKE wildcards so user input cannot force a full scan
+// or match unintended rows. The escape character is portable across dialects.
+func escapeLike(s string) string {
+	s = strings.ReplaceAll(s, "!", "!!")
+	s = strings.ReplaceAll(s, "%", "!%")
+	s = strings.ReplaceAll(s, "_", "!_")
+	return s
 }
 
 func appendFilters(sql string, args []any, q Query) (string, []any) {

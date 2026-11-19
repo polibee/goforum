@@ -2,8 +2,10 @@ package auth
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -195,16 +197,23 @@ type OAuthState struct {
 	Nonce    string `json:"n"`
 	Next     string `json:"x,omitempty"`
 	Link     bool   `json:"l,omitempty"`
+	// Verifier is the PKCE code_verifier. It stays in the signed cookie and is
+	// never placed in the authorize URL.
+	Verifier string `json:"v"`
 }
 
-// NewOAuthState builds a random nonce and its cookie payload.
+// NewOAuthState builds a random nonce, PKCE verifier and cookie payload.
 func NewOAuthState(provider, next string, link bool) (OAuthState, string, error) {
 	buf := make([]byte, 24)
 	if _, err := rand.Read(buf); err != nil {
 		return OAuthState{}, "", err
 	}
 	nonce := base64.RawURLEncoding.EncodeToString(buf)
-	state := OAuthState{Provider: provider, Nonce: nonce, Next: next, Link: link}
+	verifier, err := randomOAuthToken(32)
+	if err != nil {
+		return OAuthState{}, "", err
+	}
+	state := OAuthState{Provider: provider, Nonce: nonce, Next: next, Link: link, Verifier: verifier}
 	raw, err := json.Marshal(state)
 	if err != nil {
 		return OAuthState{}, "", err
@@ -212,7 +221,16 @@ func NewOAuthState(provider, next string, link bool) (OAuthState, string, error)
 	return state, base64.RawURLEncoding.EncodeToString(raw), nil
 }
 
-// ParseOAuthState decodes a state cookie value.
+func randomOAuthToken(size int) (string, error) {
+	buf := make([]byte, size)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(buf), nil
+}
+
+// ParseOAuthState decodes a state payload. It must only be called after the
+// payload signature has been verified.
 func ParseOAuthState(encoded string) (OAuthState, error) {
 	raw, err := base64.RawURLEncoding.DecodeString(encoded)
 	if err != nil {
@@ -222,10 +240,67 @@ func ParseOAuthState(encoded string) (OAuthState, error) {
 	if err := json.Unmarshal(raw, &state); err != nil {
 		return OAuthState{}, err
 	}
-	if state.Provider == "" || state.Nonce == "" {
+	if state.Provider == "" || state.Nonce == "" || state.Verifier == "" {
 		return OAuthState{}, errors.New("invalid state")
 	}
 	return state, nil
+}
+
+// SignOAuthState authenticates the payload with APP_KEY so the browser cannot
+// rewrite Link/Next. The nonce is still checked against the provider response.
+func SignOAuthState(payload, key string) (string, error) {
+	if strings.TrimSpace(key) == "" {
+		return "", errors.New("oauth state signing key is not configured")
+	}
+	return payload + "." + base64.RawURLEncoding.EncodeToString(oauthStateMAC(payload, key)), nil
+}
+
+// VerifyOAuthState verifies the HMAC and returns the decoded state.
+func VerifyOAuthState(encoded, key string) (OAuthState, error) {
+	if strings.TrimSpace(key) == "" {
+		return OAuthState{}, errors.New("oauth state signing key is not configured")
+	}
+	dot := strings.LastIndexByte(encoded, '.')
+	if dot <= 0 || dot == len(encoded)-1 {
+		return OAuthState{}, errors.New("invalid signed state")
+	}
+	payload, sig := encoded[:dot], encoded[dot+1:]
+	provided, err := base64.RawURLEncoding.DecodeString(sig)
+	if err != nil {
+		return OAuthState{}, errors.New("invalid state signature")
+	}
+	if !hmac.Equal(provided, oauthStateMAC(payload, key)) {
+		return OAuthState{}, errors.New("state signature mismatch")
+	}
+	return ParseOAuthState(payload)
+}
+
+func oauthStateMAC(payload, key string) []byte {
+	mac := hmac.New(sha256.New, []byte(key))
+	mac.Write([]byte("goforum-oauth-state\x00"))
+	mac.Write([]byte(payload))
+	return mac.Sum(nil)
+}
+
+func (s *Service) newOAuthState(provider, next string, link bool) (OAuthState, string, error) {
+	state, payload, err := NewOAuthState(provider, next, link)
+	if err != nil {
+		return OAuthState{}, "", err
+	}
+	signed, err := SignOAuthState(payload, s.secretKey)
+	if err != nil {
+		return OAuthState{}, "", httpx.NewError("oauth.unavailable", 503, "第三方登录暂不可用，请稍后重试")
+	}
+	return state, signed, nil
+}
+
+func (s *Service) verifyOAuthState(encoded string) (OAuthState, error) {
+	return VerifyOAuthState(encoded, s.secretKey)
+}
+
+// oauthStateMatches compares the provider callback state with the signed nonce.
+func oauthStateMatches(providerState, nonce string) bool {
+	return subtle.ConstantTimeCompare([]byte(providerState), []byte(nonce)) == 1
 }
 
 // OAuthProfile is the normalized provider payload used to create a local user.
@@ -237,16 +312,20 @@ type OAuthProfile struct {
 	AvatarURL  string
 }
 
-// FetchOAuthProfile exchanges the code and loads the provider profile.
-func (s *Service) FetchOAuthProfile(ctx context.Context, provider, code string) (*OAuthProfile, error) {
+// FetchOAuthProfile exchanges the code and loads the provider profile. The
+// verifier is the PKCE code_verifier saved in the signed state cookie.
+func (s *Service) FetchOAuthProfile(ctx context.Context, provider, code, verifier string) (*OAuthProfile, error) {
 	cfg, err := s.providerConfig(provider)
 	if err != nil {
 		return nil, err
 	}
+	if strings.TrimSpace(verifier) == "" {
+		return nil, httpx.NewError("oauth.state_invalid", 400, "登录状态校验失败，请重新发起登录")
+	}
 	spec, _ := ProviderByKey(provider)
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
-	tok, err := cfg.Exchange(ctx, code)
+	tok, err := cfg.Exchange(ctx, code, oauth2.VerifierOption(verifier))
 	if err != nil {
 		return nil, httpx.NewError("oauth.exchange_failed", 502, "无法完成第三方登录授权")
 	}
@@ -393,9 +472,9 @@ func (s *Service) OAuthLogin(ctx context.Context, provider string, profile *OAut
 	}
 
 	// No stored identity: match an existing local account by verified email.
-	// Linking to an existing account by email requires an admin-controlled
-	// toggle; when disabled, a provider login never touches an existing user.
-	autoLink := true
+	// Linking to an existing account by email is opt-in; when disabled, a
+	// provider login never touches an existing user.
+	autoLink := false
 	if s.settings != nil {
 		autoLink = s.settings.GetBool("oauth.auto_link_email")
 	}
@@ -417,6 +496,21 @@ func (s *Service) OAuthLogin(ctx context.Context, provider string, profile *OAut
 		}
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, false, err
+		}
+	}
+	// Without auto-linking, refuse to create a duplicate account for an email
+	// that already belongs to a local user. The user must sign in first and
+	// bind the provider from the security page.
+	if !autoLink && profile.Email != "" && profile.EmailOK {
+		var count int64
+		if err := s.db.WithContext(ctx).Model(&User{}).
+			Where("email_lower = ?", strings.ToLower(profile.Email)).
+			Count(&count).Error; err != nil {
+			return nil, false, err
+		}
+		if count > 0 {
+			return nil, false, httpx.NewError("oauth.email_registered", 409,
+				"该邮箱已注册，请先登录后在安全设置中绑定此第三方账号")
 		}
 	}
 
@@ -607,9 +701,12 @@ func OAuthRedirectCookieName(provider string) string {
 	return "gf_oauth_" + hex.EncodeToString(sum[:6])
 }
 
-// AuthCodeURL builds the provider authorize URL for a state.
-func AuthCodeURL(cfg *oauth2.Config, state string) string {
-	return cfg.AuthCodeURL(state, oauth2.AccessTypeOnline)
+// AuthCodeURL builds the provider authorize URL for a signed OAuth state.
+func AuthCodeURL(cfg *oauth2.Config, state OAuthState) string {
+	return cfg.AuthCodeURL(state.Nonce,
+		oauth2.AccessTypeOnline,
+		oauth2.S256ChallengeOption(state.Verifier),
+	)
 }
 
 // RedirectAllowlist checks that a configured redirect URL stays on this host.

@@ -154,6 +154,7 @@ func (g *lemonSqueezyGateway) VerifyNotify(ctx context.Context, r *http.Request)
 			Attributes struct {
 				Status      string      `json:"status"`
 				Total       json.Number `json:"total"`
+				Currency    string      `json:"currency"`
 				OrderNumber int64       `json:"order_number"`
 			} `json:"attributes"`
 		} `json:"data"`
@@ -161,7 +162,11 @@ func (g *lemonSqueezyGateway) VerifyNotify(ctx context.Context, r *http.Request)
 	if err := json.Unmarshal(raw, &payload); err != nil {
 		return nil, err
 	}
-	total, _ := payload.Data.Attributes.Total.Int64()
+	total, amountErr := payload.Data.Attributes.Total.Int64()
+	currency := strings.ToUpper(strings.TrimSpace(payload.Data.Attributes.Currency))
+	if currency == "" {
+		currency = "USD"
+	}
 	status := payload.Data.Attributes.Status
 	if status == "" && payload.Meta.EventName == "order_created" {
 		status = "paid"
@@ -171,7 +176,8 @@ func (g *lemonSqueezyGateway) VerifyNotify(ctx context.Context, r *http.Request)
 		OutTradeNo:     payload.Meta.CustomData["order_no"],
 		ChannelTradeNo: payload.Data.ID,
 		AmountMinor:    total,
-		Currency:       "USD",
+		Currency:       currency,
+		AmountVerified: payload.Data.Attributes.Total.String() != "" && amountErr == nil,
 		Status:         status,
 		Raw:            string(raw),
 	}, nil

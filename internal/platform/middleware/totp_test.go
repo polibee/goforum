@@ -101,7 +101,7 @@ func TestRequireLoginAllowsEnrolledOrUnrestricted(t *testing.T) {
 
 func TestRequireLoginSkipsTOTPSetupInDevelopment(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	for _, env := range []string{"development", "dev", "", "test"} {
+	for _, env := range []string{"development", "dev", "test"} {
 		t.Run(env, func(t *testing.T) {
 			store := testTOTPSettings(t, "superadmin")
 			r := gin.New()
@@ -120,4 +120,23 @@ func TestRequireLoginSkipsTOTPSetupInDevelopment(t *testing.T) {
 			}
 		})
 	}
+
+	// An empty APP_ENV is production, not development: fail closed.
+	t.Run("empty", func(t *testing.T) {
+		store := testTOTPSettings(t, "superadmin")
+		r := gin.New()
+		r.Use(func(c *gin.Context) {
+			p := &authn.Principal{ID: "u1", SuperAdmin: true, Status: "active"}
+			c.Request = c.Request.WithContext(authn.WithPrincipal(c.Request.Context(), p))
+			c.Next()
+		})
+		r.Use(RequireLogin(Deps{Settings: store, Config: &config.Config{Env: ""}}))
+		r.GET("/admin", func(c *gin.Context) { c.Status(http.StatusOK) })
+
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/admin", nil))
+		if rec.Code != http.StatusFound {
+			t.Fatalf("empty env status = %d, want redirect to TOTP setup", rec.Code)
+		}
+	})
 }
