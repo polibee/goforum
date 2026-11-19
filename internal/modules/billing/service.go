@@ -1190,6 +1190,12 @@ func (s *Service) applyEvent(ctx context.Context, driver string, ev *NotifyEvent
 	}
 	switch strings.ToLower(ev.Status) {
 	case "finished", "confirmed", "paid":
+		// XCash's signed invoice callback intentionally omits the fiat amount.
+		// Every other provider must supply an amount we can compare, otherwise
+		// a zero/missing field would silently bypass the order check.
+		if driver != "xcash" && !ev.AmountVerified {
+			return httpx.NewError("payment.amount_missing", 400, "支付回调缺少可校验金额")
+		}
 		if ev.AmountVerified {
 			if ev.AmountMinor != order.AmountMinor {
 				return httpx.NewError("payment.amount_mismatch", 400, "支付金额与订单不一致")

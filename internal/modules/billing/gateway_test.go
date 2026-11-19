@@ -216,7 +216,7 @@ func TestNowPaymentsNotifyMarksOrderPaid(t *testing.T) {
 	}
 	payload := map[string]any{
 		"payment_id": 42, "order_id": "GFN1", "payment_status": "finished",
-		"price_amount": 10, "pay_currency": "usdttrc20",
+		"price_amount": 10, "price_currency": "cny", "pay_currency": "usdttrc20",
 	}
 	raw, _ := json.Marshal(payload)
 	canonical, _ := canonicalJSON(raw)
