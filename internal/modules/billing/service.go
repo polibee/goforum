@@ -551,7 +551,7 @@ func (s *Service) RefundOrder(ctx context.Context, orderID, operatorID, reason s
 	if order.Status == "refunding" {
 		var pending Refund
 		err := s.db.WithContext(ctx).
-			Where("order_id = ? AND status = ?", order.ID, "pending").
+			Where("order_id = ? AND status = ?", order.ID, "processing").
 			Order("created_at DESC").First(&pending).Error
 		if err != nil {
 			return httpx.Invalid(map[string]string{"order": "退款处理中，请稍后刷新订单状态"})
@@ -620,10 +620,11 @@ func (s *Service) RefundOrder(ctx context.Context, orderID, operatorID, reason s
 			"支付渠道退款失败："+httpx.ErrorOf(gwErr).Message)
 	}
 
-	// Persist the provider reference before the local ledger write. If the
-	// finalize step fails, a retry can complete without contacting the gateway.
+	// Persist the provider reference and mark the provider step complete before
+	// the local ledger write. If finalize fails, a retry can finish the local
+	// side effects without calling the gateway again.
 	if err := s.db.WithContext(ctx).Model(&Refund{}).Where("id = ?", refund.ID).
-		Update("channel_refund_no", gatewayRefundNo).Error; err != nil && s.log != nil {
+		Updates(map[string]any{"status": "processing", "channel_refund_no": gatewayRefundNo}).Error; err != nil && s.log != nil {
 		s.log.Warn("refund: persist channel refund no failed", "refund_id", refund.ID, "error", err)
 	}
 	if err := s.finalizeRefund(ctx, &order, refund.ID, amount, gatewayRefundNo, operatorID, reason); err != nil {
@@ -652,6 +653,7 @@ func (s *Service) abortRefund(ctx context.Context, orderID, refundID string) {
 // finalizeRefund writes the idempotent local side effects after the gateway
 // has accepted the refund. It is safe to retry while the order is refunding.
 func (s *Service) finalizeRefund(ctx context.Context, order *Order, refundID string, amount int64, channelRefundNo, operatorID, reason string) error {
+	finalized := false
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		now := time.Now().UTC()
 		res := tx.Model(&Order{}).Where("id = ? AND status = ?", order.ID, "refunding").
@@ -672,6 +674,7 @@ func (s *Service) finalizeRefund(ctx context.Context, order *Order, refundID str
 				"status": "succeeded", "channel_refund_no": channelRefundNo, "completed_at": now,
 			}).Error
 		}
+		finalized = true
 
 		// Only a balance payment is returned to the in-app wallet. External
 		// gateways send the money back on the original rail, so their ledger
@@ -705,6 +708,9 @@ func (s *Service) finalizeRefund(ctx context.Context, order *Order, refundID str
 	})
 	if err != nil {
 		return err
+	}
+	if !finalized {
+		return nil
 	}
 	if s.bus != nil {
 		_ = s.bus.Publish(ctx, events.NewEvent("order.refunded", "order", order.ID, []byte(`{"order_id":"`+order.ID+`"}`)))

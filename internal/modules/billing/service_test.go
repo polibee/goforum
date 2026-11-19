@@ -305,3 +305,31 @@ func TestApplyEventRejectsAmountAndCurrencyMismatch(t *testing.T) {
 		t.Fatalf("valid event rejected: %v", err)
 	}
 }
+
+func TestRefundRetryWaitsForGatewayStep(t *testing.T) {
+	svc := setup(t)
+	ctx := context.Background()
+	order := Order{
+		ID: "o-refunding", OutTradeNo: "GFRETRY", UserID: "u1", ProductID: "p1",
+		ProductType: "vip_plan", ProductName: "VIP", AmountMinor: 1000,
+		Currency: "USD", ChannelCode: "alipay", Status: "refunding",
+	}
+	if err := svc.db.Create(&order).Error; err != nil {
+		t.Fatal(err)
+	}
+	refund := Refund{ID: "r-pending", OrderID: order.ID, UserID: "u1", AmountMinor: 1000,
+		Status: "pending", CreatedAt: time.Now().UTC()}
+	if err := svc.db.Create(&refund).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.RefundOrder(ctx, order.ID, "admin", "retry"); err == nil {
+		t.Fatal("retry finalized before the gateway step was recorded")
+	}
+	var reloaded Order
+	if err := svc.db.First(&reloaded, "id = ?", order.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	if reloaded.Status != "refunding" {
+		t.Fatalf("order status = %s, want refunding", reloaded.Status)
+	}
+}
