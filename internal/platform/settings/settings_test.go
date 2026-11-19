@@ -235,3 +235,40 @@ func TestUnreadableSecretReported(t *testing.T) {
 		t.Fatalf("secret errors = %v", errors)
 	}
 }
+
+func TestSecretRotationUsesPreviousKey(t *testing.T) {
+	store, db := testStoreWithSecret(t)
+	ctx := context.Background()
+	if err := store.SetSecretKey("key-one"); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Set(ctx, "mail.smtp.password", "rotated-secret", "actor"); err != nil {
+		t.Fatal(err)
+	}
+	reg := NewRegistry()
+	if err := reg.Register(Definition{Namespace: "mail", Key: "smtp.password", Group: "notification", Label: "SMTP 密码", Type: TypeSecret, Default: ""}); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := NewStore(db, reg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reopened.SetPreviousSecretKey("key-one")
+	if err := reopened.SetSecretKey("key-two"); err != nil {
+		t.Fatal(err)
+	}
+	if got := reopened.GetString("mail.smtp.password"); got != "rotated-secret" {
+		t.Fatalf("rotated read = %q", got)
+	}
+	var row Setting
+	if err := db.Where("namespace = ? AND key = ?", "mail", "smtp.password").First(&row).Error; err != nil {
+		t.Fatal(err)
+	}
+	var encoded string
+	if err := json.Unmarshal([]byte(row.ValueJSON), &encoded); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := secretbox.Decrypt("key-two", encoded); err != nil {
+		t.Fatalf("row was not rewritten with the new key: %v", err)
+	}
+}
