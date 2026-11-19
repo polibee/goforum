@@ -68,9 +68,9 @@
             <td><input type="checkbox" name="ids" value="{{.ID}}" form="bulk-topics" data-bulk class="h-3.5 w-3.5 rounded border-border" aria-label="{{t "选择主题" $.Lang}}"></td>
             <td class="max-w-md" data-label="{{t "主题" $.Lang}}">
               <div class="flex flex-wrap items-center gap-1.5">
-                {{if .IsPinned}}<span class="gf-badge bg-warning/10 !px-1.5 !py-0 text-[9px] text-warning">{{t "置顶" $.Lang}}</span>{{end}}
-                {{if .IsFeatured}}<span class="gf-badge bg-brand-50 !px-1.5 !py-0 text-[9px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "精华" $.Lang}}</span>{{end}}
-                {{if .IsLocked}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[9px]">{{t "锁定" $.Lang}}</span>{{end}}
+                {{if .IsPinned}}<span class="gf-badge bg-warning/10 !px-1.5 !py-0 text-[10px] text-warning">{{t "置顶" $.Lang}}</span>{{end}}
+                {{if .IsFeatured}}<span class="gf-badge bg-brand-50 !px-1.5 !py-0 text-[10px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "精华" $.Lang}}</span>{{end}}
+                {{if .IsLocked}}<span class="gf-badge gf-badge-neutral !px-1.5 !py-0 text-[10px]">{{t "锁定" $.Lang}}</span>{{end}}
                 <a href="/t/{{.Number}}" class="text-[13px] font-medium hover:text-brand-600">{{.Title}}</a>
               </div>
               <div class="mt-0.5 text-[10px] text-fg-muted">{{.CategoryName}} · {{.AuthorName}} · {{.CreatedAt.Format "2006-01-02 15:04"}}</div>

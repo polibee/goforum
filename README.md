@@ -142,6 +142,7 @@ sudo ./scripts/deploy.sh --url https://forum.example.com
 | [33 密钥加密与版本化迁移](./docs/33-密钥加密与版本化迁移.md) | 设置密钥 AES-GCM 加密、schema_migrations 台账 |
 | [34 一键部署脚本与 Docker](./docs/34-一键部署脚本与Docker.md) | systemd 一键脚本、Dockerfile/Compose、密钥、升级与排错 |
 | [35 安全审计修复记录](./docs/35-安全审计修复记录.md) | OAuth、广告隔离、退款、上传、回调校验与迁移说明 |
+| [36 后台管理界面现代化](./docs/36-后台管理界面现代化.md) | 设计 Token、侧边栏/命令面板、仪表盘、设置页与列表升级 |
 
 ## 技术栈
 

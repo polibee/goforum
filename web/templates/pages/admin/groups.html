@@ -45,8 +45,8 @@
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-1.5">
               <span class="text-[13px] font-medium">{{.Name}}</span>
-              {{if .IsDefault}}<span class="gf-badge bg-brand-50 !px-1.5 !py-0 text-[9px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "默认组" $.Lang}}</span>{{end}}
-              <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 font-mono text-[9px]">{{.Slug}}</span>
+              {{if .IsDefault}}<span class="gf-badge bg-brand-50 !px-1.5 !py-0 text-[10px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "默认组" $.Lang}}</span>{{end}}
+              <span class="gf-badge gf-badge-neutral !px-1.5 !py-0 font-mono text-[10px]">{{.Slug}}</span>
             </div>
             <div class="mt-0.5 text-[10px] text-fg-muted">{{len .Permissions}} {{t "个权限" $.Lang}} · {{t "优先级" $.Lang}} {{.Priority}}</div>
           </div>

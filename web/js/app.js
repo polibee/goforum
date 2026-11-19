@@ -3,11 +3,27 @@ import Alpine from "@alpinejs/csp";
 // CSP-friendly components: logic lives here, templates only call methods.
 Alpine.data("nav", () => ({
   open: false,
+  collapsed: false,
+  init() {
+    try {
+      this.collapsed = localStorage.getItem("gf-admin-collapsed") === "1";
+    } catch (e) {
+      /* storage may be unavailable */
+    }
+  },
   toggle() {
     this.open = !this.open;
   },
   close() {
     this.open = false;
+  },
+  toggleCollapse() {
+    this.collapsed = !this.collapsed;
+    try {
+      localStorage.setItem("gf-admin-collapsed", this.collapsed ? "1" : "0");
+    } catch (e) {
+      /* storage may be unavailable */
+    }
   }
 }));
 
@@ -118,8 +134,16 @@ Alpine.data("reaction", () => ({
 
 
 Alpine.data("bulk", () => ({
+  count: 0,
+  init() {
+    this.update();
+  },
   toggleAll(checked) {
     document.querySelectorAll("[data-bulk]").forEach((el) => { el.checked = checked; });
+    this.update();
+  },
+  update() {
+    this.count = document.querySelectorAll("[data-bulk]:checked").length;
   }
 }));
 
@@ -256,16 +280,40 @@ Alpine.data("commandPalette", () => ({
   active: 0,
   loading: false,
   timer: null,
+  adminCommands: [],
   init() {
+    const source = document.getElementById("admin-commands");
+    if (source) {
+      try {
+        const parsed = JSON.parse(source.textContent || "[]");
+        this.adminCommands = (Array.isArray(parsed) ? parsed : []).map((item) => ({
+          type: "admin",
+          title: item.title || item.Label,
+          group: item.group || item.Group,
+          url: item.url || item.URL,
+        }));
+      } catch (e) {
+        this.adminCommands = [];
+      }
+    }
     window.addEventListener("keydown", (event) => {
       if ((event.metaKey || event.ctrlKey) && String(event.key).toLowerCase() === "k") {
         event.preventDefault();
         this.show();
       }
+      if (event.key === "/" && !this.open && !/^(INPUT|TEXTAREA|SELECT)$/.test((event.target.tagName || ""))) {
+        if (this.adminCommands.length) {
+          event.preventDefault();
+          this.show();
+        }
+      }
     });
   },
   show() {
     this.open = true;
+    if (this.adminCommands.length && !this.query) {
+      this.results = this.adminCommands;
+    }
     this.$nextTick(() => setTimeout(() => this.$refs.input && this.$refs.input.focus(), 20));
   },
   close() {
@@ -275,9 +323,21 @@ Alpine.data("commandPalette", () => ({
     this.loading = false;
     this.active = 0;
   },
+  matchesAdmin(q) {
+    const needle = q.toLowerCase();
+    return this.adminCommands.filter((item) =>
+      (item.title + " " + item.group).toLowerCase().includes(needle),
+    );
+  },
   async search() {
     const q = (this.query || "").trim();
     clearTimeout(this.timer);
+    if (this.adminCommands.length) {
+      this.results = q ? this.matchesAdmin(q) : this.adminCommands;
+      this.active = 0;
+      this.loading = false;
+      return;
+    }
     if (!q) {
       this.results = [];
       this.loading = false;
@@ -1028,7 +1088,7 @@ Alpine.data("settingsPage", () => ({
   init() {
     // Snapshot every control so reset/compare works without server round-trips.
     this.$root.querySelectorAll("[data-setting-row]").forEach((row) => {
-      const field = row.querySelector("[name^='setting.']");
+      const field = row.querySelector("[name^='setting.'][type='checkbox']") || row.querySelector("[name^='setting.']");
       if (!field) return;
       const key = field.name.replace("setting.", "");
       this.original[key] = this.readValue(field);
@@ -1070,9 +1130,11 @@ Alpine.data("settingsPage", () => ({
     if (type === "bool") {
       let target = defaultText === "true";
       // A checkbox is paired with a hidden false input; set both consistently.
-      row.querySelectorAll(`input[name='setting.${key}']`).forEach((el) => {
-        if (el.type === "checkbox") el.checked = target;
-      });
+      const box = row.querySelector(`input[name='setting.${key}'][type='checkbox']`);
+      if (box) {
+        box.checked = target;
+        box.dispatchEvent(new Event("change", { bubbles: true }));
+      }
       this.mark(key, target ? "true" : "false", defaultText);
       return;
     }
@@ -1095,9 +1157,11 @@ Alpine.data("settingsPage", () => ({
     if (original === undefined) return;
 
     if (type === "bool") {
-      row.querySelectorAll(`input[name='setting.${key}']`).forEach((el) => {
-        if (el.type === "checkbox") el.checked = original === "true";
-      });
+      const box = row.querySelector(`input[name='setting.${key}'][type='checkbox']`);
+      if (box) {
+        box.checked = original === "true";
+        box.dispatchEvent(new Event("change", { bubbles: true }));
+      }
     } else {
       const field = row.querySelector(`[name='setting.${key}']`);
       if (!field) return;
@@ -1115,6 +1179,10 @@ Alpine.data("settingsPage", () => ({
     const field = this.$refs[ref];
     if (!field) return;
     field.type = field.type === "password" ? "text" : "password";
+  },
+
+  discard() {
+    window.location.reload();
   },
 
   filter(query) {
@@ -1153,7 +1221,7 @@ Alpine.data("settingsPage", () => ({
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
         if (shown.length) this.current = shown[0].target.id;
       },
-      { rootMargin: "-96px 0px -60% 0px", threshold: 0 },
+      { rootMargin: "-190px 0px -55% 0px", threshold: 0 },
     );
     groups.forEach((g) => observer.observe(g));
   },
@@ -1162,7 +1230,7 @@ Alpine.data("settingsPage", () => ({
     const target = document.getElementById(id);
     if (!target) return;
     this.current = id;
-    const top = target.getBoundingClientRect().top + window.scrollY - 120;
+    const top = target.getBoundingClientRect().top + window.scrollY - 176;
     window.scrollTo({ top, behavior: "smooth" });
   },
 }));

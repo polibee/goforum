@@ -17,23 +17,46 @@
     --gf-brand-950: color-mix(in srgb, var(--gf-brand-600) 40%, black);
     --gf-surface: #ffffff;
     --gf-surface-muted: #f8fafc;
+    --gf-surface-subtle: #f1f5f9;
+    --gf-canvas: #f6f8fa;
     --gf-border: #e2e8f0;
     --gf-fg: #0f172a;
     --gf-fg-muted: #64748b;
+    --gf-card-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     color-scheme: light;
   }
 
   .dark {
     --gf-surface: #0b1220;
     --gf-surface-muted: #111a2e;
+    --gf-surface-subtle: #16213a;
+    --gf-canvas: #090d16;
     --gf-border: #1e293b;
     --gf-fg: #e2e8f0;
     --gf-fg-muted: #94a3b8;
+    --gf-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
     color-scheme: dark;
   }
 
   html {
     @apply antialiased;
+  }
+
+  body {
+    font-family: "Inter var", Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  .brand-dot {
+    background: linear-gradient(135deg, var(--gf-brand) 0%, var(--gf-accent) 100%);
+  }
+
+  .admin-shell {
+    background: var(--gf-canvas);
+  }
+
+  .gf-tabular {
+    font-variant-numeric: tabular-nums;
   }
 
   [x-cloak] {
@@ -44,6 +67,7 @@
   html[data-theme="wechat"]:not(.dark) {
     --gf-surface: #ffffff;
     --gf-surface-muted: #f2f2f2;
+    --gf-canvas: #f5f5f5;
     --gf-border: #e6e6e6;
     --gf-fg: #111111;
     --gf-fg-muted: #6b6b6b;
@@ -57,6 +81,7 @@
   html[data-theme="minimal"]:not(.dark) {
     --gf-surface: #ffffff;
     --gf-surface-muted: #fafafa;
+    --gf-canvas: #ffffff;
     --gf-border: #e7e7e7;
     --gf-fg: #111111;
     --gf-fg-muted: #737373;
@@ -72,6 +97,7 @@
   html[data-theme="douyin"] {
     --gf-surface: #131313;
     --gf-surface-muted: #1c1c1c;
+    --gf-canvas: #0a0a0a;
     --gf-border: #2e2e2e;
     --gf-fg: #f5f5f5;
     --gf-fg-muted: #a8a8a8;
@@ -116,7 +142,8 @@
   }
 
   .gf-card {
-    @apply rounded-xl border border-border bg-surface shadow-sm;
+    @apply rounded-xl border border-border bg-surface;
+    box-shadow: var(--gf-card-shadow);
   }
 
   .gf-sidebar-card {
@@ -272,11 +299,51 @@
   }
 
   .gf-table th {
-    @apply border-b border-border px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-fg-muted;
+    @apply border-b border-border bg-surface-muted px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-fg-muted;
   }
 
   .gf-table td {
-    @apply border-b border-border px-3 py-3 text-fg;
+    @apply border-b border-border px-3 py-3 text-[13px] leading-5 text-fg;
+  }
+
+  .gf-table tbody tr {
+    @apply transition-colors hover:bg-surface-muted;
+  }
+
+  .gf-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  /* Accessible switch used by settings and feature toggles. */
+  .gf-switch {
+    @apply inline-flex cursor-pointer items-center gap-2.5;
+  }
+  .gf-switch-track {
+    @apply relative h-6 w-11 shrink-0 rounded-full border border-border bg-surface-muted transition-colors;
+  }
+  .gf-switch-thumb {
+    @apply absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform;
+  }
+  .gf-switch input:checked + .gf-switch-track {
+    @apply border-brand-600 bg-brand-600;
+  }
+  .gf-switch input:checked + .gf-switch-track .gf-switch-thumb {
+    transform: translateX(1.25rem);
+  }
+  .gf-switch .gf-switch-on { display: none; }
+  .gf-switch input:checked ~ .gf-switch-on { display: inline; }
+  .gf-switch input:checked ~ .gf-switch-off { display: none; }
+  .gf-switch input:focus-visible + .gf-switch-track {
+    @apply ring-2 ring-brand-500 ring-offset-2;
+  }
+  .gf-kbd {
+    @apply rounded border border-border bg-surface-muted px-1.5 py-0.5 font-mono text-[10px] text-fg-muted;
+  }
+  .gf-admin-tabs {
+    scrollbar-width: none;
+  }
+  .gf-admin-tabs::-webkit-scrollbar {
+    display: none;
   }
 }
 

@@ -429,6 +429,37 @@ func New(fsys fs.FS, dev bool, log *slog.Logger) (*Renderer, error) {
 			}
 			return string(b)
 		},
+		"jsonScript": func(v any) template.JS {
+			b, err := json.Marshal(v)
+			if err != nil {
+				return template.JS("[]")
+			}
+			return template.JS(b)
+		},
+		"adminCommands": func(groups []adminui.NavGroup, lang string) template.JS {
+			type command struct {
+				Title string `json:"title"`
+				Group string `json:"group"`
+				URL   string `json:"url"`
+			}
+			tr := func(s string) string {
+				if globalTranslate != nil {
+					return globalTranslate(lang, s)
+				}
+				return s
+			}
+			out := make([]command, 0)
+			for _, g := range groups {
+				for _, item := range g.Items {
+					out = append(out, command{Title: tr(item.Label), Group: tr(g.Label), URL: item.URL})
+				}
+			}
+			b, err := json.Marshal(out)
+			if err != nil {
+				return template.JS("[]")
+			}
+			return template.JS(b)
+		},
 		"year":     func() int { return nowYear() },
 		"add":      func(a, b int) int { return a + b },
 		"sub":      func(a, b int) int { return a - b },

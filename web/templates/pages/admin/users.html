@@ -3,7 +3,7 @@
 <div class="space-y-4">
   <div class="flex flex-wrap items-end justify-between gap-3">
     <div>
-      <h2 class="text-lg font-semibold">{{t "用户" $.Lang}}</h2>
+      <h2 class="text-xl font-semibold tracking-tight">{{t "用户" $.Lang}}</h2>
       <p class="mt-1 text-sm text-fg-muted">{{t "审核、封禁、禁言与账号状态管理。" $.Lang}}</p>
     </div>
     <span class="gf-badge gf-badge-neutral">{{.Total}} {{t "个账号" $.Lang}}</span>
@@ -32,32 +32,24 @@
     <a href="/admin/users" class="gf-btn gf-btn-ghost !px-3 !py-1.5 text-xs">{{t "重置" $.Lang}}</a>
   </form>
 
-  <form id="bulk-users" method="post" action="/admin/users/bulk" class="gf-card flex flex-wrap items-center gap-2 p-2.5">
-    <input type="hidden" name="_csrf" value="{{$.CSRF}}">
-    <select name="status" class="gf-input !w-36 !py-1.5 text-xs">
-      <option value="active">{{t "通过/启用" $.Lang}}</option>
-      <option value="suspended">{{t "禁言" $.Lang}}</option>
-      <option value="banned">{{t "封禁" $.Lang}}</option>
-      <option value="rejected">{{t "拒绝" $.Lang}}</option>
-    </select>
-    <button class="gf-btn gf-btn-ghost border border-border !px-2.5 !py-1.5 text-xs">{{t "批量执行" $.Lang}}</button>
-    <span class="text-[11px] text-fg-muted">{{t "勾选下方用户后执行。" $.Lang}}</span>
-  </form>
-
-  <div class="gf-card overflow-hidden">
+  <div class="gf-card overflow-hidden" x-data="bulk">
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+      <div class="text-[13px] font-semibold">{{t "用户列表" $.Lang}}</div>
+      <span class="text-[11px] text-fg-muted">{{t "勾选用户后可批量处理。" $.Lang}}</span>
+    </div>
     <div class="overflow-x-auto">
       <table class="gf-table gf-table-cards text-xs">
         <thead>
-          <tr><th class="w-8"><input type="checkbox" x-data="bulk" x-on:change="toggleAll($event.target.checked)" class="h-3.5 w-3.5 rounded border-border" aria-label="{{t "全选" $.Lang}}"></th><th>{{t "用户名" $.Lang}}</th><th>{{t "邮箱" $.Lang}}</th><th>{{t "状态" $.Lang}}</th><th>{{t "验证" $.Lang}}</th><th>{{t "信任等级" $.Lang}}</th><th>{{t "注册时间" $.Lang}}</th><th class="text-right">{{t "操作" $.Lang}}</th></tr>
+          <tr><th class="w-8"><input type="checkbox" x-on:change="toggleAll($event.target.checked)" class="h-3.5 w-3.5 rounded border-border" aria-label="{{t "全选" $.Lang}}"></th><th>{{t "用户名" $.Lang}}</th><th>{{t "邮箱" $.Lang}}</th><th>{{t "状态" $.Lang}}</th><th>{{t "验证" $.Lang}}</th><th>{{t "信任等级" $.Lang}}</th><th>{{t "注册时间" $.Lang}}</th><th class="text-right">{{t "操作" $.Lang}}</th></tr>
         </thead>
         <tbody>
           {{range .Users}}
           <tr>
-            <td><input type="checkbox" name="ids" value="{{.ID}}" form="bulk-users" data-bulk class="h-3.5 w-3.5 rounded border-border" aria-label="{{t "选择用户" $.Lang}}"></td>
+            <td><input type="checkbox" name="ids" value="{{.ID}}" form="bulk-users" data-bulk x-on:change="update" class="h-3.5 w-3.5 rounded border-border" aria-label="{{t "选择用户" $.Lang}}"></td>
             <td data-label="{{t "用户名" $.Lang}}">
               <div class="flex flex-wrap items-center gap-1.5">
                 <a href="/admin/users/{{.ID}}" class="text-[13px] font-medium hover:text-brand-600">{{.Username}}</a>
-                {{if .SuperAdmin}}<span class="gf-badge bg-brand-50 !px-1.5 !py-0 text-[9px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "超管" $.Lang}}</span>{{end}}
+                {{if .SuperAdmin}}<span class="gf-badge bg-brand-50 !px-1.5 !py-0 text-[10px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "超管" $.Lang}}</span>{{end}}
               </div>
             </td>
             <td class="text-[11px] text-fg-muted" data-label="{{t "邮箱" $.Lang}}">{{.Email}}</td>
@@ -113,6 +105,17 @@
         </tbody>
       </table>
     </div>
+    <form id="bulk-users" method="post" action="/admin/users/bulk" x-cloak x-show="count > 0" class="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 flex-wrap items-center gap-2 rounded-xl bg-slate-900 px-3 py-2 text-white shadow-2xl dark:bg-white dark:text-slate-900">
+      <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+      <span class="px-1 text-[12px] font-semibold">{{t "已选" $.Lang}} <span x-text="count"></span> {{t "项" $.Lang}}</span>
+      <select name="status" class="rounded-md border-0 bg-white/10 px-2 py-1 text-[11px] text-white focus:outline-none dark:bg-slate-900/10 dark:text-slate-900">
+        <option value="active">{{t "通过/启用" $.Lang}}</option>
+        <option value="suspended">{{t "禁言" $.Lang}}</option>
+        <option value="banned">{{t "封禁" $.Lang}}</option>
+        <option value="rejected">{{t "拒绝" $.Lang}}</option>
+      </select>
+      <button class="rounded-md bg-white px-3 py-1 text-[11px] font-semibold text-slate-900 transition hover:bg-white/90 dark:bg-slate-900 dark:text-white dark:hover:bg-slate-800">{{t "批量执行" $.Lang}}</button>
+    </form>
   </div>
 
   {{if gt .TotalPages 1}}

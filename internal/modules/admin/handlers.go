@@ -24,12 +24,13 @@ import (
 )
 
 type loginData struct {
-	Login        string
-	Error        string
-	Action       string
-	Next         string
-	Providers    []contracts.OAuthProviderView
-	HidePassword bool
+	Login                string
+	Error                string
+	Action               string
+	Next                 string
+	Providers            []contracts.OAuthProviderView
+	HidePassword         bool
+	PasswordResetEnabled bool
 }
 
 type dailyActivityPoint struct {
@@ -40,6 +41,18 @@ type dailyActivityPoint struct {
 	UserPct  int
 	TopicPct int
 	PostPct  int
+	UserY    int
+	TopicY   int
+	PostY    int
+	X        int
+}
+
+type dashboardActivity struct {
+	Kind      string
+	Title     string
+	Meta      string
+	URL       string
+	CreatedAt time.Time
 }
 
 type dashboardData struct {
@@ -54,16 +67,28 @@ type dashboardData struct {
 	PermissionCount int
 	SettingCount    int
 	Modules         []adminui.ModuleInfo
-	Activity        []dailyActivityPoint
+	Chart           []dailyActivityPoint
+	ChartMax        int64
+	Range           int
+	UserTrend       int
+	TopicTrend      int
+	PostTrend       int
+	UserSpark       string
+	TopicSpark      string
+	PostSpark       string
+	Recent          []dashboardActivity
 	DBDriver        string
 	Version         string
 	Reindexed       string
 	Error           string
 }
 
-func (m *Module) dailyActivity(ctx context.Context) []dailyActivityPoint {
+func (m *Module) dailyActivity(ctx context.Context, days int) []dailyActivityPoint {
+	if days != 7 && days != 14 && days != 30 {
+		days = 14
+	}
 	now := time.Now().UTC()
-	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -13)
+	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -(days - 1))
 	expr := "strftime('%Y-%m-%d', created_at)"
 	switch m.deps.DB.Dialector.Name() {
 	case "postgres":
@@ -89,31 +114,87 @@ func (m *Module) dailyActivity(ctx context.Context) []dailyActivityPoint {
 			counts[r.Day] = v
 		}
 	}
-	points := make([]dailyActivityPoint, 0, 14)
-	var max int64 = 1
-	for i := 0; i < 14; i++ {
+	points := make([]dailyActivityPoint, 0, days)
+	for i := 0; i < days; i++ {
 		d := start.AddDate(0, 0, i)
 		key := d.Format("2006-01-02")
 		v := counts[key]
-		if v[0] > max {
-			max = v[0]
-		}
-		if v[1] > max {
-			max = v[1]
-		}
-		if v[2] > max {
-			max = v[2]
-		}
 		points = append(points, dailyActivityPoint{
 			Label: d.Format("01-02"), Users: v[0], Topics: v[1], Posts: v[2],
 		})
 	}
+	normalizeActivity(points)
+	return points
+}
+
+// normalizeActivity converts counts to chart coordinates. The SVG uses a
+// 0-100 viewBox, so percentages and Y coordinates are precomputed.
+func normalizeActivity(points []dailyActivityPoint) {
+	var max int64 = 1
+	for _, p := range points {
+		if p.Users > max {
+			max = p.Users
+		}
+		if p.Topics > max {
+			max = p.Topics
+		}
+		if p.Posts > max {
+			max = p.Posts
+		}
+	}
+	last := len(points) - 1
 	for i := range points {
 		points[i].UserPct = int(points[i].Users * 100 / max)
 		points[i].TopicPct = int(points[i].Topics * 100 / max)
 		points[i].PostPct = int(points[i].Posts * 100 / max)
+		points[i].UserY = 100 - points[i].UserPct
+		points[i].TopicY = 100 - points[i].TopicPct
+		points[i].PostY = 100 - points[i].PostPct
+		if last > 0 {
+			points[i].X = i * 100 / last
+		} else {
+			points[i].X = 0
+		}
 	}
-	return points
+}
+
+func activityTrend(points []dailyActivityPoint, pick func(dailyActivityPoint) int64) int {
+	if len(points) < 14 {
+		return 0
+	}
+	var current, previous int64
+	for _, p := range points[len(points)-7:] {
+		current += pick(p)
+	}
+	for _, p := range points[len(points)-14 : len(points)-7] {
+		previous += pick(p)
+	}
+	if previous == 0 {
+		if current > 0 {
+			return 100
+		}
+		return 0
+	}
+	return int((current - previous) * 100 / previous)
+}
+
+func sparkline(points []dailyActivityPoint, pick func(dailyActivityPoint) int) string {
+	if len(points) == 0 {
+		return ""
+	}
+	start := 0
+	if len(points) > 7 {
+		start = len(points) - 7
+	}
+	var b strings.Builder
+	for i, p := range points[start:] {
+		y := 26 - pick(p)*22/100
+		if i > 0 {
+			b.WriteByte(' ')
+		}
+		fmt.Fprintf(&b, "%d,%d", i*16, y)
+	}
+	return b.String()
 }
 
 type settingsGroup struct {
@@ -161,7 +242,7 @@ func (m *Module) loginPage(c *gin.Context) {
 		return
 	}
 	data := m.base(c, "登录")
-	data.Data = loginData{Action: "/admin/login", Next: c.Query("next"), Providers: m.oauthProviders()}
+	data.Data = loginData{Action: "/admin/login", Next: c.Query("next"), Providers: m.oauthProviders(), PasswordResetEnabled: m.deps.Settings.GetBool("site.verification.password_reset")}
 	m.deps.Renderer.Render(c, http.StatusOK, "login", data)
 }
 
@@ -220,7 +301,7 @@ func (m *Module) loginPost(c *gin.Context) {
 
 func (m *Module) renderLoginError(c *gin.Context, login, next, message string, status int) {
 	data := m.base(c, "登录")
-	data.Data = loginData{Login: login, Error: message, Action: "/admin/login", Next: next, Providers: m.oauthProviders()}
+	data.Data = loginData{Login: login, Error: message, Action: "/admin/login", Next: next, Providers: m.oauthProviders(), PasswordResetEnabled: m.deps.Settings.GetBool("site.verification.password_reset")}
 	m.deps.Renderer.Render(c, status, "login", data)
 }
 
@@ -268,6 +349,31 @@ func (m *Module) dashboard(c *gin.Context) {
 	settingCount := len(m.deps.Settings.Items(""))
 
 	data := m.base(c, "仪表盘")
+	rangeDays := 14
+	switch c.Query("range") {
+	case "7":
+		rangeDays = 7
+	case "30":
+		rangeDays = 30
+	}
+	allActivity := m.dailyActivity(ctx, rangeDays)
+	chart := allActivity
+	if len(chart) > rangeDays {
+		chart = chart[len(chart)-rangeDays:]
+		normalizeActivity(chart)
+	}
+	var chartMax int64 = 1
+	for _, p := range chart {
+		if p.Users > chartMax {
+			chartMax = p.Users
+		}
+		if p.Topics > chartMax {
+			chartMax = p.Topics
+		}
+		if p.Posts > chartMax {
+			chartMax = p.Posts
+		}
+	}
 	data.Data = dashboardData{
 		UserCount:       users,
 		TopicCount:      topics,
@@ -277,7 +383,16 @@ func (m *Module) dashboard(c *gin.Context) {
 		PendingAppeals:  pendingAppeals,
 		PendingTotal:    pendingFlags + pendingReviews + pendingAppeals,
 		ModuleCount:     len(modules),
-		Activity:        m.dailyActivity(ctx),
+		Chart:           chart,
+		ChartMax:        chartMax,
+		Range:           rangeDays,
+		UserTrend:       activityTrend(allActivity, func(p dailyActivityPoint) int64 { return p.Users }),
+		TopicTrend:      activityTrend(allActivity, func(p dailyActivityPoint) int64 { return p.Topics }),
+		PostTrend:       activityTrend(allActivity, func(p dailyActivityPoint) int64 { return p.Posts }),
+		UserSpark:       sparkline(chart, func(p dailyActivityPoint) int { return p.UserPct }),
+		TopicSpark:      sparkline(chart, func(p dailyActivityPoint) int { return p.TopicPct }),
+		PostSpark:       sparkline(chart, func(p dailyActivityPoint) int { return p.PostPct }),
+		Recent:          m.recentActivity(ctx),
 		PermissionCount: permCount,
 		SettingCount:    settingCount,
 		Modules:         modules,
@@ -287,6 +402,48 @@ func (m *Module) dashboard(c *gin.Context) {
 		Error:           c.Query("error"),
 	}
 	m.deps.Renderer.Render(c, http.StatusOK, "admin_dashboard", data)
+}
+
+func (m *Module) recentActivity(ctx context.Context) []dashboardActivity {
+	out := make([]dashboardActivity, 0, 12)
+	var users []struct {
+		Username  string
+		CreatedAt time.Time
+	}
+	_ = m.deps.DB.WithContext(ctx).Table("users").
+		Select("username, created_at").Order("created_at DESC").Limit(5).Scan(&users).Error
+	for _, u := range users {
+		out = append(out, dashboardActivity{
+			Kind: "user", Title: u.Username, Meta: "新注册用户",
+			URL: "/admin/users?q=" + url.QueryEscape(u.Username), CreatedAt: u.CreatedAt,
+		})
+	}
+	var orders []struct {
+		OutTradeNo  string
+		ProductName string
+		AmountMinor int64
+		Currency    string
+		PaidAt      *time.Time
+	}
+	_ = m.deps.DB.WithContext(ctx).Table("orders").
+		Select("out_trade_no, product_name, amount_minor, currency, paid_at").
+		Where("status = ?", "paid").Order("paid_at DESC").Limit(5).Scan(&orders).Error
+	for _, o := range orders {
+		at := time.Now().UTC()
+		if o.PaidAt != nil {
+			at = *o.PaidAt
+		}
+		out = append(out, dashboardActivity{
+			Kind: "order", Title: o.ProductName,
+			Meta: fmt.Sprintf("%s %.2f", o.Currency, float64(o.AmountMinor)/100),
+			URL:  "/admin/billing?tab=orders", CreatedAt: at,
+		})
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].CreatedAt.After(out[j].CreatedAt) })
+	if len(out) > 8 {
+		out = out[:8]
+	}
+	return out
 }
 
 var groupLabels = map[string]string{

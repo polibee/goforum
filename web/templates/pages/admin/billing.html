@@ -6,7 +6,7 @@
   {{if .TokenSaved}}<div class="gf-alert-success">{{t "接收币种已保存，前台支付页立即生效。" $.Lang}}</div>{{end}}
   <div class="flex flex-wrap items-end justify-between gap-3">
     <div>
-      <h2 class="text-lg font-semibold">{{t "商业化" $.Lang}}</h2>
+      <h2 class="text-xl font-semibold tracking-tight">{{t "商业化" $.Lang}}</h2>
       <p class="mt-1 text-sm text-fg-muted">{{t "商品、订单、支付渠道、退款、订阅、优惠券与对账报表。" $.Lang}}</p>
     </div>
     <span class="gf-badge gf-badge-neutral">{{len .Products}} {{t "个商品" $.Lang}} · {{len .Orders}} {{t "笔订单" $.Lang}}</span>
@@ -127,32 +127,36 @@
   </div>
 
   <div x-show="tab === 'channels'" x-cloak class="space-y-3">
-  <section class="gf-card overflow-hidden">
-    <div class="border-b border-border px-4 py-2.5"><h3 class="text-[13px] font-semibold">{{t "支付渠道" $.Lang}}</h3></div>
-    <div class="overflow-x-auto">
-      <table class="gf-table gf-table-cards text-xs">
-        <thead><tr><th>{{t "名称" $.Lang}}</th><th>{{t "驱动" $.Lang}}</th><th>{{t "模式" $.Lang}}</th><th>{{t "状态" $.Lang}}</th><th></th></tr></thead>
-        <tbody>
-          {{range .Channels}}
-          <tr>
-            <td class="text-sm font-medium">{{t .Name $.Lang}}</td>
-            <td class="font-mono text-xs">{{.Driver}}</td>
-            <td class="text-xs text-fg-muted">{{.Mode}}</td>
-            <td><span class="gf-badge {{if .Enabled}}bg-success/10 text-success{{else}}bg-surface-muted text-fg-muted{{end}}">{{if .Enabled}}{{t "启用" $.Lang}}{{else}}{{t "停用" $.Lang}}{{end}}</span></td>
-            <td class="text-right">
-              <form method="post" action="/admin/billing/channel" class="inline">
-                <input type="hidden" name="_csrf" value="{{$.CSRF}}">
-                <input type="hidden" name="channel_id" value="{{.ID}}">
-                <input type="hidden" name="enabled" value="{{if .Enabled}}{{else}}1{{end}}">
-                <button class="gf-btn gf-btn-ghost !px-2 !py-1 text-xs">{{if .Enabled}}{{t "停用" $.Lang}}{{else}}{{t "启用" $.Lang}}{{end}}</button>
-              </form>
-            </td>
-          </tr>
-          {{end}}
-        </tbody>
-      </table>
-    </div>
-  </section>
+  <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    {{range .Channels}}
+    <section class="gf-card flex flex-col p-4">
+      <div class="flex items-start gap-3">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-muted text-sm font-semibold uppercase text-fg-muted">{{printf "%.1s" .Name}}</span>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-2">
+            <h3 class="truncate text-[13px] font-semibold">{{t .Name $.Lang}}</h3>
+            <span class="gf-badge {{if eq .Mode "live"}}bg-success/10 text-success{{else}}bg-warning/10 text-warning{{end}} !px-1.5 !py-0 text-[10px]">{{if eq .Mode "live"}}Live{{else}}Sandbox{{end}}</span>
+          </div>
+          <div class="mt-0.5 font-mono text-[10px] text-fg-muted">{{.Driver}}</div>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
+        <span class="inline-flex items-center gap-1.5 text-[11px] {{if .Enabled}}text-success{{else}}text-fg-muted{{end}}">
+          <span class="h-1.5 w-1.5 rounded-full {{if .Enabled}}bg-success{{else}}bg-fg-muted/50{{end}}"></span>{{if .Enabled}}{{t "启用" $.Lang}}{{else}}{{t "停用" $.Lang}}{{end}}
+        </span>
+        <div class="flex items-center gap-1.5">
+          <a href="/admin/settings#group-payment" class="rounded-md px-2 py-1 text-[11px] font-medium text-fg-muted transition hover:bg-surface-muted hover:text-fg">{{t "配置参数" $.Lang}}</a>
+          <form method="post" action="/admin/billing/channel">
+            <input type="hidden" name="_csrf" value="{{$.CSRF}}">
+            <input type="hidden" name="channel_id" value="{{.ID}}">
+            <input type="hidden" name="enabled" value="{{if .Enabled}}{{else}}1{{end}}">
+            <button class="rounded-md border border-border px-2 py-1 text-[11px] font-medium transition {{if .Enabled}}text-fg-muted hover:border-danger/40 hover:text-danger{{else}}text-brand-600 hover:border-brand-300{{end}}">{{if .Enabled}}{{t "停用" $.Lang}}{{else}}{{t "启用" $.Lang}}{{end}}</button>
+          </form>
+        </div>
+      </div>
+    </section>
+    {{end}}
+  </div>
 
   <!-- Deipay 接收币种 -->
   <section class="gf-card overflow-hidden" x-data="tokenPicker({{toJSON .SelectedTokenIDs}})">
@@ -195,7 +199,7 @@
             <span class="flex min-w-0 flex-col">
               <span class="flex items-center gap-1">
                 <span class="text-[12px] font-medium">{{.Symbol}}</span>
-                {{if .Popular}}<span class="gf-badge bg-brand-100 !px-1 !py-0 text-[8px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "常用" $.Lang}}</span>{{end}}
+                {{if .Popular}}<span class="gf-badge bg-brand-100 !px-1 !py-0 text-[10px] text-brand-700 dark:bg-brand-900 dark:text-brand-200">{{t "常用" $.Lang}}</span>{{end}}
               </span>
               <span class="truncate text-[10px] text-fg-muted">{{.Name}}</span>
             </span>

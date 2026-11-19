@@ -23,6 +23,8 @@ module.exports = {
         },
         surface: "var(--gf-surface)",
         "surface-muted": "var(--gf-surface-muted)",
+        "surface-subtle": "var(--gf-surface-subtle)",
+        canvas: "var(--gf-canvas)",
         border: "var(--gf-border)",
         fg: "var(--gf-fg)",
         "fg-muted": "var(--gf-fg-muted)",
@@ -32,6 +34,8 @@ module.exports = {
       },
       fontFamily: {
         sans: [
+          "Inter var",
+          "Inter",
           "system-ui",
           "-apple-system",
           "Segoe UI",
