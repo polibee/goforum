@@ -185,6 +185,7 @@ func (c *Config) applyDotEnv(dotenv map[string]string) {
 	str("APP_ENV", &c.Env)
 	str("APP_URL", &c.HTTP.BaseURL)
 	str("APP_KEY", &c.Security.SecretKey)
+	str("APP_KEY_PREVIOUS", &c.Security.PreviousSecretKey)
 
 	str("HTTP_ADDR", &c.HTTP.Addr)
 	bodyMegabytes := 0

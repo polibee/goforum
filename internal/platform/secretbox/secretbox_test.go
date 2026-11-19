@@ -60,3 +60,17 @@ func TestBase64Key(t *testing.T) {
 		t.Fatalf("decrypt: %v", err)
 	}
 }
+
+func TestDecryptAnyWithPreviousKey(t *testing.T) {
+	encrypted, err := Encrypt("old-key", []byte("value"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	plain, err := DecryptAny("new-key", "old-key", encrypted)
+	if err != nil || string(plain) != "value" {
+		t.Fatalf("DecryptAny = %q, %v", plain, err)
+	}
+	if _, err := DecryptAny("new-key", "", encrypted); err == nil {
+		t.Fatal("old ciphertext accepted without previous key")
+	}
+}

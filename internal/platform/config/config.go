@@ -93,10 +93,11 @@ type LogConfig struct {
 }
 
 type SecurityConfig struct {
-	SecretKey      string   `yaml:"secret_key"`
-	SessionTTL     Duration `yaml:"session_ttl"`
-	SessionCookie  string   `yaml:"session_cookie"`
-	TrustedProxies []string `yaml:"trusted_proxies"`
+	SecretKey         string   `yaml:"secret_key"`
+	PreviousSecretKey string   `yaml:"previous_secret_key"`
+	SessionTTL        Duration `yaml:"session_ttl"`
+	SessionCookie     string   `yaml:"session_cookie"`
+	TrustedProxies    []string `yaml:"trusted_proxies"`
 }
 
 type WorkerConfig struct {

@@ -249,7 +249,7 @@ Compliance note: privacy policy, terms of service, moderation rules and data-ret
 | Migration lock / checksums | No advisory lock; never edit an applied migration |
 | Built-in scheduler | Backups and cleanup need external cron |
 | Docker | `Dockerfile`, `docker-compose.yml` and a one-command deploy script are included; multi-instance still needs shared storage |
-| `APP_KEY` rotation | Invalidates encrypted settings and TOTP secrets; re-enter them |
+| `APP_KEY` rotation | `APP_KEY_PREVIOUS` keeps old ciphertext readable and is rewritten automatically; keep the old key until verified |
 
 ## 9. Recommended Infrastructure
 

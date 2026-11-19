@@ -236,6 +236,7 @@ func Open(cfg *config.Config, configPath, version string, log *slog.Logger) (app
 	if err != nil {
 		return nil, err
 	}
+	settingsStore.SetPreviousSecretKey(cfg.Security.PreviousSecretKey)
 	if err := settingsStore.SetSecretKey(cfg.Security.SecretKey); err != nil {
 		log.Warn("settings secret migration failed; secrets stay readable but may remain plaintext", "error", err)
 	}
@@ -300,6 +301,7 @@ func Open(cfg *config.Config, configPath, version string, log *slog.Logger) (app
 	authMod.SetAudit(auditSvc)
 	authSvc.Configure(settingsStore, mailer, cfg.HTTP.BaseURL)
 	authSvc.SetSecretKey(cfg.Security.SecretKey)
+	authSvc.SetPreviousSecretKey(cfg.Security.PreviousSecretKey)
 	authSvc.SetEnv(cfg.Env)
 	authSvc.SetCache(cacheStore)
 	authSvc.SetAudit(auditSvc)

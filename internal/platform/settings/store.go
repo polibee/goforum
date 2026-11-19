@@ -35,6 +35,8 @@ type Store struct {
 	// secretKey encrypts TypeSecret values at rest. Empty means new secret
 	// writes are rejected and existing plaintext secrets stay readable.
 	secretKey string
+	// previousSecretKey keeps old rows readable during APP_KEY rotation.
+	previousSecretKey string
 	// secretErrors records configured secrets that cannot be decrypted, e.g.
 	// after APP_KEY was rotated. The admin settings page surfaces these.
 	secretErrors sync.Map
@@ -136,7 +138,7 @@ func (s *Store) decodeSecret(b json.RawMessage) (json.RawMessage, error) {
 	if key == "" {
 		return nil, errors.New("APP_KEY is not configured")
 	}
-	plain, err := secretbox.Decrypt(key, encoded)
+	plain, err := secretbox.DecryptAny(key, s.previousSecretKey, encoded)
 	if err != nil {
 		return nil, err
 	}
@@ -570,6 +572,14 @@ func defaultText(it Item) string {
 	}
 }
 
+// SetPreviousSecretKey keeps the old APP_KEY available for decryption during
+// rotation. New values are always encrypted with the current key.
+func (s *Store) SetPreviousSecretKey(key string) {
+	s.mu.Lock()
+	s.previousSecretKey = strings.TrimSpace(key)
+	s.mu.Unlock()
+}
+
 // SetSecretKey installs the key used to encrypt secret settings. Existing
 // plaintext secrets are migrated in place so upgrades do not require admins to
 // re-enter every SMTP/payment/OAuth credential.
@@ -630,6 +640,7 @@ func (s *Store) encryptLegacySecrets(ctx context.Context) error {
 		return nil
 	}
 	s.mu.RLock()
+	previous := s.previousSecretKey
 	snapshot := make(map[string]json.RawMessage, len(s.values))
 	for k, v := range s.values {
 		snapshot[k] = v
@@ -651,10 +662,26 @@ func (s *Store) encryptLegacySecrets(ctx context.Context) error {
 		}
 		var encoded string
 		if err := json.Unmarshal(raw, &encoded); err == nil && secretbox.IsEncrypted(encoded) {
-			if _, err := secretbox.Decrypt(key, encoded); err != nil {
+			plain, err := secretbox.DecryptAny(key, previous, encoded)
+			if err != nil {
 				s.secretErrors.Store(def.FullKey(), err)
-			} else {
-				s.secretErrors.Delete(def.FullKey())
+				continue
+			}
+			s.secretErrors.Delete(def.FullKey())
+			// Rewrite rows still encrypted with the previous key so the old key
+			// can be removed after one successful startup.
+			if previous != "" {
+				if _, currentErr := secretbox.Decrypt(key, encoded); currentErr != nil {
+					reencrypted, encErr := secretbox.Encrypt(key, plain)
+					if encErr != nil {
+						return encErr
+					}
+					quoted, quoteErr := json.Marshal(reencrypted)
+					if quoteErr != nil {
+						return quoteErr
+					}
+					updates = append(updates, update{def: def, value: string(quoted)})
+				}
 			}
 			continue
 		}

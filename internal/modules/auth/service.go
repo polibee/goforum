@@ -33,6 +33,7 @@ type Service struct {
 	mailer      mail.Mailer
 	baseURL     string
 	secretKey   string
+	previousKey string
 	devMode     bool
 	activity    contracts.ActivityReader
 	invites     contracts.InviteService

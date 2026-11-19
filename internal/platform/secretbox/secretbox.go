@@ -44,6 +44,27 @@ func Encrypt(key string, plaintext []byte) (string, error) {
 }
 
 func Decrypt(key, encoded string) ([]byte, error) {
+	return decryptWithKey(key, encoded)
+}
+
+// DecryptAny tries the current key first, then the previous key. It supports
+// APP_KEY rotation: new writes use the current key while old rows remain
+// readable until they are rewritten.
+func DecryptAny(current, previous, encoded string) ([]byte, error) {
+	plain, err := decryptWithKey(current, encoded)
+	if err == nil {
+		return plain, nil
+	}
+	if strings.TrimSpace(previous) == "" {
+		return nil, err
+	}
+	if previousPlain, prevErr := decryptWithKey(previous, encoded); prevErr == nil {
+		return previousPlain, nil
+	}
+	return nil, err
+}
+
+func decryptWithKey(key, encoded string) ([]byte, error) {
 	if !IsEncrypted(encoded) {
 		return nil, errors.New("value is not encrypted")
 	}

@@ -38,6 +38,12 @@ func (s *Service) SetSecretKey(key string) {
 	s.secretKey = strings.TrimSpace(key)
 }
 
+// SetPreviousSecretKey allows old TOTP secrets to be read during APP_KEY
+// rotation. Re-enrollment or the next successful read can rewrite them.
+func (s *Service) SetPreviousSecretKey(key string) {
+	s.previousKey = strings.TrimSpace(key)
+}
+
 // AdminTOTPPolicy returns off, superadmin or admins.
 func (s *Service) AdminTOTPPolicy() string {
 	if s.settings == nil {
@@ -443,7 +449,7 @@ func (s *Service) decryptTOTP(encoded string) (string, error) {
 	if s.secretKey == "" {
 		return "", secretbox.ErrKeyMissing
 	}
-	plain, err := secretbox.Decrypt(s.secretKey, encoded)
+	plain, err := secretbox.DecryptAny(s.secretKey, s.previousKey, encoded)
 	if err != nil {
 		return "", err
 	}

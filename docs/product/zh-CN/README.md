@@ -249,7 +249,7 @@ GoForum 面向希望**自己掌握数据与规则**的社区团队。它把 Disc
 | 迁移锁 / 校验和 | 未实现 advisory lock；不要修改已发布迁移 |
 | 内置调度器 | 备份、清理等需外部 cron |
 | Docker | 已提供 `Dockerfile`、`docker-compose.yml` 与一键部署脚本；多实例仍需共享存储 |
-| `APP_KEY` 轮换 | 会导致设置密钥与 TOTP 失效，需重新配置 |
+| `APP_KEY` 轮换 | 支持 `APP_KEY_PREVIOUS` 过渡并自动重写密文；完成前不要销毁旧密钥 |
 
 ## 9. 推荐基础设施
 
